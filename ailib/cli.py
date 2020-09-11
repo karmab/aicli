@@ -111,6 +111,13 @@ def download_kubeconfig(args):
     ai.download_kubeconfig(args.cluster)
 
 
+def update_host(args):
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai = AssistedClient(args.url)
+    ai.update_host(args.cluster, args.hostname, overrides)
+
+
 def cli():
     """
 
@@ -140,6 +147,10 @@ def cli():
     list_desc = 'List Object'
     list_parser = subparsers.add_parser('list', description=list_desc, help=list_desc, aliases=['get'])
     list_subparsers = list_parser.add_subparsers(metavar='', dest='subcommand_list')
+
+    update_desc = 'Update Object'
+    update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc)
+    update_subparsers = update_parser.add_subparsers(metavar='', dest='subcommand_update')
 
     clustercreate_desc = 'Create Cluster'
     clustercreate_epilog = None
@@ -209,8 +220,19 @@ def cli():
     hostslist_parser = argparse.ArgumentParser(add_help=False)
     hostslist_parser.add_argument('cluster', metavar='CLUSTER')
     hostslist_parser.set_defaults(func=list_hosts)
-    list_subparsers.add_parser('hosts', parents=[hostslist_parser], description=hostslist_desc,
+    list_subparsers.add_parser('host', parents=[hostslist_parser], description=hostslist_desc,
                                help=clusterlist_desc, aliases=['hosts'])
+
+    hostupdate_desc = 'Update Host'
+    hostupdate_parser = argparse.ArgumentParser(add_help=False)
+    hostupdate_parser.add_argument('-P', '--param', action='append',
+                                   help='specify parameter or keyword for rendering (multiple can be specified)',
+                                   metavar='PARAM')
+    hostupdate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
+    hostupdate_parser.add_argument('cluster', metavar='CLUSTER')
+    hostupdate_parser.add_argument('hostname', metavar='HOSTNAME')
+    hostupdate_parser.set_defaults(func=update_host)
+    update_subparsers.add_parser('host', parents=[hostupdate_parser], description=hostupdate_desc, help=hostupdate_desc)
 
     if len(sys.argv) == 1:
         parser.print_help()

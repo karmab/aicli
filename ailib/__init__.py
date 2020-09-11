@@ -96,3 +96,26 @@ class AssistedClient(object):
         cluster_id = self.get_cluster_id(name)
         hosts = self.client.list_hosts(cluster_id=cluster_id)
         return hosts
+
+    def update_host(self, name, hostname, overrides):
+        warning("not implemented")
+        return
+        cluster_id = self.get_cluster_id(name)
+        hostids = [host['id'] for host in self.client.list_hosts(cluster_id=cluster_id)
+                   if host['requested_hostname'] == hostname or host['id'] == hostname]
+        if not hostids:
+            error("No Matching Host with name %s found" % hostname)
+        cluster_update_params = {}
+        role = None
+        if 'role' in overrides:
+            role = overrides['role']
+            hosts_roles = [{"id": hostid, "role": role} for hostid in hostids]
+            # cluster_update_params = models.ClusterUpdateParams(hosts_roles=host_roles)
+            cluster_update_params['hosts_roles'] = hosts_roles
+        if len(hostids) > 1:
+            node = role if role is not None else 'node'
+            hosts_names = [{"id": hostid, "hostname": "%s-%s" % (node, index)} for index, hostid in enumerate(hostids)]
+            cluster_update_params['hosts_names'] = hosts_names
+        if cluster_update_params:
+            cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
+            print(self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params))
