@@ -1,0 +1,18 @@
+{% if virtual_masters %}
+{%- for num in range(0, virtual_masters_number) %}
+{{ cluster }}-master-{{ num }}:
+ pool: {{ pool }}
+ numcpus: {{ virtual_masters_numcpus }}
+ start: false
+ iso: {{ cluster}}.iso
+ memory: {{ virtual_masters_memory }}
+ nets:
+  - name: {{ network }}
+    mac: {{ virtual_masters_mac_prefix + ":" + "%02.d" | format(num + 1)| string }}
+ disks:
+{%- for size in [disk_size] + extra_disks %}
+  - size: {{ size }}
+    interface: scsi
+{%- endfor %}
+{%- endfor %}
+{%- endif %}
