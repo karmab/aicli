@@ -5,34 +5,31 @@ parameters:
  pool: default
  image: centos8
  minikube: true
- virtual_masters_disks_size: 120
  network: default
  notify: true
  cluster: testk
  start: false
- virtual_masters: true
- virtual_masters_number: 3
- virtual_masters_numcpus: 8
- virtual_masters_memory: 16384
+ nodes: 0
+ nodes_numcpus: 8
+ nodes_memory: 16384
+ nodes_disks_size: 120
  deploy: false
 
 {{ image }}:
   type: image
 
-{% if virtual_masters %}
-{%- for num in range(0, virtual_masters_number) %}
-{{ cluster }}-master-{{ num }}:
+{%- for num in range(0, nodes) %}
+{{ cluster }}-node-{{ num }}:
  pool: {{ pool }}
- numcpus: {{ virtual_masters_numcpus }}
+ numcpus: {{ nodes_numcpus }}
  start: {{ start }}
  iso: {{ cluster}}.iso
- memory: {{ virtual_masters_memory }}
+ memory: {{ nodes_memory }}
  nets:
   - name: {{ network }}
  disks:
-  - size: {{ virtual_masters_disks_size }}
+  - size: {{ nodes_disks_size }}
 {%- endfor %}
-{%- endif %}
 
 {{ cluster }}-installer:
  image: {{ image }}

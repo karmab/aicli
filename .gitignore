@@ -1,5 +1,13 @@
+build/
+*.egg
+*.eggs
+*.egg-info
+*.pyc
+dist
+build
 kcli_parameters.yml
 parameters_*.yml
 openshift_pull.json*
 *.iso
 assisted-service-client-*.tar.gz
+kubeconfig.*
