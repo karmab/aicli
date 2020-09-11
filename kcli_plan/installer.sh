@@ -15,3 +15,4 @@ kubectl wait -n assisted-installer $(kubectl get pod -n assisted-installer -l ap
 tmux new-session -s port-forward-service -d "kubectl -n assisted-installer port-forward --address 0.0.0.0 svc/assisted-service 8090:8090"
 kubectl wait -n assisted-installer $(kubectl get pod -n assisted-installer -l app=ocp-metal-ui -o name) --for=condition=Ready
 tmux new-session -s port-forward-ui -d "kubectl -n assisted-installer port-forward --address 0.0.0.0 svc/ocp-metal-ui 8080:80"
+echo "export AI_URL=$(hostname -I |cut -f1 -d' '):8090" >> /root/.bashrc

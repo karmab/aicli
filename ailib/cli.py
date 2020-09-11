@@ -65,7 +65,7 @@ def info_cluster(args):
 
 def list_cluster(args):
     ai = AssistedClient(args.url)
-    clusters = ai.list()
+    clusters = ai.list_clusters()
     clusterstable = PrettyTable(["Cluster", "Id", "Status", "Dns Domain"])
     for cluster in sorted(clusters, key=lambda x: x['name']):
         name = cluster['name']
@@ -75,6 +75,20 @@ def list_cluster(args):
         entry = [name, _id, status, base_dns_domain]
         clusterstable.add_row(entry)
     print(clusterstable)
+
+
+def list_hosts(args):
+    ai = AssistedClient(args.url)
+    hosts = ai.list_hosts(args.cluster)
+    hoststable = PrettyTable(["Host", "Id", "Status", "Role"])
+    for host in sorted(hosts, key=lambda x: x['requested_hostname']):
+        name = host['requested_hostname']
+        _id = host['id']
+        role = host['role']
+        status = host['status']
+        entry = [name, _id, status, role]
+        hoststable.add_row(entry)
+    print(hoststable)
 
 
 def create_iso(args):
@@ -177,6 +191,13 @@ def cli():
     clusterlist_parser.set_defaults(func=list_cluster)
     list_subparsers.add_parser('cluster', parents=[clusterlist_parser], description=clusterlist_desc,
                                help=clusterlist_desc, aliases=['clusters'])
+
+    hostslist_desc = 'List Hosts'
+    hostslist_parser = argparse.ArgumentParser(add_help=False)
+    hostslist_parser.add_argument('cluster', metavar='CLUSTER')
+    hostslist_parser.set_defaults(func=list_hosts)
+    list_subparsers.add_parser('hosts', parents=[hostslist_parser], description=hostslist_desc,
+                               help=clusterlist_desc, aliases=['hosts'])
 
     if len(sys.argv) == 1:
         parser.print_help()

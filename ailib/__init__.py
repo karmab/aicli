@@ -22,7 +22,7 @@ class AssistedClient(object):
         self.client = api.InstallerApi(api_client=self.api)
 
     def get_cluster_id(self, name):
-        matching_ids = [x['id'] for x in self.list() if x['name'] == name]
+        matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
         if matching_ids:
             return matching_ids[0]
         else:
@@ -81,5 +81,10 @@ class AssistedClient(object):
         with open("%s.iso" % name, "wb") as f:
             copyfileobj(response, f)
 
-    def list(self):
+    def list_clusters(self):
         return self.client.list_clusters()
+
+    def list_hosts(self, name):
+        cluster_id = self.get_cluster_id(name)
+        hosts = self.client.list_hosts(cluster_id=cluster_id)
+        return hosts
