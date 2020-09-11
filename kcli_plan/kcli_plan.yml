@@ -1,16 +1,15 @@
 parameters:
- disk_size: 30
- extra_disks: []
+ disk_size: 80
  numcpus: 8
  memory: 16384
  pool: default
  image: centos8
  minikube: true
- disks:
- - 80
+ virtual_masters_disks_size: 120
  network: default
  notify: true
  cluster: testk
+ start: false
  virtual_masters: true
  virtual_masters_number: 3
  virtual_masters_numcpus: 8
@@ -25,16 +24,14 @@ parameters:
 {{ cluster }}-master-{{ num }}:
  pool: {{ pool }}
  numcpus: {{ virtual_masters_numcpus }}
- start: false
+ start: {{ start }}
  iso: {{ cluster}}.iso
  memory: {{ virtual_masters_memory }}
  nets:
   - name: {{ network }}
  disks:
-{%- for size in [disk_size] + extra_disks %}
-  - size: {{ size }}
+  - size: {{ virtual_masters_disks_size }}
     interface: scsi
-{%- endfor %}
 {%- endfor %}
 {%- endif %}
 
@@ -42,7 +39,7 @@ parameters:
  image: {{ image }}
  memory: {{ memory }}
  numcpus: {{ numcpus }}
- disks: {{ disks }}
+ disks: [{{ disk_size }}]
  nets: [{{ network }}]
  scripts:
  - pre.sh

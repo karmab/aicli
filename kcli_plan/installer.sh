@@ -4,7 +4,10 @@ yum -y install python3-pip socat make
 pip3 install waiting
 git clone https://github.com/openshift/assisted-service
 cd assisted-service
-sed -i "s@REPLACE_BASE_URL@http://$(hostname -I |cut -f1 -d" "):8090@" deploy/assisted-service-configmap.yaml
+IP=$(hostname -I | cut -d' ' -f1)
+REVERSE_NAME=$(dig -x $IP +short | sed 's/\.[^\.]*$//')
+URL=http://${REVERSE_NAME:-$IP}:8090
+sed -i "s@REPLACE_BASE_URL@$URL@" deploy/assisted-service-configmap.yaml
 make deploy-all {{ "TARGET=oc-ingress" if not minikube else "" }}
 make deploy-ui {{ "TARGET=oc-ingress" if not minikube else "" }}
 docker run -v $PWD:/here --rm quay.io/ocpmetal/assisted-service:latest cp -r /clients/assisted-service-client-1.0.0.tar.gz /here
