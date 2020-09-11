@@ -31,7 +31,6 @@ parameters:
   - name: {{ network }}
  disks:
   - size: {{ virtual_masters_disks_size }}
-    interface: scsi
 {%- endfor %}
 {%- endif %}
 
@@ -52,4 +51,3 @@ parameters:
 {% endif %}
  notify: {{ notify }}
  notifyscript: notify.sh
-
