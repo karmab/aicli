@@ -73,7 +73,7 @@ class AssistedClient(object):
                 error("Missing public key file %s" % pub_key)
                 sys.exit(1)
         image_create_params = models.ImageCreateParams(ssh_public_key=ssh_public_key)
-        self.client.generate_cluster_iso(cluster_id=cluster_id, image_create_params=image_create_params)
+        print(self.client.generate_cluster_iso(cluster_id=cluster_id, image_create_params=image_create_params))
 
     def download_iso(self, name):
         cluster_id = self.get_cluster_id(name)
