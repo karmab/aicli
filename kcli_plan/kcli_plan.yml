@@ -1,0 +1,56 @@
+parameters:
+ prefix: assisted
+ disk_size: 30
+ extra_disks: []
+ numcpus: 8
+ memory: 16384
+ pool: default
+ image: centos8
+ minikube: true
+ disks:
+ - 80
+ network: default
+ notify: true
+ cluster: testk
+ virtual_masters: false
+ virtual_masters_number: 3
+ virtual_masters_numcpus: 8
+ virtual_masters_memory: 16384
+ virtual_masters_mac_prefix: aa:aa:aa:aa:aa
+
+{{ image }}:
+  type: image
+
+{{ prefix }}-installer:
+ image: {{ image }}
+ memory: {{ memory }}
+ numcpus: {{ numcpus }}
+ disks: {{ disks }}
+ nets: [{{ network }}]
+ scripts:
+ - pre.sh
+{% if minikube %}
+ - minikube.sh
+{% endif %}
+ - installer.sh
+ notify: {{ notify }}
+ notifyscript: notify.sh
+
+{% if virtual_masters %}
+{%- for num in range(0, virtual_masters_number) %}
+{{ cluster }}-master-{{ num }}:
+ pool: {{ pool }}
+ numcpus: {{ virtual_masters_numcpus }}
+ start: false
+ iso: {{ cluster}}.iso
+ memory: {{ virtual_masters_memory }}
+ nets:
+  - name: {{ network }}
+    mac: {{ virtual_masters_mac_prefix + ":" + "%02.d" | format(num + 1)| string }}
+ disks:
+{%- for size in [disk_size] + extra_disks %}
+  - size: {{ size }}
+    interface: scsi
+{%- endfor %}
+{%- endfor %}
+{%- endif %}
