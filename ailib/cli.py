@@ -1,7 +1,7 @@
 import argparse
 from argparse import RawDescriptionHelpFormatter as rawhelp
 from ailib import AssistedClient
-from ailib.common import get_overrides, info, error
+from ailib.common import get_overrides, info, error, success
 from prettytable import PrettyTable
 import os
 import sys
@@ -49,6 +49,7 @@ def create_cluster(args):
 
 
 def delete_cluster(args):
+    success("Deleting cluster %s" % args.cluster)
     ai = AssistedClient(args.url)
     ai.delete_cluster(args.cluster)
 
@@ -99,8 +100,15 @@ def create_iso(args):
 
 
 def download_iso(args):
+    success("Downloading iso for cluster %s" % args.cluster)
     ai = AssistedClient(args.url)
     ai.download_iso(args.cluster)
+
+
+def download_kubeconfig(args):
+    success("Downloading kubeconfig for cluster %s in kubeconfig.%s" % args.cluster)
+    ai = AssistedClient(args.url)
+    ai.download_kubeconfig(args.cluster)
 
 
 def cli():
@@ -177,14 +185,19 @@ def cli():
 
     isodownload_desc = 'Download Iso'
     isodownload_parser = argparse.ArgumentParser(add_help=False)
-    isodownload_parser.add_argument('-P', '--param', action='append',
-                                    help='Define parameter for rendering (can specify multiple)', metavar='PARAM')
-    isodownload_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
     isodownload_parser.add_argument('cluster', metavar='CLUSTER')
     isodownload_parser.set_defaults(func=download_iso)
     download_subparsers.add_parser('iso', parents=[isodownload_parser],
                                    description=isodownload_desc,
                                    help=isodownload_desc)
+
+    kubeconfigdownload_desc = 'Download Kubeconfig'
+    kubeconfigdownload_parser = argparse.ArgumentParser(add_help=False)
+    kubeconfigdownload_parser.add_argument('cluster', metavar='CLUSTER')
+    kubeconfigdownload_parser.set_defaults(func=download_kubeconfig)
+    download_subparsers.add_parser('kubeconfig', parents=[kubeconfigdownload_parser],
+                                   description=kubeconfigdownload_desc,
+                                   help=kubeconfigdownload_desc)
 
     clusterlist_desc = 'List Clusters'
     clusterlist_parser = argparse.ArgumentParser(add_help=False)

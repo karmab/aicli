@@ -81,6 +81,14 @@ class AssistedClient(object):
         with open("%s.iso" % name, "wb") as f:
             copyfileobj(response, f)
 
+    def download_kubeconfig(self, name):
+        cluster_id = self.get_cluster_id(name)
+        # response = self.client.download_cluster_kubeconfig(cluster_id=cluster_id, _preload_content=False)
+        response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="kubeconfig-noingress",
+                                                      _preload_content=False)
+        with open("kubeconfig.%s" % name, "wb") as f:
+            copyfileobj(response, f)
+
     def list_clusters(self):
         return self.client.list_clusters()
 
