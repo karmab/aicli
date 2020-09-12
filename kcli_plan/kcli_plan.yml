@@ -33,6 +33,7 @@ parameters:
 
 {{ cluster }}-installer:
  image: {{ image }}
+ pool: {{ pool }}
  memory: {{ memory }}
  numcpus: {{ numcpus }}
  disks: [{{ disk_size }}]
