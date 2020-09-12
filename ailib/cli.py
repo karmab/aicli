@@ -79,15 +79,20 @@ def list_cluster(args):
 
 
 def list_hosts(args):
+    clusterids = {}
     ai = AssistedClient(args.url)
-    hosts = ai.list_hosts(args.cluster)
-    hoststable = PrettyTable(["Host", "Id", "Status", "Role"])
+    hosts = ai.list_hosts()
+    hoststable = PrettyTable(["Host", "Cluster", "Id", "Status", "Role"])
     for host in sorted(hosts, key=lambda x: x['requested_hostname']):
         name = host['requested_hostname']
+        clusterid = host['cluster_id']
+        if clusterid not in clusterids:
+            clusterids[clusterid] = ai.get_cluster_name(clusterid)
+        clustername = clusterids[clusterid]
         _id = host['id']
         role = host['role']
         status = host['status']
-        entry = [name, _id, status, role]
+        entry = [name, clustername, _id, status, role]
         hoststable.add_row(entry)
     print(hoststable)
 
@@ -253,7 +258,6 @@ def cli():
 
     hostslist_desc = 'List Hosts'
     hostslist_parser = argparse.ArgumentParser(add_help=False)
-    hostslist_parser.add_argument('cluster', metavar='CLUSTER')
     hostslist_parser.set_defaults(func=list_hosts)
     list_subparsers.add_parser('host', parents=[hostslist_parser], description=hostslist_desc,
                                help=clusterlist_desc, aliases=['hosts'])

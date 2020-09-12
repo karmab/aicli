@@ -29,6 +29,14 @@ class AssistedClient(object):
             error("Cluster %s not found" % name)
             os._exit(1)
 
+    def get_cluster_name(self, _id):
+        matching_names = [x['name'] for x in self.list_clusters() if x['id'] == _id]
+        if matching_names:
+            return matching_names[0]
+        else:
+            error("Cluster %s not found" % _id)
+            os._exit(1)
+
     def create_cluster(self, name, overrides={}):
         if 'pull_secret' not in overrides:
             warning("No pull_secret file path provided as parameter. Using openshift_pull.json")
@@ -92,10 +100,14 @@ class AssistedClient(object):
     def list_clusters(self):
         return self.client.list_clusters()
 
-    def list_hosts(self, name):
-        cluster_id = self.get_cluster_id(name)
-        hosts = self.client.list_hosts(cluster_id=cluster_id)
-        return hosts
+    def list_hosts(self):
+        allhosts = []
+        for cluster in self.client.list_clusters():
+            # allhosts.extend(cluster['hosts'])
+            cluster_id = cluster['id']
+            hosts = self.client.list_hosts(cluster_id=cluster_id)
+            allhosts.extend(hosts)
+        return allhosts
 
     def update_host(self, name, hostname, overrides):
         cluster_id = self.get_cluster_id(name)
