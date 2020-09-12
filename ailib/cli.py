@@ -119,6 +119,12 @@ def download_iso(args):
     ai.download_iso(args.cluster, args.path)
 
 
+def download_kubeadminpassword(args):
+    success("Downloading KubeAdminPassword for Cluster %s in %s/kubeadmin.%s" % (args.cluster, args.path, args.cluster))
+    ai = AssistedClient(args.url)
+    ai.download_kubeadminpassword(args.cluster, args.path)
+
+
 def download_kubeconfig(args):
     success("Downloading Kubeconfig for Cluster %s in %s/kubeconfig.%s" % (args.cluster, args.path, args.cluster))
     ai = AssistedClient(args.url)
@@ -266,6 +272,15 @@ def cli():
     download_subparsers.add_parser('installconfig', parents=[installconfigdownload_parser],
                                    description=installconfigdownload_desc,
                                    help=installconfigdownload_desc)
+
+    kubepassworddownload_desc = 'Download Kubeadmin-password'
+    kubepassworddownload_parser = argparse.ArgumentParser(add_help=False)
+    kubepassworddownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
+    kubepassworddownload_parser.add_argument('cluster', metavar='CLUSTER')
+    kubepassworddownload_parser.set_defaults(func=download_kubeadminpassword)
+    download_subparsers.add_parser('kubeadmin-password', parents=[kubepassworddownload_parser],
+                                   description=kubepassworddownload_desc,
+                                   help=kubepassworddownload_desc)
 
     kubeconfigdownload_desc = 'Download Kubeconfig'
     kubeconfigdownload_parser = argparse.ArgumentParser(add_help=False)
