@@ -114,7 +114,7 @@ def create_iso(args):
 
 
 def download_iso(args):
-    success("Downloading Iso for Cluster %s in %s" % args.cluster, args.path)
+    success("Downloading Iso for Cluster %s in %s" % (args.cluster, args.path))
     ai = AssistedClient(args.url)
     ai.download_iso(args.cluster, args.path)
 
@@ -251,7 +251,7 @@ def cli():
 
     isodownload_desc = 'Download Iso'
     isodownload_parser = argparse.ArgumentParser(add_help=False)
-    isodownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
+    isodownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
     isodownload_parser.add_argument('cluster', metavar='CLUSTER')
     isodownload_parser.set_defaults(func=download_iso)
     download_subparsers.add_parser('iso', parents=[isodownload_parser],
