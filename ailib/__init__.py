@@ -83,18 +83,17 @@ class AssistedClient(object):
         image_create_params = models.ImageCreateParams(ssh_public_key=ssh_public_key)
         self.client.generate_cluster_iso(cluster_id=cluster_id, image_create_params=image_create_params)
 
-    def download_iso(self, name):
+    def download_iso(self, name, path):
         cluster_id = self.get_cluster_id(name)
         response = self.client.download_cluster_iso(cluster_id=cluster_id, _preload_content=False)
-        with open("%s.iso" % name, "wb") as f:
+        with open("%s/%s.iso" % (path, name), "wb") as f:
             copyfileobj(response, f)
 
-    def download_kubeconfig(self, name):
+    def download_kubeconfig(self, name, path):
         cluster_id = self.get_cluster_id(name)
-        # response = self.client.download_cluster_kubeconfig(cluster_id=cluster_id, _preload_content=False)
         response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="kubeconfig-noingress",
                                                       _preload_content=False)
-        with open("kubeconfig.%s" % name, "wb") as f:
+        with open("%s/kubeconfig.%s" % (path, name), "wb") as f:
             copyfileobj(response, f)
 
     def list_clusters(self):
@@ -108,10 +107,14 @@ class AssistedClient(object):
             allhosts.extend(hosts)
         return allhosts
 
-    def update_host(self, name, hostname, overrides):
-        cluster_id = self.get_cluster_id(name)
-        hostids = [host['id'] for host in self.client.list_hosts(cluster_id=cluster_id)
-                   if host['requested_hostname'] == hostname or host['id'] == hostname]
+    def update_host(self, hostname, overrides):
+        hostids = []
+        for cluster in self.client.list_clusters():
+            cluster_id = cluster['id']
+            hosts = self.client.list_hosts(cluster_id=cluster_id)
+            matchingids = [host['id'] for host in hosts
+                           if host['requested_hostname'] == hostname or host['id'] == hostname]
+            hostids.extend(matchingids)
         if not hostids:
             error("No Matching Host with name %s found" % hostname)
         cluster_update_params = {}

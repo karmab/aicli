@@ -116,21 +116,21 @@ def create_iso(args):
 def download_iso(args):
     success("Downloading Iso for Cluster %s" % args.cluster)
     ai = AssistedClient(args.url)
-    ai.download_iso(args.cluster)
+    ai.download_iso(args.cluster, args.path)
 
 
 def download_kubeconfig(args):
     success("Downloading Kubeconfig for Cluster %s in kubeconfig.%s" % (args.cluster, args.cluster))
     ai = AssistedClient(args.url)
-    ai.download_kubeconfig(args.cluster)
+    ai.download_kubeconfig(args.cluster, args.path)
 
 
 def update_host(args):
-    success("Updating Host %s in Cluster %s" % (args.hostname, args.cluster))
+    success("Updating Host %s" % args.hostname)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url)
-    ai.update_host(args.cluster, args.hostname, overrides)
+    ai.update_host(args.hostname, overrides)
 
 
 def update_cluster(args):
@@ -244,6 +244,7 @@ def cli():
 
     isodownload_desc = 'Download Iso'
     isodownload_parser = argparse.ArgumentParser(add_help=False)
+    isodownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
     isodownload_parser.add_argument('cluster', metavar='CLUSTER')
     isodownload_parser.set_defaults(func=download_iso)
     download_subparsers.add_parser('iso', parents=[isodownload_parser],
@@ -252,6 +253,7 @@ def cli():
 
     kubeconfigdownload_desc = 'Download Kubeconfig'
     kubeconfigdownload_parser = argparse.ArgumentParser(add_help=False)
+    kubeconfigdownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
     kubeconfigdownload_parser.add_argument('cluster', metavar='CLUSTER')
     kubeconfigdownload_parser.set_defaults(func=download_kubeconfig)
     download_subparsers.add_parser('kubeconfig', parents=[kubeconfigdownload_parser],
@@ -276,7 +278,6 @@ def cli():
                                    help='specify parameter or keyword for rendering (multiple can be specified)',
                                    metavar='PARAM')
     hostupdate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
-    hostupdate_parser.add_argument('cluster', metavar='CLUSTER')
     hostupdate_parser.add_argument('hostname', metavar='HOSTNAME')
     hostupdate_parser.set_defaults(func=update_host)
     update_subparsers.add_parser('host', parents=[hostupdate_parser], description=hostupdate_desc, help=hostupdate_desc)
