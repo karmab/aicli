@@ -107,7 +107,7 @@ def download_iso(args):
 
 
 def download_kubeconfig(args):
-    success("Downloading Kubeconfig for Cluster %s in kubeconfig.%s" % args.cluster)
+    success("Downloading Kubeconfig for Cluster %s in kubeconfig.%s" % (args.cluster, args.cluster))
     ai = AssistedClient(args.url)
     ai.download_kubeconfig(args.cluster)
 
