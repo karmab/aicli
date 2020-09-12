@@ -145,3 +145,7 @@ class AssistedClient(object):
         if cluster_update_params:
             cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
             self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
+
+    def start_cluster(self, name):
+        cluster_id = self.get_cluster_id(name)
+        self.client.install_cluster(cluster_id=cluster_id)

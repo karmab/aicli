@@ -1,5 +1,14 @@
 This is a sample python client on top of the generated assisted-installer python library to ease working with assisted installer
 
+Available features:
+
+- create/delete cluster (autoinjecting pull secret file and ssh public key)
+- create/download discovery iso
+- list cluster/hosts
+- update hostnames and host roles
+- update cluster attributes such as api vip and ingress vip 
+- launch cluster install
+
 # Deploying
 
 ## Cli

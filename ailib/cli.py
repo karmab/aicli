@@ -128,6 +128,12 @@ def update_cluster(args):
     ai.update_cluster(args.cluster, overrides)
 
 
+def start_cluster(args):
+    success("Starting cluster %s" % args.cluster)
+    ai = AssistedClient(args.url)
+    ai.start_cluster(args.cluster)
+
+
 def cli():
     """
 
@@ -159,8 +165,12 @@ def cli():
     list_subparsers = list_parser.add_subparsers(metavar='', dest='subcommand_list')
 
     update_desc = 'Update Object'
-    update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc)
+    update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc, aliases=['launch'])
     update_subparsers = update_parser.add_subparsers(metavar='', dest='subcommand_update')
+
+    start_desc = 'Start Object'
+    start_parser = subparsers.add_parser('start', description=start_desc, help=start_desc)
+    start_subparsers = start_parser.add_subparsers(metavar='', dest='subcommand_start')
 
     clustercreate_desc = 'Create Cluster'
     clustercreate_epilog = None
@@ -190,10 +200,6 @@ def cli():
     clusterdelete_parser = delete_subparsers.add_parser('cluster', description=clusterdelete_desc,
                                                         help=clusterdelete_desc,
                                                         epilog=clusterdelete_epilog, formatter_class=rawhelp)
-    clusterdelete_parser.add_argument('-P', '--param', action='append',
-                                      help='specify parameter or keyword for rendering (multiple can be specified)',
-                                      metavar='PARAM')
-    clusterdelete_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
     clusterdelete_parser.add_argument('cluster', metavar='CLUSTER')
     clusterdelete_parser.set_defaults(func=delete_cluster)
 
@@ -214,6 +220,14 @@ def cli():
     clusterupdate_parser.set_defaults(func=update_cluster)
     update_subparsers.add_parser('cluster', parents=[clusterupdate_parser], description=clusterupdate_desc,
                                  help=clusterupdate_desc)
+
+    clusterstart_desc = 'Start Cluster'
+    clusterstart_epilog = None
+    clusterstart_parser = start_subparsers.add_parser('cluster', description=clusterstart_desc,
+                                                      help=clusterstart_desc,
+                                                      epilog=clusterstart_epilog, formatter_class=rawhelp)
+    clusterstart_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterstart_parser.set_defaults(func=start_cluster)
 
     isodownload_desc = 'Download Iso'
     isodownload_parser = argparse.ArgumentParser(add_help=False)
