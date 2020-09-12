@@ -103,7 +103,6 @@ class AssistedClient(object):
     def list_hosts(self):
         allhosts = []
         for cluster in self.client.list_clusters():
-            # allhosts.extend(cluster['hosts'])
             cluster_id = cluster['id']
             hosts = self.client.list_hosts(cluster_id=cluster_id)
             allhosts.extend(hosts)

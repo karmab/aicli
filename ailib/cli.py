@@ -2,6 +2,7 @@ import argparse
 from argparse import RawDescriptionHelpFormatter as rawhelp
 from ailib import AssistedClient
 from ailib.common import get_overrides, info, error, success
+import json
 from prettytable import PrettyTable
 import os
 import sys
@@ -82,7 +83,7 @@ def list_hosts(args):
     clusterids = {}
     ai = AssistedClient(args.url)
     hosts = ai.list_hosts()
-    hoststable = PrettyTable(["Host", "Cluster", "Id", "Status", "Role"])
+    hoststable = PrettyTable(["Host", "Cluster", "Id", "Status", "Role", "Ip"])
     for host in sorted(hosts, key=lambda x: x['requested_hostname']):
         name = host['requested_hostname']
         clusterid = host['cluster_id']
@@ -92,7 +93,14 @@ def list_hosts(args):
         _id = host['id']
         role = host['role']
         status = host['status']
-        entry = [name, clustername, _id, status, role]
+        inventory = json.loads(host['inventory'])
+        ip = 'N/A'
+        if 'interfaces' in inventory and inventory['interfaces']:
+            if 'ipv6_addresses' in inventory['interfaces'][0] and inventory['interfaces'][0]['ipv6_addresses']:
+                ip = inventory['interfaces'][0]['ipv6_addresses'][0].split('/')[0]
+            if 'ipv4_addresses' in inventory['interfaces'][0] and inventory['interfaces'][0]['ipv4_addresses']:
+                ip = inventory['interfaces'][0]['ipv4_addresses'][0].split('/')[0]
+        entry = [name, clustername, _id, status, role, ip]
         hoststable.add_row(entry)
     print(hoststable)
 
