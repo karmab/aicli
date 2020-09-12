@@ -114,15 +114,22 @@ def create_iso(args):
 
 
 def download_iso(args):
-    success("Downloading Iso for Cluster %s" % args.cluster)
+    success("Downloading Iso for Cluster %s in %s" % args.cluster, args.path)
     ai = AssistedClient(args.url)
     ai.download_iso(args.cluster, args.path)
 
 
 def download_kubeconfig(args):
-    success("Downloading Kubeconfig for Cluster %s in kubeconfig.%s" % (args.cluster, args.cluster))
+    success("Downloading Kubeconfig for Cluster %s in %s/kubeconfig.%s" % (args.cluster, args.path, args.cluster))
     ai = AssistedClient(args.url)
     ai.download_kubeconfig(args.cluster, args.path)
+
+
+def download_installconfig(args):
+    success("Downloading Install Config for Cluster %s in %s/install-config.yaml.%s" % (args.cluster, args.path,
+                                                                                        args.cluster))
+    ai = AssistedClient(args.url)
+    ai.download_installconfig(args.cluster, args.path)
 
 
 def update_host(args):
@@ -250,6 +257,15 @@ def cli():
     download_subparsers.add_parser('iso', parents=[isodownload_parser],
                                    description=isodownload_desc,
                                    help=isodownload_desc)
+
+    installconfigdownload_desc = 'Download Installconfig'
+    installconfigdownload_parser = argparse.ArgumentParser(add_help=False)
+    installconfigdownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
+    installconfigdownload_parser.add_argument('cluster', metavar='CLUSTER')
+    installconfigdownload_parser.set_defaults(func=download_installconfig)
+    download_subparsers.add_parser('installconfig', parents=[installconfigdownload_parser],
+                                   description=installconfigdownload_desc,
+                                   help=installconfigdownload_desc)
 
     kubeconfigdownload_desc = 'Download Kubeconfig'
     kubeconfigdownload_parser = argparse.ArgumentParser(add_help=False)

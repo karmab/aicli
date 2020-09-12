@@ -89,11 +89,32 @@ class AssistedClient(object):
         with open("%s/%s.iso" % (path, name), "wb") as f:
             copyfileobj(response, f)
 
+    def download_installconfig(self, name, path):
+        cluster_id = self.get_cluster_id(name)
+        response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
+                                                      _preload_content=False)
+        with open("%s/installconfig.yaml.%s" % (path, name), "wb") as f:
+            copyfileobj(response, f)
+
+    def download_kubeadminpassword(self, name, path):
+        cluster_id = self.get_cluster_id(name)
+        response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="kubeadmin-password",
+                                                      _preload_content=False)
+        with open("%s/kubeadmin-password.%s" % (path, name), "wb") as f:
+            copyfileobj(response, f)
+
     def download_kubeconfig(self, name, path):
         cluster_id = self.get_cluster_id(name)
         response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="kubeconfig-noingress",
                                                       _preload_content=False)
         with open("%s/kubeconfig.%s" % (path, name), "wb") as f:
+            copyfileobj(response, f)
+
+    def download_ignition(self, name, path, role='bootstrap'):
+        cluster_id = self.get_cluster_id(name)
+        response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="%s.ign" % role,
+                                                      _preload_content=False)
+        with open("%s/%s.ign.%s" % (path, role, name), "wb") as f:
             copyfileobj(response, f)
 
     def list_clusters(self):
