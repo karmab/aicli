@@ -93,6 +93,7 @@ def list_hosts(args):
 
 
 def create_iso(args):
+    success("Creating Iso for Cluster %s" % args.cluster)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url)
@@ -100,22 +101,31 @@ def create_iso(args):
 
 
 def download_iso(args):
-    success("Downloading iso for cluster %s" % args.cluster)
+    success("Downloading Iso for Cluster %s" % args.cluster)
     ai = AssistedClient(args.url)
     ai.download_iso(args.cluster)
 
 
 def download_kubeconfig(args):
-    success("Downloading kubeconfig for cluster %s in kubeconfig.%s" % args.cluster)
+    success("Downloading Kubeconfig for Cluster %s in kubeconfig.%s" % args.cluster)
     ai = AssistedClient(args.url)
     ai.download_kubeconfig(args.cluster)
 
 
 def update_host(args):
+    success("Updating Host %s in Cluster %s" % (args.hostname, args.cluster))
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url)
     ai.update_host(args.cluster, args.hostname, overrides)
+
+
+def update_cluster(args):
+    success("Updating Cluster %s" % args.cluster)
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai = AssistedClient(args.url)
+    ai.update_cluster(args.cluster, overrides)
 
 
 def cli():
@@ -193,6 +203,17 @@ def cli():
                                                     epilog=clusterinfo_epilog, formatter_class=rawhelp)
     clusterinfo_parser.add_argument('cluster', metavar='CLUSTER')
     clusterinfo_parser.set_defaults(func=info_cluster)
+
+    clusterupdate_desc = 'Update Cluster'
+    clusterupdate_parser = argparse.ArgumentParser(add_help=False)
+    clusterupdate_parser.add_argument('-P', '--param', action='append',
+                                      help='specify parameter or keyword for rendering (multiple can be specified)',
+                                      metavar='PARAM')
+    clusterupdate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
+    clusterupdate_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterupdate_parser.set_defaults(func=update_cluster)
+    update_subparsers.add_parser('cluster', parents=[clusterupdate_parser], description=clusterupdate_desc,
+                                 help=clusterupdate_desc)
 
     isodownload_desc = 'Download Iso'
     isodownload_parser = argparse.ArgumentParser(add_help=False)

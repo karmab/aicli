@@ -51,7 +51,7 @@ class AssistedClient(object):
         new_cluster_params.update(overrides)
         new_cluster_params['name'] = name
         cluster_params = models.ClusterCreateParams(**new_cluster_params)
-        print(self.client.register_cluster(new_cluster_params=cluster_params))
+        self.client.register_cluster(new_cluster_params=cluster_params)
 
     def delete_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
@@ -73,7 +73,7 @@ class AssistedClient(object):
                 error("Missing public key file %s" % pub_key)
                 sys.exit(1)
         image_create_params = models.ImageCreateParams(ssh_public_key=ssh_public_key)
-        print(self.client.generate_cluster_iso(cluster_id=cluster_id, image_create_params=image_create_params))
+        self.client.generate_cluster_iso(cluster_id=cluster_id, image_create_params=image_create_params)
 
     def download_iso(self, name):
         cluster_id = self.get_cluster_id(name)
@@ -98,8 +98,6 @@ class AssistedClient(object):
         return hosts
 
     def update_host(self, name, hostname, overrides):
-        warning("not implemented")
-        return
         cluster_id = self.get_cluster_id(name)
         hostids = [host['id'] for host in self.client.list_hosts(cluster_id=cluster_id)
                    if host['requested_hostname'] == hostname or host['id'] == hostname]
@@ -110,7 +108,6 @@ class AssistedClient(object):
         if 'role' in overrides:
             role = overrides['role']
             hosts_roles = [{"id": hostid, "role": role} for hostid in hostids]
-            # cluster_update_params = models.ClusterUpdateParams(hosts_roles=host_roles)
             cluster_update_params['hosts_roles'] = hosts_roles
         if len(hostids) > 1:
             node = role if role is not None else 'node'
@@ -118,4 +115,33 @@ class AssistedClient(object):
             cluster_update_params['hosts_names'] = hosts_names
         if cluster_update_params:
             cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
-            print(self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params))
+            self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
+
+    def update_cluster(self, name, overrides):
+        cluster_id = self.get_cluster_id(name)
+        cluster_update_params = {}
+        if 'api_ip' in overrides:
+            cluster_update_params['api_vip'] = overrides['api_ip']
+        if 'api_vip' in overrides:
+            cluster_update_params['api_vip'] = overrides['api_vip']
+        if 'ingress_ip' in overrides:
+            cluster_update_params['ingress_vip'] = overrides['ingress_ip']
+        if 'ingress_vip' in overrides:
+            cluster_update_params['ingress_vip'] = overrides['ingress_vip']
+        if 'domain' in overrides:
+            cluster_update_params['base_dns_domain'] = overrides['domain']
+        if 'base_dns_domain' in overrides:
+            cluster_update_params['base_dns_domain'] = overrides['base_dns_domain']
+        if 'ssh_public_key' in overrides:
+            cluster_update_params['ssh_public_key'] = overrides['ssh_public_key']
+        if 'pull_secret' in overrides:
+            pull_secret = os.path.expanduser(overrides['pull_secret'])
+            if os.path.exists(pull_secret):
+                cluster_update_params['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
+        if 'baremetal_machine_cidr' in overrides:
+            cluster_update_params['machine_network_cidr'] = overrides['baremetal_machine_cidr']
+        if 'machine_network_cidr' in overrides:
+            cluster_update_params['machine_network_cidr'] = overrides['machine_network_cidr']
+        if cluster_update_params:
+            cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
+            self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
