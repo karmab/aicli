@@ -153,6 +153,10 @@ class AssistedClient(object):
             cluster_update_params['machine_network_cidr'] = overrides['baremetal_machine_cidr']
         if 'machine_network_cidr' in overrides:
             cluster_update_params['machine_network_cidr'] = overrides['machine_network_cidr']
+        if 'role' in overrides:
+            role = overrides['role']
+            hosts_roles = [{"id": host['id'], "role": role} for host in self.client.list_hosts(cluster_id=cluster_id)]
+            cluster_update_params['hosts_roles'] = hosts_roles
         if cluster_update_params:
             cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
             self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
