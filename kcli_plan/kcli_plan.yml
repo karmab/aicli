@@ -14,6 +14,7 @@ parameters:
  nodes_memory: 16384
  nodes_disks_size: 120
  deploy: false
+ racadm: true
  keys: []
 
 {{ image }}:
@@ -41,6 +42,9 @@ parameters:
  nets: [{{ network }}]
  keys: {{ keys }}
  scripts:
+{% if racadm %}
+ - racadm.sh
+{% endif %}
  - pre.sh
 {% if minikube %}
  - minikube.sh
