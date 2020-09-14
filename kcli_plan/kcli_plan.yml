@@ -14,6 +14,7 @@ parameters:
  nodes_memory: 16384
  nodes_disks_size: 120
  deploy: false
+ keys: []
 
 {{ image }}:
   type: image
@@ -38,6 +39,7 @@ parameters:
  numcpus: {{ numcpus }}
  disks: [{{ disk_size }}]
  nets: [{{ network }}]
+ keys: {{ keys }}
  scripts:
  - pre.sh
 {% if minikube %}
