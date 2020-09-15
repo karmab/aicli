@@ -140,13 +140,7 @@ def download_installconfig(args):
 
 def download_metal(args):
     path = args.path
-    kernel, initrd, metal = get_latest_rhcos_metal()
-    info("Downloading kernel %s in %s" % (kernel, path))
-    downloadcmd = "curl -L %s > %s/%s" % (kernel, path, os.path.basename(kernel))
-    os.system(downloadcmd)
-    info("Downloading initrd %s in %s" % (initrd, path))
-    downloadcmd = "curl -L %s > %s/%s" % (initrd, path, os.path.basename(initrd))
-    os.system(downloadcmd)
+    metal = get_latest_rhcos_metal(version=args.version)
     info("Downloading metal %s in %s" % (metal, path))
     downloadcmd = "curl -L %s > %s/%s" % (metal, path, os.path.basename(metal))
     os.system(downloadcmd)
@@ -322,9 +316,11 @@ def cli():
                                    description=kubeconfigdownload_desc,
                                    help=kubeconfigdownload_desc)
 
-    metaldownload_desc = 'Download Iso'
+    metaldownload_desc = 'Download Metal file'
     metaldownload_parser = argparse.ArgumentParser(add_help=False)
     metaldownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
+    metaldownload_parser.add_argument('-v', '--version', metavar='VERSION', default='4.6',
+                                      help='Version to use.Defaults to 4.6')
     metaldownload_parser.set_defaults(func=download_metal)
     download_subparsers.add_parser('metalassets', parents=[metaldownload_parser],
                                    description=metaldownload_desc,
