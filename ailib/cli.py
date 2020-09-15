@@ -152,6 +152,12 @@ def download_metal(args):
     os.system(downloadcmd)
 
 
+def download_ignition(args):
+    ai = AssistedClient(args.url)
+    role = args.role
+    ai.download_ignition(args.cluster, args.path, role=role)
+
+
 def update_host(args):
     success("Updating Host %s" % args.hostname)
     paramfile = choose_parameter_file(args.paramfile)
@@ -268,6 +274,17 @@ def cli():
                                                       epilog=clusterstart_epilog, formatter_class=rawhelp)
     clusterstart_parser.add_argument('cluster', metavar='CLUSTER')
     clusterstart_parser.set_defaults(func=start_cluster)
+
+    ignitiondownload_desc = 'Download Ignition file'
+    ignitiondownload_parser = argparse.ArgumentParser(add_help=False)
+    ignitiondownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
+    ignitiondownload_parser.add_argument('-r', '--role', metavar='ROLE', default='worker',
+                                         help='Which role to download')
+    ignitiondownload_parser.add_argument('cluster', metavar='CLUSTER')
+    ignitiondownload_parser.set_defaults(func=download_ignition)
+    download_subparsers.add_parser('ignition', parents=[ignitiondownload_parser],
+                                   description=ignitiondownload_desc,
+                                   help=ignitiondownload_desc)
 
     isodownload_desc = 'Download Iso'
     isodownload_parser = argparse.ArgumentParser(add_help=False)
