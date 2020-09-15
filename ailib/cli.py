@@ -1,7 +1,7 @@
 import argparse
 from argparse import RawDescriptionHelpFormatter as rawhelp
 from ailib import AssistedClient
-from ailib.common import get_overrides, info, error, success, get_latest_rhcos_metal
+from ailib.common import get_overrides, info, error, success, get_latest_rhcos_metal, get_commit_rhcos_metal
 import json
 from prettytable import PrettyTable
 import os
@@ -140,7 +140,14 @@ def download_installconfig(args):
 
 def download_metal(args):
     path = args.path
-    metal = get_latest_rhcos_metal(version=args.version)
+    if args.commit:
+        commitcmd = "oc adm release info quay.io/ocpmetal/ocp-release:$(oc get clusterversion -o "
+        commitcmd += "jsonpath='{.items[0].status.desired.version}') --commits | "
+        commitcmd += "awk -F' ' ''/baremetal-installer/ {print $3}'"
+        commitid = os.popen(commitcmd).read()
+        metal = get_commit_rhcos_metal(commitid)
+    else:
+        metal = get_latest_rhcos_metal(version=args.version)
     info("Downloading metal %s in %s" % (metal, path))
     downloadcmd = "curl -L %s > %s/%s" % (metal, path, os.path.basename(metal))
     os.system(downloadcmd)
@@ -318,6 +325,7 @@ def cli():
 
     metaldownload_desc = 'Download Metal file'
     metaldownload_parser = argparse.ArgumentParser(add_help=False)
+    metaldownload_parser.add_argument('--commit', action='store_true', help='Use commit id')
     metaldownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
     metaldownload_parser.add_argument('-v', '--version', metavar='VERSION', default='4.6',
                                       help='Version to use.Defaults to 4.6')

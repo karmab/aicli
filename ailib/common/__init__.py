@@ -72,6 +72,15 @@ def get_overrides(paramfile=None, param=[]):
     return overrides
 
 
+def get_commit_rhcos_metal(commitid):
+    buildurl = "https://raw.githubusercontent.com/openshift/installer/%s/data/data/rhcos.json" % commitid
+    with urlopen(buildurl) as b:
+        data = json.loads(b.read().decode())
+        baseuri = data['baseURI']
+        metal = "%s%s" % (baseuri, data['images']['metal']['path'])
+        return metal
+
+
 def get_latest_rhcos_metal(url='https://releases-art-rhcos.svc.ci.openshift.org/art/storage/releases/rhcos',
                            version='4.6'):
     url += "-%s" % version
