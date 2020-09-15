@@ -150,6 +150,14 @@ class AssistedClient(object):
             node = role if role is not None else 'node'
             hosts_names = [{"id": hostid, "hostname": "%s-%s" % (node, index)} for index, hostid in enumerate(hostids)]
             cluster_update_params['hosts_names'] = hosts_names
+        elif 'name' in overrides:
+            newname = overrides['name']
+            hosts_names = [{"id": hostids[0], "hostname": newname}]
+            cluster_update_params['hosts_names'] = hosts_names
+        elif 'requested_hostname' in overrides:
+            newname = overrides['requested_hostname']
+            hosts_names = [{"id": hostids[0], "hostname": newname}]
+            cluster_update_params['hosts_names'] = hosts_names
         if cluster_update_params:
             cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
             self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
