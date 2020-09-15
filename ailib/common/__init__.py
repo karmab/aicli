@@ -1,4 +1,6 @@
 from ast import literal_eval
+from urllib.request import urlopen
+import json
 import os
 import yaml
 
@@ -68,3 +70,15 @@ def get_overrides(paramfile=None, param=[]):
                             value[index] = v
                 overrides[key] = value
     return overrides
+
+
+def get_latest_rhcos_metal(url='https://releases-art-rhcos.svc.ci.openshift.org/art/storage/releases/rhcos-4.6'):
+    buildurl = '%s/builds.json' % url
+    with urlopen(buildurl) as b:
+        data = json.loads(b.read().decode())
+        for build in data['builds']:
+            build = build['id']
+            kernel = "%s/%s/x86_64/rhcos-%s-installer-kernel-x86_64" % (url, build, build)
+            initrd = "%s/%s/x86_64/rhcos-%s-installer-initramfs.x86_64.img" % (url, build, build)
+            metal = "%s/%s/x86_64/rhcos-%s-metal.x86_64.raw.gz" % (url, build, build)
+            return kernel, initrd, metal

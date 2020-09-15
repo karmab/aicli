@@ -1,7 +1,7 @@
 import argparse
 from argparse import RawDescriptionHelpFormatter as rawhelp
 from ailib import AssistedClient
-from ailib.common import get_overrides, info, error, success
+from ailib.common import get_overrides, info, error, success, get_latest_rhcos_metal
 import json
 from prettytable import PrettyTable
 import os
@@ -136,6 +136,20 @@ def download_installconfig(args):
                                                                                         args.cluster))
     ai = AssistedClient(args.url)
     ai.download_installconfig(args.cluster, args.path)
+
+
+def download_metal(args):
+    path = args.path
+    kernel, initrd, metal = get_latest_rhcos_metal()
+    info("Downloading kernel %s in %s" % (kernel, path))
+    downloadcmd = "curl -L %s > %s/%s" % (kernel, path, os.path.basename(kernel))
+    os.system(downloadcmd)
+    info("Downloading initrd %s in %s" % (initrd, path))
+    downloadcmd = "curl -L %s > %s/%s" % (initrd, path, os.path.basename(initrd))
+    os.system(downloadcmd)
+    info("Downloading metal %s in %s" % (metal, path))
+    downloadcmd = "curl -L %s > %s/%s" % (metal, path, os.path.basename(metal))
+    os.system(downloadcmd)
 
 
 def update_host(args):
@@ -291,6 +305,14 @@ def cli():
                                    description=kubeconfigdownload_desc,
                                    help=kubeconfigdownload_desc)
 
+    metaldownload_desc = 'Download Iso'
+    metaldownload_parser = argparse.ArgumentParser(add_help=False)
+    metaldownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
+    metaldownload_parser.set_defaults(func=download_metal)
+    download_subparsers.add_parser('metalassets', parents=[metaldownload_parser],
+                                   description=metaldownload_desc,
+                                   help=metaldownload_desc)
+
     clusterlist_desc = 'List Clusters'
     clusterlist_parser = argparse.ArgumentParser(add_help=False)
     clusterlist_parser.set_defaults(func=list_cluster)
@@ -331,7 +353,7 @@ def cli():
                     get_subparser_print_help(subparser, subsubcommand)
                 os._exit(0)
         os._exit(0)
-    if args.url is None:
+    if args.url is None and not ('subcommand_download' in vars(args) and args.subcommand_download == 'metalassets'):
         error("Specify a valid url with -U flag or set environment variable AI_URL")
         os._exit(1)
     args.func(args)
