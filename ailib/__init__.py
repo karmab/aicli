@@ -1,5 +1,5 @@
 from assisted_service_client import ApiClient, Configuration, api, models
-from ailib.common import warning, error
+from ailib.common import warning, error, info
 import os
 import re
 import sys
@@ -58,11 +58,13 @@ class AssistedClient(object):
         new_cluster_params = default_cluster_params
         new_cluster_params.update(overrides)
         new_cluster_params['name'] = name
+        info("Creating cluster %s" % name)
         cluster_params = models.ClusterCreateParams(**new_cluster_params)
         self.client.register_cluster(new_cluster_params=cluster_params)
 
     def delete_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
+        info("Deleting cluster %s" % name)
         self.client.deregister_cluster(cluster_id=cluster_id)
 
     def info_cluster(self, name):

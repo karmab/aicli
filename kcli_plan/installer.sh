@@ -14,6 +14,7 @@ docker run -v $PWD:/here --rm quay.io/ocpmetal/assisted-service:latest cp -r /cl
 tar zxvf assisted-service-client-1.0.0.tar.gz
 cd assisted-service-client-1.0.0
 python3 setup.py install
+pip3 install git+https://github.com/karmab/assisted-installer-cli.git#egg=assisted-installer-cli
 kubectl wait -n assisted-installer $(kubectl get pod -n assisted-installer -l app=assisted-service -o name) --for=condition=Ready
 tmux new-session -s port-forward-service -d "kubectl -n assisted-installer port-forward --address 0.0.0.0 svc/assisted-service 8090:8090"
 kubectl wait -n assisted-installer $(kubectl get pod -n assisted-installer -l app=ocp-metal-ui -o name) --for=condition=Ready
