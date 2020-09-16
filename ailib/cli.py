@@ -330,7 +330,7 @@ def cli():
     metaldownload_parser.add_argument('-v', '--version', metavar='VERSION', default='4.6',
                                       help='Version to use.Defaults to 4.6')
     metaldownload_parser.set_defaults(func=download_metal)
-    download_subparsers.add_parser('metalassets', parents=[metaldownload_parser],
+    download_subparsers.add_parser('metalfile', parents=[metaldownload_parser],
                                    description=metaldownload_desc,
                                    help=metaldownload_desc)
 

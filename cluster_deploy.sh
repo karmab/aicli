@@ -1,6 +1,6 @@
 CLUSTER=testk
 ISOPATH="/var/lib/libvirt/images"
-export AI_URL=http://$(kcli info vm $CLUSTER-installer -v -f ip):8080
+export AI_URL=http://$(kcli info vm ${CLUSTER:-testk} -installer -v -f ip):8080
 aicli create cluster $CLUSTER
 aicli create iso $CLUSTER
 aicli download iso $CLUSTER --path $ISOPATH
