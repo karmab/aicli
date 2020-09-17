@@ -16,7 +16,7 @@ cd assisted-service-client-1.0.0
 python3 setup.py install
 pip3 install git+https://github.com/karmab/assisted-installer-cli.git#egg=assisted-installer-cli
 kubectl wait -n assisted-installer $(kubectl get pod -n assisted-installer -l app=assisted-service -o name) --for=condition=Ready
-tmux new-session -s port-forward-service -d "kubectl -n assisted-installer port-forward --address 0.0.0.0 svc/assisted-service 8090:8090"
+tmux new-session -s port-forward-service -d "kubectl -n assisted-installer port-forward --streaming-connection-idle-timeout=0 --address 0.0.0.0 svc/assisted-service 8090:8090"
 kubectl wait -n assisted-installer $(kubectl get pod -n assisted-installer -l app=ocp-metal-ui -o name) --for=condition=Ready
-tmux new-session -s port-forward-ui -d "kubectl -n assisted-installer port-forward --address 0.0.0.0 svc/ocp-metal-ui 8080:80"
+tmux new-session -s port-forward-ui -d "kubectl -n assisted-installer port-forward --streaming-connection-idle-timeout=0 --address 0.0.0.0 svc/ocp-metal-ui 8080:80"
 echo "export AI_URL=$AI_URL" >> /root/.bashrc
