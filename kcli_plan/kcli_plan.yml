@@ -15,6 +15,7 @@ parameters:
  nodes_disks_size: 120
  deploy: false
  racadm: true
+ iso:
  keys: []
 
 {{ image }}:
@@ -25,7 +26,7 @@ parameters:
  pool: {{ pool }}
  numcpus: {{ nodes_numcpus }}
  start: {{ start }}
- iso: {{ cluster}}.iso
+ iso: {{ iso if iso != None else cluster + ".iso" }}
  memory: {{ nodes_memory }}
  nets:
   - name: {{ network }}
