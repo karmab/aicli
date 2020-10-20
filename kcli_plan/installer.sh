@@ -20,3 +20,4 @@ tmux new-session -s port-forward-service -d "while true; do kubectl -n assisted-
 kubectl wait -n assisted-installer $(kubectl get pod -n assisted-installer -l app=ocp-metal-ui -o name) --for=condition=Ready
 tmux new-session -s port-forward-ui -d "while true; do kubectl -n assisted-installer port-forward --address 0.0.0.0 svc/ocp-metal-ui 8080:80; done"
 echo "export AI_URL=$AI_URL" >> /root/.bashrc
+echo "export PATH=/usr/local/bin:\$PATH" >> /root/.bashrc
