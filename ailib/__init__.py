@@ -1,9 +1,12 @@
 from assisted_service_client import ApiClient, Configuration, api, models
-from ailib.common import warning, error, success
+from ailib.common import warning, error
 import os
 import re
 import sys
+import yaml
 from shutil import copyfileobj
+from uuid import uuid4
+
 
 # default_cluster_params = {"openshift_version": "4.6", "base_dns_domain": "karmalabs.com",
 #                          "cluster_network_cidr": "string", "cluster_network_host_prefix": 24,
@@ -38,7 +41,8 @@ class AssistedClient(object):
             os._exit(1)
 
     def create_cluster(self, name, overrides={}):
-        success("Creating cluster %s" % name)
+        if '-day2' in name:
+            self.create_day2_cluster(name, overrides=overrides)
         if 'pull_secret' not in overrides:
             warning("No pull_secret file path provided as parameter. Using openshift_pull.json")
             overrides['pull_secret'] = "openshift_pull.json"
@@ -69,6 +73,28 @@ class AssistedClient(object):
     def info_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         return self.client.get_cluster(cluster_id=cluster_id)
+
+    def create_day2_cluster(self, name):
+        try:
+            cluster_id = self.get_cluster_id(name)
+        except Exception as e:
+            error("Coulnt get base cluster %s. Got %s" % (name, e))
+        cluster = self.client.get_cluster(cluster_id=cluster_id)
+        cluster_version = cluster.openshift_version
+        ssh_public_key = cluster.image_info.ssh_public_key
+        api_name = "api." + name + "." + cluster.base_dns_domain
+        response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
+                                                      _preload_content=False)
+        data = yaml.safe_load(response.read().decode("utf-8"))
+        pull_secret = data.get('pullSecret')
+        cluster_params = {"openshift_version": cluster_version, "api_vip_dnsname": api_name}
+        new_cluster_id = str(uuid4())
+        new_name = name + "-day2"
+        new_cluster = models.AddHostsClusterCreateParams(name=new_name, id=new_cluster_id, **cluster_params)
+        self.client.register_add_hosts_cluster(new_add_hosts_cluster_params=new_cluster)
+        cluster_update_params = {'pull_secret': pull_secret, 'ssh_public_key': ssh_public_key}
+        cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
+        self.client.update_cluster(cluster_id=new_cluster_id, cluster_update_params=cluster_update_params)
 
     def create_iso(self, name, overrides):
         cluster_id = self.get_cluster_id(name)
@@ -207,4 +233,7 @@ class AssistedClient(object):
 
     def start_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
-        self.client.install_cluster(cluster_id=cluster_id)
+        if '-day2' in name:
+            self.client.install_hosts(cluster_id=cluster_id)
+        else:
+            self.client.install_cluster(cluster_id=cluster_id)

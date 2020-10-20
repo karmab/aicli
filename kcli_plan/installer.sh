@@ -10,7 +10,9 @@ AI_URL=http://${REVERSE_NAME:-$IP}:8090
 sed -i "s@REPLACE_BASE_URL@$AI_URL@" deploy/assisted-service-configmap.yaml
 make deploy-all {{ "TARGET=oc-ingress" if not minikube else "" }}
 make deploy-ui {{ "TARGET=oc-ingress" if not minikube else "" }}
-docker run -v $PWD:/here --rm quay.io/ocpmetal/assisted-service:latest cp -r /clients/assisted-service-client-1.0.0.tar.gz /here
+#docker run -v $PWD:/here --rm quay.io/ocpmetal/assisted-service:latest cp -r /clients/assisted-service-client-1.0.0.tar.gz /here
+docker build -t ocpmetal/assisted-service -f Dockerfile.assisted-service .
+docker run -v $PWD:/here --rm ocpmetal/assisted-service:latest cp -r /clients/assisted-service-client-1.0.0.tar.gz /here
 tar zxvf assisted-service-client-1.0.0.tar.gz
 cd assisted-service-client-1.0.0
 python3 setup.py install
