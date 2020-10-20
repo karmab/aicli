@@ -58,7 +58,7 @@ def delete_cluster(args):
 
 def info_cluster(args):
     skipped = ['kind', 'href', 'ssh_public_key', 'http_proxy', 'https_proxy', 'no_proxy', 'pull_secret_set',
-               'vip_dhcp_allocation', 'validations_info', 'hosts', 'image_info']
+               'vip_dhcp_allocation', 'validations_info', 'hosts', 'image_info', 'host_networks']
     ai = AssistedClient(args.url)
     info = ai.info_cluster(args.cluster).to_dict()
     for entry in sorted(info):
@@ -66,6 +66,21 @@ def info_cluster(args):
             continue
         else:
             print("%s: %s" % (entry, info[entry]))
+
+
+def info_host(args):
+    skipped = ['kind', 'inventory', 'logs_collected_at', 'href', 'validations_info', 'discovery_agent_version',
+               'installer_version', 'progress_stages', 'connectivity']
+    ai = AssistedClient(args.url)
+    hostinfo = ai.info_host(args.host)
+    if hostinfo is None:
+        error("Host %s not found" % args.host)
+    else:
+        for entry in sorted(hostinfo):
+            if entry in skipped:
+                continue
+            else:
+                print("%s: %s" % (entry, hostinfo[entry]))
 
 
 def list_cluster(args):
@@ -342,6 +357,13 @@ def cli():
     clusterlist_parser.set_defaults(func=list_cluster)
     list_subparsers.add_parser('cluster', parents=[clusterlist_parser], description=clusterlist_desc,
                                help=clusterlist_desc, aliases=['clusters'])
+
+    hostinfo_desc = 'Info Host'
+    hostinfo_epilog = None
+    hostinfo_parser = info_subparsers.add_parser('host', description=hostinfo_desc, help=hostinfo_desc,
+                                                 epilog=hostinfo_epilog, formatter_class=rawhelp)
+    hostinfo_parser.add_argument('host', metavar='HOST')
+    hostinfo_parser.set_defaults(func=info_host)
 
     hostslist_desc = 'List Hosts'
     hostslist_parser = argparse.ArgumentParser(add_help=False)

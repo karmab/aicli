@@ -129,6 +129,17 @@ class AssistedClient(object):
             allhosts.extend(hosts)
         return allhosts
 
+    def info_host(self, hostname):
+        hostinfo = None
+        for cluster in self.client.list_clusters():
+            cluster_id = cluster['id']
+            cluster_hosts = self.client.list_hosts(cluster_id=cluster_id)
+            hosts = [h for h in cluster_hosts if h['requested_hostname'] == hostname or h['id'] == hostname]
+            if hosts:
+                hostinfo = hosts[0]
+                break
+        return hostinfo
+
     def update_host(self, hostname, overrides):
         hostids = []
         for cluster in self.client.list_clusters():
