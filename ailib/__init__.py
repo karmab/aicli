@@ -64,7 +64,6 @@ class AssistedClient(object):
 
     def delete_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
-        success("Deleting cluster %s" % name)
         self.client.deregister_cluster(cluster_id=cluster_id)
 
     def info_cluster(self, name):

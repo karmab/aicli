@@ -38,11 +38,12 @@ def choose_parameter_file(paramfile):
             info("Using default parameter file aicli_parameters.yml")
     elif paramfile is None and os.path.exists("aicli_parameters.yml"):
         paramfile = "aicli_parameters.yml"
-        info("Using default parameter file aii_parameters.yml")
+        info("Using default parameter file aicli_parameters.yml")
     return paramfile
 
 
 def create_cluster(args):
+    success("Creating cluster %s" % args.cluster)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url)
@@ -57,11 +58,13 @@ def delete_cluster(args):
 
 def info_cluster(args):
     skipped = ['kind', 'href', 'ssh_public_key', 'http_proxy', 'https_proxy', 'no_proxy', 'pull_secret_set',
-               'vip_dhcp_allocation', 'validations_info']
+               'vip_dhcp_allocation', 'validations_info', 'hosts', 'image_info']
     ai = AssistedClient(args.url)
     info = ai.info_cluster(args.cluster).to_dict()
-    for entry in info:
-        if entry not in skipped:
+    for entry in sorted(info):
+        if entry in skipped or info[entry] is None:
+            continue
+        else:
             print("%s: %s" % (entry, info[entry]))
 
 
