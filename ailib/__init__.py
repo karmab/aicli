@@ -75,6 +75,9 @@ class AssistedClient(object):
     def delete_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         self.client.deregister_cluster(cluster_id=cluster_id)
+        day2_matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name + '-day2']
+        if day2_matching_ids:
+            self.client.deregister_cluster(cluster_id=day2_matching_ids[0])
 
     def info_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
