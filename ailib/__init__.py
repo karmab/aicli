@@ -1,5 +1,5 @@
 from assisted_service_client import ApiClient, Configuration, api, models
-from ailib.common import warning, error
+from ailib.common import warning, error, info
 import os
 import re
 import sys
@@ -81,10 +81,8 @@ class AssistedClient(object):
         return self.client.get_cluster(cluster_id=cluster_id)
 
     def create_day2_cluster(self, name):
-        try:
-            cluster_id = self.get_cluster_id(name)
-        except Exception as e:
-            error("Coulnt get base cluster %s. Got %s" % (name, e))
+        name = name.replace('-day2', '')
+        cluster_id = self.get_cluster_id(name)
         cluster = self.client.get_cluster(cluster_id=cluster_id)
         cluster_version = cluster.openshift_version
         ssh_public_key = cluster.image_info.ssh_public_key
@@ -115,6 +113,8 @@ class AssistedClient(object):
                 sys.exit(1)
         image_create_params = models.ImageCreateParams(ssh_public_key=ssh_public_key)
         self.client.generate_cluster_iso(cluster_id=cluster_id, image_create_params=image_create_params)
+        iso_url = "%s/api/assisted-install/v1/clusters/%s/downloads/image" % (self.url, cluster_id)
+        info("Iso available at %s" % iso_url)
 
     def download_iso(self, name, path):
         cluster_id = self.get_cluster_id(name)
