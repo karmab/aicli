@@ -240,6 +240,6 @@ class AssistedClient(object):
     def start_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         if '-day2' in name:
-            print(self.client.install_hosts(cluster_id=cluster_id))
+            self.client.install_hosts(cluster_id=cluster_id)
         else:
             self.client.install_cluster(cluster_id=cluster_id)
