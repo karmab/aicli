@@ -41,8 +41,12 @@ class AssistedClient(object):
             os._exit(1)
 
     def create_cluster(self, name, overrides={}):
+        allowed_parameters = ["name", "openshift_version", "base_dns_domain", "cluster_network_cidr",
+                              "cluster_network_host_prefix", "service_network_cidr", "ingress_vip", "pull_secret",
+                              "ssh_public_key", "vip_dhcp_allocation", "http_proxy", "https_proxy", "no_proxy"]
         if '-day2' in name:
-            self.create_day2_cluster(name, overrides=overrides)
+            self.create_day2_cluster(name)
+            return
         if 'pull_secret' not in overrides:
             warning("No pull_secret file path provided as parameter. Using openshift_pull.json")
             overrides['pull_secret'] = "openshift_pull.json"
@@ -61,8 +65,10 @@ class AssistedClient(object):
             if 'public_key' in overrides:
                 del overrides['pub_key']
         new_cluster_params = default_cluster_params
-        new_cluster_params.update(overrides)
         new_cluster_params['name'] = name
+        for parameter in overrides:
+            if parameter in allowed_parameters:
+                new_cluster_params[parameter] = overrides[parameter]
         cluster_params = models.ClusterCreateParams(**new_cluster_params)
         self.client.register_cluster(new_cluster_params=cluster_params)
 
@@ -234,6 +240,6 @@ class AssistedClient(object):
     def start_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         if '-day2' in name:
-            self.client.install_hosts(cluster_id=cluster_id)
+            print(self.client.install_hosts(cluster_id=cluster_id))
         else:
             self.client.install_cluster(cluster_id=cluster_id)

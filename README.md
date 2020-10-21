@@ -44,6 +44,8 @@ kcli create plan
 
 You need to indicate a target AI_URL, which can be done with the flag *--url*
 
+The url is in this format `http://$AI_IP:8080` 
+
 Alternatively, you can set it as an environment variable
 
 ## Parameters
