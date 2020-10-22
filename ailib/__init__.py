@@ -129,7 +129,7 @@ class AssistedClient(object):
         cluster_id = self.get_cluster_id(name)
         response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
                                                       _preload_content=False)
-        with open("%s/installconfig.yaml.%s" % (path, name), "wb") as f:
+        with open("%s/install-config.yaml.%s" % (path, name), "wb") as f:
             copyfileobj(response, f)
 
     def download_kubeadminpassword(self, name, path):
@@ -176,36 +176,53 @@ class AssistedClient(object):
         return hostinfo
 
     def update_host(self, hostname, overrides):
-        hostids = []
-        for cluster in self.client.list_clusters():
-            cluster_id = cluster['id']
+        clusters = {}
+        if 'cluster' in overrides:
+            cluster = overrides['cluster']
+            cluster_id = self.get_cluster_id(cluster)
             hosts = self.client.list_hosts(cluster_id=cluster_id)
             matchingids = [host['id'] for host in hosts
                            if host['requested_hostname'] == hostname or host['id'] == hostname]
-            hostids.extend(matchingids)
-        if not hostids:
+        else:
+            for cluster in self.client.list_clusters():
+                cluster_id = cluster['id']
+                hosts = self.client.list_hosts(cluster_id=cluster_id)
+                matchingids = [host['id'] for host in hosts
+                               if host['requested_hostname'] == hostname or host['id'] == hostname]
+                if matchingids:
+                    clusters[cluster_id] = matchingids
+        if not clusters:
             error("No Matching Host with name %s found" % hostname)
-        cluster_update_params = {}
-        role = None
-        if 'role' in overrides:
-            role = overrides['role']
-            hosts_roles = [{"id": hostid, "role": role} for hostid in hostids]
-            cluster_update_params['hosts_roles'] = hosts_roles
-        if len(hostids) > 1:
-            node = role if role is not None else 'node'
-            hosts_names = [{"id": hostid, "hostname": "%s-%s" % (node, index)} for index, hostid in enumerate(hostids)]
+        for cluster_id in clusters:
+            base_cluster = self.client.get_cluster(cluster_id=cluster_id)
+            cluster_name = base_cluster.name
+            hostids = clusters[cluster_id]
+            cluster_update_params = {}
+            role = None
+            if 'role' in overrides:
+                role = overrides['role']
+                hosts_roles = [{"id": hostid, "role": role} for hostid in hostids]
+                cluster_update_params['hosts_roles'] = hosts_roles
+            if len(hostids) == 1 and 'name' in overrides:
+                newname = overrides['name']
+                info("renaming node %s as %s in cluster %s" % (hostname, newname, cluster_name))
+                hosts_names = [{"id": hostids[0], "hostname": newname}]
+            elif len(hostids) == 1 and 'requested_hostname' in overrides:
+                newname = overrides['requested_hostname']
+                info("renaming node %s as %s in cluster %s" % (hostname, newname, cluster_name))
+                hosts_names = [{"id": hostids[0], "hostname": newname}]
+            else:
+                node = role if role is not None else 'node'
+                hosts_names = []
+                for index, hostid in enumerate(hostids):
+                    newname = "%s-%s" % (node, index)
+                    info("renaming node %s as %s in cluster %s" % (hostid, newname, cluster_name))
+                    new_host = {"id": hostid, "hostname": newname}
+                    hosts_names.append(new_host)
             cluster_update_params['hosts_names'] = hosts_names
-        elif 'name' in overrides:
-            newname = overrides['name']
-            hosts_names = [{"id": hostids[0], "hostname": newname}]
-            cluster_update_params['hosts_names'] = hosts_names
-        elif 'requested_hostname' in overrides:
-            newname = overrides['requested_hostname']
-            hosts_names = [{"id": hostids[0], "hostname": newname}]
-            cluster_update_params['hosts_names'] = hosts_names
-        if cluster_update_params:
-            cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
-            self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
+            if cluster_update_params:
+                cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
+                self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
 
     def update_cluster(self, name, overrides):
         cluster_id = self.get_cluster_id(name)
@@ -243,6 +260,12 @@ class AssistedClient(object):
     def start_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         if '-day2' in name:
+            base_name = name.replace('-day2', '')
+            base_cluster_id = self.get_cluster_id(base_name)
+            base_cluster = self.client.get_cluster(cluster_id=base_cluster_id)
+            cluster_update_params = {'api_vip': base_cluster.api_vip, 'base_dns_domain': base_cluster.base_dns_domain}
+            cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
+            self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
             self.client.install_hosts(cluster_id=cluster_id)
         else:
             self.client.install_cluster(cluster_id=cluster_id)

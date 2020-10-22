@@ -371,7 +371,7 @@ def cli():
     list_subparsers.add_parser('host', parents=[hostslist_parser], description=hostslist_desc,
                                help=clusterlist_desc, aliases=['hosts'])
 
-    hostupdate_desc = 'Update Host'
+    hostupdate_desc = 'Update Host name and role'
     hostupdate_parser = argparse.ArgumentParser(add_help=False)
     hostupdate_parser.add_argument('-P', '--param', action='append',
                                    help='specify parameter or keyword for rendering (multiple can be specified)',

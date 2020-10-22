@@ -13,7 +13,7 @@ parameters:
  nodes_numcpus: 8
  nodes_memory: 16384
  nodes_disks_size: 120
- deploy: false
+ deploy_installer: true
  racadm: true
  iso:
  keys: []
@@ -34,6 +34,8 @@ parameters:
   - size: {{ nodes_disks_size }}
 {%- endfor %}
 
+
+{% if deploy_installer %}
 {{ cluster }}-installer:
  image: {{ image }}
  pool: {{ pool }}
@@ -51,8 +53,6 @@ parameters:
  - minikube.sh
 {% endif %}
  - installer.sh
-{% if deploy %}
- - deploy.sh
-{% endif %}
  notify: {{ notify }}
  notifyscript: notify.sh
+{%- endif %}
