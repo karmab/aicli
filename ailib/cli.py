@@ -199,6 +199,12 @@ def start_cluster(args):
     ai.start_cluster(args.cluster)
 
 
+def stop_cluster(args):
+    success("Stopping cluster %s" % args.cluster)
+    ai = AssistedClient(args.url)
+    ai.stop_cluster(args.cluster)
+
+
 def cli():
     """
 
@@ -230,12 +236,16 @@ def cli():
     list_subparsers = list_parser.add_subparsers(metavar='', dest='subcommand_list')
 
     update_desc = 'Update Object'
-    update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc, aliases=['launch'])
+    update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc)
     update_subparsers = update_parser.add_subparsers(metavar='', dest='subcommand_update')
 
     start_desc = 'Start Object'
-    start_parser = subparsers.add_parser('start', description=start_desc, help=start_desc)
+    start_parser = subparsers.add_parser('start', description=start_desc, help=start_desc, aliases=['launch'])
     start_subparsers = start_parser.add_subparsers(metavar='', dest='subcommand_start')
+
+    stop_desc = 'Stop Object'
+    stop_parser = subparsers.add_parser('stop', description=stop_desc, help=stop_desc, aliases=['reset'])
+    stop_subparsers = stop_parser.add_subparsers(metavar='', dest='subcommand_stop')
 
     clustercreate_desc = 'Create Cluster'
     clustercreate_epilog = None
@@ -293,6 +303,14 @@ def cli():
                                                       epilog=clusterstart_epilog, formatter_class=rawhelp)
     clusterstart_parser.add_argument('cluster', metavar='CLUSTER')
     clusterstart_parser.set_defaults(func=start_cluster)
+
+    clusterstop_desc = 'Stop Cluster'
+    clusterstop_epilog = None
+    clusterstop_parser = stop_subparsers.add_parser('cluster', description=clusterstop_desc,
+                                                    help=clusterstop_desc,
+                                                    epilog=clusterstop_epilog, formatter_class=rawhelp)
+    clusterstop_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterstop_parser.set_defaults(func=stop_cluster)
 
     ignitiondownload_desc = 'Download Ignition file'
     ignitiondownload_parser = argparse.ArgumentParser(add_help=False)

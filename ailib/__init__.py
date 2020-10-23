@@ -269,3 +269,7 @@ class AssistedClient(object):
             self.client.install_hosts(cluster_id=cluster_id)
         else:
             self.client.install_cluster(cluster_id=cluster_id)
+
+    def stop_cluster(self, name):
+        cluster_id = self.get_cluster_id(name)
+        self.client.reset_cluster(cluster_id=cluster_id)
