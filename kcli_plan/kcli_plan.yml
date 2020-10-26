@@ -7,16 +7,20 @@ parameters:
  minikube: true
  network: default
  notify: true
- cluster: testk
  start: false
  nodes: 0
  nodes_numcpus: 8
  nodes_memory: 16384
  nodes_disks_size: 120
  deploy_installer: true
+ deploy_cluster: false
  racadm: true
  iso:
  keys: []
+ cluster: testk
+ api_ip: 192.168.122.253
+ ingress_ip: 192.168.122.252
+ domain: karmalabs.com
 
 {{ image }}:
   type: image
@@ -33,7 +37,6 @@ parameters:
  disks:
   - size: {{ nodes_disks_size }}
 {%- endfor %}
-
 
 {% if deploy_installer %}
 {{ cluster }}-installer:
@@ -53,6 +56,10 @@ parameters:
  - minikube.sh
 {% endif %}
  - installer.sh
+{% if deploy_installer %}
+ - deploy_cluster.sh
+ privatekey: true
+{% endif %}
  notify: {{ notify }}
  notifyscript: notify.sh
 {%- endif %}
