@@ -1,6 +1,6 @@
 export HOME=/root
 cd /root
-yum -y install python3-pip socat make
+dnf -y install python3-pip socat make
 pip3 install waiting
 git clone https://github.com/openshift/assisted-service
 cd assisted-service

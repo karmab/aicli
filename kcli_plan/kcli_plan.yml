@@ -13,8 +13,7 @@ parameters:
  nodes_memory: 16384
  nodes_disks_size: 120
  deploy_installer: true
- deploy_cluster: false
- racadm: true
+ racadm: false
  iso:
  keys: []
  cluster: testk
@@ -47,19 +46,14 @@ parameters:
  disks: [{{ disk_size }}]
  nets: [{{ network }}]
  keys: {{ keys }}
- scripts:
-{% if racadm %}
+ files:
  - racadm.sh
-{% endif %}
+ scripts:
  - pre.sh
 {% if minikube %}
  - minikube.sh
 {% endif %}
  - installer.sh
-{% if deploy_installer %}
- - deploy_cluster.sh
- privatekey: true
-{% endif %}
  notify: {{ notify }}
  notifyscript: notify.sh
 {%- endif %}

@@ -7,7 +7,7 @@ name=Racadm
 baseurl=http://linux.dell.com/repo/hardware/dsu/os_dependent/RHEL8_64
 enabled=1
 gpgcheck=0""" > /etc/yum.repos.d/racadm.repo
-yum -y install openssl-devel srvadmin-idracadm7
+dnf -y install openssl-devel srvadmin-idracadm7
 export PATH=/opt/dell/srvadmin/bin:$PATH
 # /opt/dell/srvadmin/bin/idracadm7 -r $SERVER -u $USER -p $PASSWORD remoteimage -s
 # /opt/dell/srvadmin/bin/idracadm7 -r $SERVER -u $USER -p $PASSWORD remoteimage -d
