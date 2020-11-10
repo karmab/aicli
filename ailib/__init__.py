@@ -205,18 +205,18 @@ class AssistedClient(object):
                 cluster_update_params['hosts_roles'] = hosts_roles
             if len(hostids) == 1 and 'name' in overrides:
                 newname = overrides['name']
-                info("renaming node %s as %s in cluster %s" % (hostname, newname, cluster_name))
+                info("Renaming node %s as %s in cluster %s" % (hostname, newname, cluster_name))
                 hosts_names = [{"id": hostids[0], "hostname": newname}]
             elif len(hostids) == 1 and 'requested_hostname' in overrides:
                 newname = overrides['requested_hostname']
-                info("renaming node %s as %s in cluster %s" % (hostname, newname, cluster_name))
+                info("Renaming node %s as %s in cluster %s" % (hostname, newname, cluster_name))
                 hosts_names = [{"id": hostids[0], "hostname": newname}]
-            else:
-                node = role if role is not None else 'node'
+            elif len(hostids) > 0 and 'name' in overrides:
+                node = overrides['name']
                 hosts_names = []
                 for index, hostid in enumerate(hostids):
                     newname = "%s-%s" % (node, index)
-                    info("renaming node %s as %s in cluster %s" % (hostid, newname, cluster_name))
+                    info("Renaming node %s as %s in cluster %s" % (hostid, newname, cluster_name))
                     new_host = {"id": hostid, "hostname": newname}
                     hosts_names.append(new_host)
             cluster_update_params['hosts_names'] = hosts_names
