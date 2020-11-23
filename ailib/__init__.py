@@ -44,6 +44,10 @@ class AssistedClient(object):
         allowed_parameters = ["name", "openshift_version", "base_dns_domain", "cluster_network_cidr",
                               "cluster_network_host_prefix", "service_network_cidr", "ingress_vip", "pull_secret",
                               "ssh_public_key", "vip_dhcp_allocation", "http_proxy", "https_proxy", "no_proxy"]
+        existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
+        if existing_ids:
+            error("Cluster %s already there. Leaving" % name)
+            sys.exit(1)
         if '-day2' in name:
             self.create_day2_cluster(name)
             return
@@ -85,6 +89,10 @@ class AssistedClient(object):
 
     def create_day2_cluster(self, name):
         name = name.replace('-day2', '')
+        existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
+        if existing_ids:
+            error("Cluster %s already there. Leaving" % name)
+            sys.exit(1)
         cluster_id = self.get_cluster_id(name)
         cluster = self.client.get_cluster(cluster_id=cluster_id)
         cluster_version = cluster.openshift_version
