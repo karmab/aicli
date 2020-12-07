@@ -227,7 +227,7 @@ class AssistedClient(object):
                     info("Renaming node %s as %s in cluster %s" % (hostid, newname, cluster_name))
                     new_host = {"id": hostid, "hostname": newname}
                     hosts_names.append(new_host)
-            cluster_update_params['hosts_names'] = hosts_names
+                cluster_update_params['hosts_names'] = hosts_names
             if cluster_update_params:
                 cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
                 self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
