@@ -90,8 +90,8 @@ class AssistedClient(object):
     def create_day2_cluster(self, name):
         name = name.replace('-day2', '')
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
-        if existing_ids:
-            error("Cluster %s already there. Leaving" % name)
+        if not existing_ids:
+            error("Base Cluster %s not found. Leaving" % name)
             sys.exit(1)
         cluster_id = self.get_cluster_id(name)
         cluster = self.client.get_cluster(cluster_id=cluster_id)
