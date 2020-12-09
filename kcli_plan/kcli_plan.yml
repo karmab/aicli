@@ -13,6 +13,7 @@ parameters:
  nodes_memory: 16384
  nodes_disks_size: 120
  deploy_installer: true
+ playbook: false
  racadm: false
  iso:
  keys: []
@@ -40,6 +41,7 @@ parameters:
 {% if deploy_installer %}
 {{ cluster }}-installer:
  image: {{ image }}
+ playbook: {{ playbook }}
  pool: {{ pool }}
  memory: {{ memory }}
  numcpus: {{ numcpus }}
