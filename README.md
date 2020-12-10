@@ -18,7 +18,7 @@ First, you need to clone the [openshift/assisted-service](https://github.com/ope
 ```
 ENGINE="podman"
 curl https://raw.githubusercontent.com/openshift/assisted-service/master/Dockerfile.assisted-service > Dockerfile.assisted-service
-$ENGINE build -t ocpmetal/assisted-service -f Dockerfile.assisted-service .
+$ENGINE build --security-opt label:disable -t ocpmetal/assisted-service -f Dockerfile.assisted-service .
 $ENGINE run -v $PWD:/here --rm ocpmetal/assisted-service:latest cp -r /clients/assisted-service-client-1.0.0.tar.gz /here
 tar zxvf assisted-service-client-1.0.0.tar.gz
 cd assisted-service-client-1.0.0
