@@ -1,10 +1,16 @@
 parameters:
+ info: |
+     This plan deploys assisted installer engine and api in a vm, with an optional number of vm nodes. Furthermore, aicli gets deployed
+     The method for deployment can either be onprem, openshift or minikube.
+     Minikube gets deployed with docker
+     Openshift requires a kubeconfig file to be specified
+     A pull secret can be provided to interact with aicli directly from the installer vm
  disk_size: 80
  numcpus: 8
  memory: 16384
  pool: default
  image: centos8
- minikube: true
+ method: onprem
  network: default
  notify: true
  start: false
@@ -21,11 +27,13 @@ parameters:
  api_ip: 192.168.122.253
  ingress_ip: 192.168.122.252
  domain: karmalabs.com
+ kubeconfig: kubeconfig
+ pullsecret: openshift_pull.json
 
 {{ image }}:
   type: image
 
-{%- for num in range(0, nodes) %}
+{% for num in range(0, nodes) %}
 {{ cluster }}-node-{{ num }}:
  pool: {{ pool }}
  numcpus: {{ nodes_numcpus }}
@@ -36,7 +44,7 @@ parameters:
   - name: {{ network }}
  disks:
   - size: {{ nodes_disks_size }}
-{%- endfor %}
+{% endfor %}
 
 {% if deploy_installer %}
 {{ cluster }}-installer:
@@ -50,12 +58,24 @@ parameters:
  keys: {{ keys }}
  files:
  - racadm.sh
+{% if pullsecret != None %}
+ - origin: {{ pullsecret }}
+   path: /root/openshift_pull.json
+{% endif %}
+{% if method == 'openshift' %}
+ - origin: {{ kubeconfig }}
+   path: /root/kubeconfig
+{% endif %}
+ cmds:
+ - ssh-keygen -t rsa -N '' -f /root/.ssh/id_rsa
+ - sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
+ - setenforce 0
  scripts:
- - pre.sh
-{% if minikube %}
+{% if method == "minikube" %}
  - minikube.sh
 {% endif %}
- - installer.sh
+ - install.sh
+ - aicli.sh
  notify: {{ notify }}
  notifyscript: notify.sh
-{%- endif %}
+{% endif %}
