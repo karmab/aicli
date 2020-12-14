@@ -211,14 +211,22 @@ class AssistedClient(object):
                 role = overrides['role']
                 hosts_roles = [{"id": hostid, "role": role} for hostid in hostids]
                 cluster_update_params['hosts_roles'] = hosts_roles
-            if len(hostids) == 1:
-                host_id = hostids[0]
-                if 'name' in overrides or 'requested_hostname' in overrides:
-                    newname = overrides.get('name', overrides.get('requested_hostname'))
+            if 'name' in overrides or 'requested_hostname' in overrides:
+                newname = overrides.get('name', overrides.get('requested_hostname'))
+                hosts_names = []
+                if len(hostids) > 1:
+                    node = role if role is not None else 'node'
+                    for index, hostid in enumerate(hostids):
+                        newname = "%s-%s" % (node, index)
+                        info("Renaming node %s as %s in cluster %s" % (hostid, newname, cluster_name))
+                        new_host = {"id": hostid, "hostname": newname}
+                        hosts_names.append(new_host)
+                else:
                     info("Renaming node %s as %s in cluster %s" % (hostname, newname, cluster_name))
                     hosts_names = [{"id": hostids[0], "hostname": newname}]
-                    cluster_update_params['hosts_names'] = hosts_names
-                if 'ignition' in overrides:
+                cluster_update_params['hosts_names'] = hosts_names
+            if 'ignition' in overrides:
+                for host_id in hostids:
                     # ignition_ori = self.client.get_host_ignition(cluster_id, host_id)
                     ignition_path = overrides['ignition']
                     if not os.path.exists(ignition_path):
@@ -227,20 +235,12 @@ class AssistedClient(object):
                         ignition_data = open(ignition_path).read()
                         host_ignition_params = models.HostIgnitionParams(config=ignition_data)
                         self.client.update_host_ignition(cluster_id, host_id, host_ignition_params=host_ignition_params)
-                if 'extra_args' in overrides:
+            if 'extra_args' in overrides:
+                for host_id in hostids:
                     extra_args = overrides['extra_args']
                     installer_args_params = models.InstallerArgsParams(args=extra_args)
                     self.client.update_host_installer_args(cluster_id, host_id,
                                                            installer_args_params=installer_args_params)
-            elif len(hostids) > 0 and 'name' in overrides:
-                node = overrides['name']
-                hosts_names = []
-                for index, hostid in enumerate(hostids):
-                    newname = "%s-%s" % (node, index)
-                    info("Renaming node %s as %s in cluster %s" % (hostid, newname, cluster_name))
-                    new_host = {"id": hostid, "hostname": newname}
-                    hosts_names.append(new_host)
-                cluster_update_params['hosts_names'] = hosts_names
             if cluster_update_params:
                 cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
                 self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
