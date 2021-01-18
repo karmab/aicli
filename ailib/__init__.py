@@ -24,6 +24,25 @@ class AssistedClient(object):
         self.api = ApiClient(configuration=configs)
         self.client = api.InstallerApi(api_client=self.api)
 
+    def set_default_values(self, overrides):
+        if 'pull_secret' not in overrides:
+            warning("No pull_secret file path provided as parameter. Using openshift_pull.json")
+            overrides['pull_secret'] = "openshift_pull.json"
+        pull_secret = os.path.expanduser(overrides['pull_secret'])
+        if not os.path.exists(pull_secret):
+            error("Missing pull secret file %s" % pull_secret)
+            sys.exit(1)
+        overrides['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
+        if 'ssh_public_key' not in overrides:
+            pub_key = overrides.get('pub_key', '%s/.ssh/id_rsa.pub' % os.environ['HOME'])
+            if os.path.exists(pub_key):
+                overrides['ssh_public_key'] = open(pub_key).read().strip()
+            else:
+                error("Missing public key file %s" % pub_key)
+                sys.exit(1)
+            if 'public_key' in overrides:
+                del overrides['public_key']
+
     def get_cluster_id(self, name):
         matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
         if matching_ids:
@@ -51,23 +70,7 @@ class AssistedClient(object):
         if '-day2' in name:
             self.create_day2_cluster(name)
             return
-        if 'pull_secret' not in overrides:
-            warning("No pull_secret file path provided as parameter. Using openshift_pull.json")
-            overrides['pull_secret'] = "openshift_pull.json"
-        pull_secret = os.path.expanduser(overrides['pull_secret'])
-        if not os.path.exists(pull_secret):
-            error("Missing pull secret file %s" % pull_secret)
-            sys.exit(1)
-        overrides['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
-        if 'ssh_public_key' not in overrides:
-            pub_key = overrides.get('pub_key', '%s/.ssh/id_rsa.pub' % os.environ['HOME'])
-            if os.path.exists(pub_key):
-                overrides['ssh_public_key'] = open(pub_key).read().strip()
-            else:
-                error("Missing public key file %s" % pub_key)
-                sys.exit(1)
-            if 'public_key' in overrides:
-                del overrides['pub_key']
+        self.set_default_values(overrides)
         new_cluster_params = default_cluster_params
         new_cluster_params['name'] = name
         for parameter in overrides:
@@ -87,22 +90,39 @@ class AssistedClient(object):
         cluster_id = self.get_cluster_id(name)
         return self.client.get_cluster(cluster_id=cluster_id)
 
-    def create_day2_cluster(self, name):
+    def create_day2_cluster(self, name, overrides={}):
         name = name.replace('-day2', '')
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
         if not existing_ids:
-            error("Base Cluster %s not found. Leaving" % name)
-            sys.exit(1)
-        cluster_id = self.get_cluster_id(name)
-        cluster = self.client.get_cluster(cluster_id=cluster_id)
-        cluster_version = cluster.openshift_version
-        ssh_public_key = cluster.image_info.ssh_public_key
-        api_name = "api." + name + "." + cluster.base_dns_domain
-        response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
-                                                      _preload_content=False)
-        data = yaml.safe_load(response.read().decode("utf-8"))
-        pull_secret = data.get('pullSecret')
-        cluster_params = {"openshift_version": cluster_version, "api_vip_dnsname": api_name}
+            warning("Base Cluster %s not found. Populating with default values" % name)
+            if 'version' in overrides:
+                openshift_version = overrides['version']
+            elif 'openshift_version' in overrides:
+                openshift_version = overrides['openshift_version']
+            else:
+                openshift_version = default_cluster_params["openshift_version"]
+                warning("No openshift_version provided.Using %s" % openshift_version)
+            if 'domain' in overrides:
+                domain = overrides['domain']
+            elif 'base_dns_domain' in overrides:
+                domain = overrides['base_dns_domain']
+            else:
+                domain = default_cluster_params["base_dns_domain"]
+                warning("No base_dns_domain provided.Using %s" % domain)
+            api_name = "api." + name + "." + domain
+            self.set_default_values(overrides)
+            pull_secret, ssh_public_key = overrides['pull_secret'], overrides['ssh_public_key']
+        else:
+            cluster_id = self.get_cluster_id(name)
+            cluster = self.client.get_cluster(cluster_id=cluster_id)
+            openshift_version = cluster.openshift_version
+            ssh_public_key = cluster.image_info.ssh_public_key
+            api_name = "api." + name + "." + cluster.base_dns_domain
+            response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
+                                                          _preload_content=False)
+            data = yaml.safe_load(response.read().decode("utf-8"))
+            pull_secret = data.get('pullSecret')
+        cluster_params = {"openshift_version": openshift_version, "api_vip_dnsname": api_name}
         new_cluster_id = str(uuid4())
         new_name = name + "-day2"
         new_cluster = models.AddHostsClusterCreateParams(name=new_name, id=new_cluster_id, **cluster_params)
