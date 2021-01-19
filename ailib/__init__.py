@@ -68,7 +68,7 @@ class AssistedClient(object):
             error("Cluster %s already there. Leaving" % name)
             sys.exit(1)
         if '-day2' in name:
-            self.create_day2_cluster(name)
+            self.create_day2_cluster(name, overrides)
             return
         self.set_default_values(overrides)
         new_cluster_params = default_cluster_params
