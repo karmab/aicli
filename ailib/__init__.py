@@ -104,11 +104,13 @@ class AssistedClient(object):
                 warning("No openshift_version provided.Using %s" % openshift_version)
             if 'domain' in overrides:
                 domain = overrides['domain']
+                del overrides['domain']
             elif 'base_dns_domain' in overrides:
                 domain = overrides['base_dns_domain']
             else:
                 domain = default_cluster_params["base_dns_domain"]
                 warning("No base_dns_domain provided.Using %s" % domain)
+            overrides['base_dns_domain'] = domain
             api_name = "api." + name + "." + domain
             self.set_default_values(overrides)
             pull_secret, ssh_public_key = overrides['pull_secret'], overrides['ssh_public_key']
