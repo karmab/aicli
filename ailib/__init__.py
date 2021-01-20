@@ -303,17 +303,6 @@ class AssistedClient(object):
     def start_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         if '-day2' in name:
-            base_name = name.replace('-day2', '')
-            try:
-                base_cluster_id = self.get_cluster_id(base_name)
-                base_cluster = self.client.get_cluster(cluster_id=base_cluster_id)
-                cluster_update_params = {'api_vip': base_cluster.api_vip,
-                                         'base_dns_domain': base_cluster.base_dns_domain}
-                cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
-                self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
-            except:
-                warning("Not updating day2 cluster as base cluster was not found")
-                pass
             self.client.install_hosts(cluster_id=cluster_id)
         else:
             self.client.install_cluster(cluster_id=cluster_id)
