@@ -111,7 +111,7 @@ def list_hosts(args):
         _id = host['id']
         role = host['role']
         status = host['status']
-        inventory = json.loads(host['inventory'])
+        inventory = json.loads(host['inventory']) if 'inventory' in host else {}
         ip = 'N/A'
         if 'interfaces' in inventory and inventory['interfaces']:
             if 'ipv6_addresses' in inventory['interfaces'][0] and inventory['interfaces'][0]['ipv6_addresses']:
