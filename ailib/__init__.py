@@ -195,6 +195,30 @@ class AssistedClient(object):
             allhosts.extend(hosts)
         return allhosts
 
+    def delete_host(self, hostname, overrides={}):
+        clusters = {}
+        if 'cluster' in overrides:
+            cluster = overrides['cluster']
+            cluster_id = self.get_cluster_id(cluster)
+            hosts = self.client.list_hosts(cluster_id=cluster_id)
+            matchingids = [host['id'] for host in hosts
+                           if host['requested_hostname'] == hostname or host['id'] == hostname]
+        else:
+            for cluster in self.client.list_clusters():
+                cluster_id = cluster['id']
+                hosts = self.client.list_hosts(cluster_id=cluster_id)
+                matchingids = [host['id'] for host in hosts
+                               if host['requested_hostname'] == hostname or host['id'] == hostname]
+                if matchingids:
+                    clusters[cluster_id] = matchingids
+        if not clusters:
+            error("No Matching Host with name %s found" % hostname)
+        for cluster_id in clusters:
+            hostids = clusters[cluster_id]
+            for host_id in hostids:
+                info("Deleting Host with id %s in cluster %s" % (host_id, cluster_id))
+                self.client.deregister_host(cluster_id, host_id)
+
     def info_host(self, hostname):
         hostinfo = None
         for cluster in self.client.list_clusters():

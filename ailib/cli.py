@@ -68,6 +68,14 @@ def info_cluster(args):
             print("%s: %s" % (entry, info[entry]))
 
 
+def delete_host(args):
+    success("Updating Host %s" % args.hostname)
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai = AssistedClient(args.url)
+    ai.delete_host(args.hostname, overrides=overrides)
+
+
 def info_host(args):
     skipped = ['kind', 'inventory', 'logs_collected_at', 'href', 'validations_info', 'discovery_agent_version',
                'installer_version', 'progress_stages', 'connectivity']
@@ -375,6 +383,16 @@ def cli():
     clusterlist_parser.set_defaults(func=list_cluster)
     list_subparsers.add_parser('cluster', parents=[clusterlist_parser], description=clusterlist_desc,
                                help=clusterlist_desc, aliases=['clusters'])
+
+    hostdelete_desc = 'Delete host'
+    hostdelete_parser = argparse.ArgumentParser(add_help=False)
+    hostdelete_parser.add_argument('-P', '--param', action='append',
+                                   help='specify parameter or keyword for rendering (multiple can be specified)',
+                                   metavar='PARAM')
+    hostdelete_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
+    hostdelete_parser.add_argument('hostname', metavar='HOSTNAME')
+    hostdelete_parser.set_defaults(func=delete_host)
+    delete_subparsers.add_parser('host', parents=[hostdelete_parser], description=hostdelete_desc, help=hostdelete_desc)
 
     hostinfo_desc = 'Info Host'
     hostinfo_epilog = None
