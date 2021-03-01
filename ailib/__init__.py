@@ -288,9 +288,25 @@ class AssistedClient(object):
                     installer_args_params = models.InstallerArgsParams(args=extra_args)
                     self.client.update_host_installer_args(cluster_id, host_id,
                                                            installer_args_params=installer_args_params)
+            if 'mcp' in overrides:
+                valid_status = ["discovering", "known", "disconnected", "insufficient", "pending-for-input"]
+                valid_hostids = []
+                for hostid in hostids:
+                    currenthost = self.client.get_host(cluster_id=cluster_id, host_id=hostid)
+                    currentstatus = currenthost.status
+                    if currentstatus in valid_status:
+                        valid_hostids.append(hostid)
+                    else:
+                        error("Mcp can't be set for host %s because of incorrect status" % hostname, currentstatus)
+                if valid_hostids:
+                    mcp = overrides['mcp']
+                    hosts_mcps = [{"id": hostid, "machine_config_pool_name": mcp} for hostid in valid_hostids]
+                    cluster_update_params['hosts_machine_config_pool_names'] = hosts_mcps
             if cluster_update_params:
                 cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
                 self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
+            else:
+                warning("Nothing updated for this host")
 
     def update_cluster(self, name, overrides):
         cluster_id = self.get_cluster_id(name)
