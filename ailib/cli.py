@@ -57,8 +57,11 @@ def delete_cluster(args):
 
 
 def info_cluster(args):
-    skipped = ['kind', 'href', 'ssh_public_key', 'http_proxy', 'https_proxy', 'no_proxy', 'pull_secret_set',
-               'vip_dhcp_allocation', 'validations_info', 'hosts', 'image_info', 'host_networks']
+    if not args.full:
+        skipped = ['kind', 'href', 'ssh_public_key', 'http_proxy', 'https_proxy', 'no_proxy', 'pull_secret_set',
+                   'vip_dhcp_allocation', 'validations_info', 'hosts', 'image_info', 'host_networks']
+    else:
+        skipped = []
     fields = args.fields.split(',') if args.fields is not None else []
     values = args.values
     ai = AssistedClient(args.url)
@@ -84,8 +87,11 @@ def delete_host(args):
 
 
 def info_host(args):
-    skipped = ['kind', 'inventory', 'logs_collected_at', 'href', 'validations_info', 'discovery_agent_version',
-               'installer_version', 'progress_stages', 'connectivity']
+    if not args.full:
+        skipped = ['kind', 'inventory', 'logs_collected_at', 'href', 'validations_info', 'discovery_agent_version',
+                   'installer_version', 'progress_stages', 'connectivity']
+    else:
+        skipped = []
     fields = args.fields.split(',') if args.fields is not None else []
     values = args.values
     ai = AssistedClient(args.url)
@@ -309,6 +315,7 @@ def cli():
     clusterinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
                                     'separated by a comma', metavar='FIELDS')
     clusterinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
+    clusterinfo_parser.add_argument('--full', action='store_true', help='Full output')
     clusterinfo_parser.add_argument('cluster', metavar='CLUSTER')
     clusterinfo_parser.set_defaults(func=info_cluster)
 
@@ -420,6 +427,7 @@ def cli():
     hostinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
                                  'separated by a comma', metavar='FIELDS')
     hostinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
+    hostinfo_parser.add_argument('--full', action='store_true', help='Full output')
     hostinfo_parser.add_argument('host', metavar='HOST')
     hostinfo_parser.set_defaults(func=info_host)
 
