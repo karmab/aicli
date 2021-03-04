@@ -6,6 +6,7 @@ import json
 from prettytable import PrettyTable
 import os
 import sys
+import yaml
 
 
 def get_subparser_print_help(parser, subcommand):
@@ -59,13 +60,25 @@ def delete_cluster(args):
 def info_cluster(args):
     skipped = ['kind', 'href', 'ssh_public_key', 'http_proxy', 'https_proxy', 'no_proxy', 'pull_secret_set',
                'vip_dhcp_allocation', 'validations_info', 'hosts', 'image_info', 'host_networks']
+    output = args.output
+    fields = args.fields.split(',') if args.fields is not None else []
+    values = args.values
     ai = AssistedClient(args.url)
     info = ai.info_cluster(args.cluster).to_dict()
-    for entry in sorted(info):
-        if entry in skipped or info[entry] is None:
-            continue
-        else:
-            print("%s: %s" % (entry, info[entry]))
+    if fields:
+        for key in list(info):
+            if key not in fields:
+                del info[key]
+    for key in list(info):
+        if key in skipped or info[key] is None:
+            del info[key]
+    if output == 'yaml':
+        print(yaml.dump(info, default_flow_style=False, indent=2, allow_unicode=True,
+                        encoding=None).replace("'", '')[:-1])
+    else:
+        for entry in sorted(info):
+            currententry = "%s: %s" % (entry, info[entry]) if not values else info[entry]
+            print(currententry)
 
 
 def delete_host(args):
@@ -290,6 +303,10 @@ def cli():
     clusterinfo_epilog = None
     clusterinfo_parser = info_subparsers.add_parser('cluster', description=clusterinfo_desc, help=clusterinfo_desc,
                                                     epilog=clusterinfo_epilog, formatter_class=rawhelp)
+    clusterinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
+                                    'separated by a comma', metavar='FIELDS')
+    clusterinfo_parser.add_argument('-o', '--output', choices=['plain', 'yaml'], help='Format of the output')
+    clusterinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
     clusterinfo_parser.add_argument('cluster', metavar='CLUSTER')
     clusterinfo_parser.set_defaults(func=info_cluster)
 

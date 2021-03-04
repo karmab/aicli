@@ -26,7 +26,7 @@ class AssistedClient(object):
 
     def set_default_values(self, overrides):
         if 'pull_secret' not in overrides:
-            warning("No pull_secret file path provided as parameter. Using openshift_pull.json")
+            warning("Using openshift_pull.json as pull_secret file")
             overrides['pull_secret'] = "openshift_pull.json"
         pull_secret = os.path.expanduser(overrides['pull_secret'])
         if not os.path.exists(pull_secret):
