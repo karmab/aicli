@@ -148,9 +148,10 @@ def list_hosts(args):
 def create_iso(args):
     success("Creating Iso for Cluster %s" % args.cluster)
     paramfile = choose_parameter_file(args.paramfile)
+    minimal = args.minimal
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url)
-    ai.create_iso(args.cluster, overrides)
+    ai.create_iso(args.cluster, overrides, minimal=minimal)
 
 
 def download_iso(args):
@@ -285,6 +286,7 @@ def cli():
     isocreate_epilog = None
     isocreate_parser = create_subparsers.add_parser('iso', description=isocreate_desc, help=isocreate_desc,
                                                     epilog=isocreate_epilog, formatter_class=rawhelp)
+    isocreate_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
     isocreate_parser.add_argument('-P', '--param', action='append',
                                   help='specify parameter or keyword for rendering (multiple can be specified)',
                                   metavar='PARAM')
