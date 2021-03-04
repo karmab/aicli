@@ -6,7 +6,6 @@ import json
 from prettytable import PrettyTable
 import os
 import sys
-import yaml
 
 
 def get_subparser_print_help(parser, subcommand):
@@ -60,7 +59,6 @@ def delete_cluster(args):
 def info_cluster(args):
     skipped = ['kind', 'href', 'ssh_public_key', 'http_proxy', 'https_proxy', 'no_proxy', 'pull_secret_set',
                'vip_dhcp_allocation', 'validations_info', 'hosts', 'image_info', 'host_networks']
-    output = args.output
     fields = args.fields.split(',') if args.fields is not None else []
     values = args.values
     ai = AssistedClient(args.url)
@@ -72,13 +70,9 @@ def info_cluster(args):
     for key in list(info):
         if key in skipped or info[key] is None:
             del info[key]
-    if output == 'yaml':
-        print(yaml.dump(info, default_flow_style=False, indent=2, allow_unicode=True,
-                        encoding=None).replace("'", '')[:-1])
-    else:
-        for entry in sorted(info):
-            currententry = "%s: %s" % (entry, info[entry]) if not values else info[entry]
-            print(currententry)
+    for entry in sorted(info):
+        currententry = "%s: %s" % (entry, info[entry]) if not values else info[entry]
+        print(currententry)
 
 
 def delete_host(args):
@@ -92,16 +86,23 @@ def delete_host(args):
 def info_host(args):
     skipped = ['kind', 'inventory', 'logs_collected_at', 'href', 'validations_info', 'discovery_agent_version',
                'installer_version', 'progress_stages', 'connectivity']
+    fields = args.fields.split(',') if args.fields is not None else []
+    values = args.values
     ai = AssistedClient(args.url)
     hostinfo = ai.info_host(args.host)
     if hostinfo is None:
         error("Host %s not found" % args.host)
     else:
+        if fields:
+            for key in list(hostinfo):
+                if key not in fields:
+                    del hostinfo[key]
+        for key in list(hostinfo):
+            if key in skipped or hostinfo[key] is None:
+                del hostinfo[key]
         for entry in sorted(hostinfo):
-            if entry in skipped:
-                continue
-            else:
-                print("%s: %s" % (entry, hostinfo[entry]))
+            currententry = "%s: %s" % (entry, hostinfo[entry]) if not values else hostinfo[entry]
+            print(currententry)
 
 
 def list_cluster(args):
@@ -305,7 +306,6 @@ def cli():
                                                     epilog=clusterinfo_epilog, formatter_class=rawhelp)
     clusterinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
                                     'separated by a comma', metavar='FIELDS')
-    clusterinfo_parser.add_argument('-o', '--output', choices=['plain', 'yaml'], help='Format of the output')
     clusterinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
     clusterinfo_parser.add_argument('cluster', metavar='CLUSTER')
     clusterinfo_parser.set_defaults(func=info_cluster)
@@ -415,6 +415,9 @@ def cli():
     hostinfo_epilog = None
     hostinfo_parser = info_subparsers.add_parser('host', description=hostinfo_desc, help=hostinfo_desc,
                                                  epilog=hostinfo_epilog, formatter_class=rawhelp)
+    hostinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
+                                 'separated by a comma', metavar='FIELDS')
+    hostinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
     hostinfo_parser.add_argument('host', metavar='HOST')
     hostinfo_parser.set_defaults(func=info_host)
 
