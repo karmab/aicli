@@ -311,35 +311,25 @@ class AssistedClient(object):
 
     def update_cluster(self, name, overrides):
         cluster_id = self.get_cluster_id(name)
-        cluster_update_params = {}
         if 'api_ip' in overrides:
-            cluster_update_params['api_vip'] = overrides['api_ip']
-        if 'api_vip' in overrides:
-            cluster_update_params['api_vip'] = overrides['api_vip']
+            overrides['api_vip'] = overrides['api_ip']
+            del overrides['api_ip']
         if 'ingress_ip' in overrides:
-            cluster_update_params['ingress_vip'] = overrides['ingress_ip']
-        if 'ingress_vip' in overrides:
-            cluster_update_params['ingress_vip'] = overrides['ingress_vip']
-        if 'domain' in overrides:
-            cluster_update_params['base_dns_domain'] = overrides['domain']
-        if 'base_dns_domain' in overrides:
-            cluster_update_params['base_dns_domain'] = overrides['base_dns_domain']
-        if 'ssh_public_key' in overrides:
-            cluster_update_params['ssh_public_key'] = overrides['ssh_public_key']
+            overrides['ingress_vip'] = overrides['ingress_ip']
+            del overrides['ingress_ip']
         if 'pull_secret' in overrides:
             pull_secret = os.path.expanduser(overrides['pull_secret'])
             if os.path.exists(pull_secret):
-                cluster_update_params['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
-        if 'baremetal_machine_cidr' in overrides:
-            cluster_update_params['machine_network_cidr'] = overrides['baremetal_machine_cidr']
-        if 'machine_network_cidr' in overrides:
-            cluster_update_params['machine_network_cidr'] = overrides['machine_network_cidr']
+                overrides['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
+            else:
+                warning("Using pull_secret as string")
         if 'role' in overrides:
             role = overrides['role']
             hosts_roles = [{"id": host['id'], "role": role} for host in self.client.list_hosts(cluster_id=cluster_id)]
-            cluster_update_params['hosts_roles'] = hosts_roles
-        if cluster_update_params:
-            cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
+            overrides['hosts_roles'] = hosts_roles
+            del overrides['role']
+        if overrides:
+            cluster_update_params = models.ClusterUpdateParams(**overrides)
             self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
 
     def start_cluster(self, name):
