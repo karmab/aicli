@@ -63,7 +63,8 @@ class AssistedClient(object):
         allowed_parameters = ["name", "openshift_version", "base_dns_domain", "cluster_network_cidr",
                               "cluster_network_host_prefix", "service_network_cidr", "ingress_vip", "pull_secret",
                               "ssh_public_key", "vip_dhcp_allocation", "http_proxy", "https_proxy", "no_proxy",
-                              "high_availability_mode"]
+                              "high_availability_mode", "user_managed_networking", "additional_ntp_source",
+                              "olm_operators"]
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
         if existing_ids:
             error("Cluster %s already there. Leaving" % name)
