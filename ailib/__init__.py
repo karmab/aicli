@@ -328,6 +328,9 @@ class AssistedClient(object):
             hosts_roles = [{"id": host['id'], "role": role} for host in self.client.list_hosts(cluster_id=cluster_id)]
             overrides['hosts_roles'] = hosts_roles
             del overrides['role']
+        if 'network_type' in overrides:
+            overrides['networking'] = {'networkType': overrides['network_type']}
+            del overrides['network_type']
         if overrides:
             cluster_update_params = models.ClusterUpdateParams(**overrides)
             self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
