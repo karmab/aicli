@@ -147,7 +147,9 @@ class AssistedClient(object):
                 error("Missing public key file %s" % pub_key)
                 sys.exit(1)
         image_type = "minimal-iso" if minimal else "full-iso"
-        image_create_params = models.ImageCreateParams(ssh_public_key=ssh_public_key, image_type=image_type)
+        static_network_config = overrides.get('static_network_config', [])
+        image_create_params = models.ImageCreateParams(ssh_public_key=ssh_public_key, image_type=image_type,
+                                                       static_network_config=static_network_config)
         self.client.generate_cluster_iso(cluster_id=cluster_id, image_create_params=image_create_params)
         iso_url = "%s/api/assisted-install/v1/clusters/%s/downloads/image" % (self.url, cluster_id)
         info("Iso available at %s" % iso_url)
