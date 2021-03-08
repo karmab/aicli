@@ -1,5 +1,6 @@
 from assisted_service_client import ApiClient, Configuration, api, models
 from ailib.common import warning, error, info
+import json
 import os
 import re
 import sys
@@ -148,6 +149,8 @@ class AssistedClient(object):
                 sys.exit(1)
         image_type = "minimal-iso" if minimal else "full-iso"
         static_network_config = overrides.get('static_network_config', [])
+        if static_network_config:
+            static_network_config = [json.dump(entry) for entry in static_network_config]
         image_create_params = models.ImageCreateParams(ssh_public_key=ssh_public_key, image_type=image_type,
                                                        static_network_config=static_network_config)
         self.client.generate_cluster_iso(cluster_id=cluster_id, image_create_params=image_create_params)
