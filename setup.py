@@ -10,7 +10,7 @@ if os.path.exists('README.rst'):
 
 setup(
     name='aicli',
-    version='99.0',
+    version='99.0.202103111306',
     include_package_data=True,
     packages=find_packages(),
     zip_safe=False,
