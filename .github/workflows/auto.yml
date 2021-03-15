@@ -20,3 +20,8 @@ jobs:
       - name: Run release.sh
         run: ./.github/release.sh
         shell: bash
+        env:
+         QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+         QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+         PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
+         PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
