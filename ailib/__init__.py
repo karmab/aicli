@@ -1,5 +1,6 @@
 from assisted_service_client import ApiClient, Configuration, api, models
 from ailib.common import warning, error, info
+import base64
 import os
 import re
 import sys
@@ -358,3 +359,32 @@ class AssistedClient(object):
     def stop_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         self.client.reset_cluster(cluster_id=cluster_id)
+
+    def upload_manifests(self, name, directory):
+        cluster_id = self.get_cluster_id(name)
+        if not os.path.exists(directory):
+            error("Directory %s not found" % directory)
+            os._exit(1)
+        elif not os.path.isdir(directory):
+            error("%s is not a directory" % directory)
+            os._exit(1)
+        manifests_api = api.ManifestsApi(api_client=self.api)
+        _fics = os.listdir(directory)
+        if not _fics:
+            warning("no files found in directory %s" % directory)
+            os._exit(0)
+        for _fic in _fics:
+            info("uploading manifest %s" % _fic)
+            content = base64.b64encode(open("%s/%s" % (directory, _fic)).read().encode()).decode("UTF-8")
+            manifest_info = {'file_name': _fic, 'content': content}
+            create_manifest_params = models.CreateManifestParams(**manifest_info)
+            manifests_api.create_cluster_manifest(cluster_id, create_manifest_params)
+
+    def list_manifests(self, name):
+        results = []
+        cluster_id = self.get_cluster_id(name)
+        manifests_api = api.ManifestsApi(api_client=self.api)
+        manifests = manifests_api.list_cluster_manifests(cluster_id)
+        for manifest in manifests:
+            results.append({'file_name': manifest['file_name'], 'folder': manifest['folder']})
+        return results

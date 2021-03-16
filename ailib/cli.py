@@ -234,6 +234,26 @@ def stop_cluster(args):
     ai.stop_cluster(args.cluster)
 
 
+def create_manifests(args):
+    info("Uploading manifests for Cluster %s" % args.cluster)
+    directory = args.dir
+    ai = AssistedClient(args.url)
+    ai.upload_manifests(args.cluster, directory=directory)
+
+
+def list_manifests(args):
+    info("Retrieving manifests for Cluster %s" % args.cluster)
+    ai = AssistedClient(args.url)
+    manifests = ai.list_manifests(args.cluster)
+    manifeststable = PrettyTable(["File", "Folder"])
+    for manifest in sorted(manifests, key=lambda x: x['file_name']):
+        filename = manifest['file_name']
+        folder = manifest['folder']
+        entry = [filename, folder]
+        manifeststable.add_row(entry)
+    print(manifeststable)
+
+
 def cli():
     """
 
@@ -299,6 +319,15 @@ def cli():
     isocreate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
     isocreate_parser.add_argument('cluster', metavar='CLUSTER')
     isocreate_parser.set_defaults(func=create_iso)
+
+    manifestscreate_desc = 'Upload manifests to cluster'
+    manifestscreate_epilog = None
+    manifestscreate_parser = create_subparsers.add_parser('manifest', description=manifestscreate_desc,
+                                                          help=manifestscreate_desc, epilog=manifestscreate_epilog,
+                                                          formatter_class=rawhelp, aliases=['manifests'])
+    manifestscreate_parser.add_argument('--dir', '--directory', help='directory with stored manifests', required=True)
+    manifestscreate_parser.add_argument('cluster', metavar='CLUSTER')
+    manifestscreate_parser.set_defaults(func=create_manifests)
 
     clusterdelete_desc = 'Delete Cluster'
     clusterdelete_epilog = None
@@ -446,6 +475,13 @@ def cli():
     hostupdate_parser.add_argument('hostname', metavar='HOSTNAME')
     hostupdate_parser.set_defaults(func=update_host)
     update_subparsers.add_parser('host', parents=[hostupdate_parser], description=hostupdate_desc, help=hostupdate_desc)
+
+    manifestslist_desc = 'List Manifests of a cluster'
+    manifestslist_parser = argparse.ArgumentParser(add_help=False)
+    manifestslist_parser.add_argument('cluster', metavar='CLUSTER')
+    manifestslist_parser.set_defaults(func=list_manifests)
+    list_subparsers.add_parser('manifest', parents=[manifestslist_parser], description=manifestslist_desc,
+                               help=manifestslist_desc, aliases=['manifests'])
 
     if len(sys.argv) == 1:
         parser.print_help()
