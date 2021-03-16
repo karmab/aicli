@@ -27,6 +27,7 @@ curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo https://downlo
 dnf -y install podman
 sed -i "s@SERVICE_BASE_URL=.*@SERVICE_BASE_URL=$AI_URL@" onprem-environment
 sed -i "s/5432,8000,8090,8080/5432:5432 -p 8000:8000 -p 8090:8090 -p 8080:8080/" Makefile
+export AUTH_TYPE=none 
 make deploy-onprem
 {% endif %}
 echo "export AI_URL=$AI_URL" >> /root/.bashrc
