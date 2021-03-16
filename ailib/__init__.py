@@ -149,7 +149,15 @@ class AssistedClient(object):
         image_type = "minimal-iso" if minimal else "full-iso"
         static_network_config = overrides.get('static_network_config', [])
         if static_network_config:
-            static_network_config = [yaml.dump(entry) for entry in static_network_config]
+            final_network_config = []
+            for entry in static_network_config:
+                mac_interface_map = []
+                for interface in entry['interfaces']:
+                    new_nic, new_mac = interface['name'], interface['mac-address']
+                    mac_interface_map.append({"mac_address": new_mac, "logical_nic_name": new_nic})
+                new_entry = {'network_yaml': yaml.dump(entry), 'mac_interface_map': mac_interface_map}
+                final_network_config.append(models.HostStaticNetworkConfig(new_entry))
+            static_network_config = final_network_config
         image_create_params = models.ImageCreateParams(ssh_public_key=ssh_public_key, image_type=image_type,
                                                        static_network_config=static_network_config)
         self.client.generate_cluster_iso(cluster_id=cluster_id, image_create_params=image_create_params)
