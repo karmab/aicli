@@ -1,7 +1,7 @@
 import argparse
 from argparse import RawDescriptionHelpFormatter as rawhelp
 from ailib import AssistedClient
-from ailib.common import get_overrides, info, error, success, get_latest_rhcos_metal, get_commit_rhcos_metal
+from ailib.common import get_overrides, info, error, get_latest_rhcos_metal, get_commit_rhcos_metal
 import json
 from prettytable import PrettyTable
 import os
@@ -43,7 +43,7 @@ def choose_parameter_file(paramfile):
 
 
 def create_cluster(args):
-    success("Creating cluster %s" % args.cluster)
+    info("Creating cluster %s" % args.cluster)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url)
@@ -51,7 +51,7 @@ def create_cluster(args):
 
 
 def delete_cluster(args):
-    success("Deleting cluster %s" % args.cluster)
+    info("Deleting cluster %s" % args.cluster)
     ai = AssistedClient(args.url)
     ai.delete_cluster(args.cluster)
 
@@ -79,7 +79,7 @@ def info_cluster(args):
 
 
 def delete_host(args):
-    success("Updating Host %s" % args.hostname)
+    info("Updating Host %s" % args.hostname)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url)
@@ -152,7 +152,7 @@ def list_hosts(args):
 
 
 def create_iso(args):
-    success("Creating Iso for Cluster %s" % args.cluster)
+    info("Creating Iso for Cluster %s" % args.cluster)
     paramfile = choose_parameter_file(args.paramfile)
     minimal = args.minimal
     overrides = get_overrides(paramfile=paramfile, param=args.param)
@@ -161,26 +161,26 @@ def create_iso(args):
 
 
 def download_iso(args):
-    success("Downloading Iso for Cluster %s in %s" % (args.cluster, args.path))
+    info("Downloading Iso for Cluster %s in %s" % (args.cluster, args.path))
     ai = AssistedClient(args.url)
     ai.download_iso(args.cluster, args.path)
 
 
 def download_kubeadminpassword(args):
-    success("Downloading KubeAdminPassword for Cluster %s in %s/kubeadmin.%s" % (args.cluster, args.path, args.cluster))
+    info("Downloading KubeAdminPassword for Cluster %s in %s/kubeadmin.%s" % (args.cluster, args.path, args.cluster))
     ai = AssistedClient(args.url)
     ai.download_kubeadminpassword(args.cluster, args.path)
 
 
 def download_kubeconfig(args):
-    success("Downloading Kubeconfig for Cluster %s in %s/kubeconfig.%s" % (args.cluster, args.path, args.cluster))
+    info("Downloading Kubeconfig for Cluster %s in %s/kubeconfig.%s" % (args.cluster, args.path, args.cluster))
     ai = AssistedClient(args.url)
     ai.download_kubeconfig(args.cluster, args.path)
 
 
 def download_installconfig(args):
-    success("Downloading Install Config for Cluster %s in %s/install-config.yaml.%s" % (args.cluster, args.path,
-                                                                                        args.cluster))
+    info("Downloading Install Config for Cluster %s in %s/install-config.yaml.%s" % (args.cluster, args.path,
+                                                                                     args.cluster))
     ai = AssistedClient(args.url)
     ai.download_installconfig(args.cluster, args.path)
 
@@ -207,7 +207,7 @@ def download_ignition(args):
 
 
 def update_host(args):
-    success("Updating Host %s" % args.hostname)
+    info("Updating Host %s" % args.hostname)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url)
@@ -215,7 +215,7 @@ def update_host(args):
 
 
 def update_cluster(args):
-    success("Updating Cluster %s" % args.cluster)
+    info("Updating Cluster %s" % args.cluster)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url)
@@ -223,13 +223,13 @@ def update_cluster(args):
 
 
 def start_cluster(args):
-    success("Starting cluster %s" % args.cluster)
+    info("Starting cluster %s" % args.cluster)
     ai = AssistedClient(args.url)
     ai.start_cluster(args.cluster)
 
 
 def stop_cluster(args):
-    success("Stopping cluster %s" % args.cluster)
+    info("Stopping cluster %s" % args.cluster)
     ai = AssistedClient(args.url)
     ai.stop_cluster(args.cluster)
 
