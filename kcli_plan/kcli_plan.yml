@@ -7,7 +7,7 @@ parameters:
      A pull secret can be provided to interact with aicli directly from the installer vm
  disk_size: 80
  numcpus: 8
- memory: 16384
+ memory: 17408
  pool: default
  image: centos8
  method: onprem
