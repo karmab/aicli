@@ -1,6 +1,6 @@
 export HOME=/root
 cd /root
-dnf -y install python3-pip socat make tmux git
+dnf -y install python3-pip socat make tmux git jq
 pip3 install waiting
 git clone https://github.com/openshift/assisted-service
 cd assisted-service
