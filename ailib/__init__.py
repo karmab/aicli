@@ -345,6 +345,10 @@ class AssistedClient(object):
         if 'network_type' in overrides:
             overrides['networking'] = {'networkType': overrides['network_type']}
             del overrides['network_type']
+        if 'sno' in overrides:
+            if overrides['sno']:
+                overrides['high_availability_mode'] = None
+            del overrides['sno']
         if overrides:
             cluster_update_params = models.ClusterUpdateParams(**overrides)
             self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
