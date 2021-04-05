@@ -1,5 +1,5 @@
 from assisted_service_client import ApiClient, Configuration, api, models
-from ailib.common import warning, error, info
+from ailib.common import warning, error, info, get_token
 import base64
 import os
 import re
@@ -16,13 +16,23 @@ default_cluster_params = {"openshift_version": "4.7", "base_dns_domain": "karmal
 
 
 class AssistedClient(object):
-    def __init__(self, url):
+    def __init__(self, url, token=None, offlinetoken=None):
         self.url = url
-        configs = Configuration()
-        configs.host = self.url + "/api/assisted-install/v1"
-        configs.verify_ssl = False
-        # self.set_config_auth(configs)
-        self.api = ApiClient(configuration=configs)
+        config = Configuration()
+        config.host = self.url + "/api/assisted-install/v1"
+        config.verify_ssl = False
+        if url == 'api.openshift.com':
+            if offlinetoken is None:
+                error("offlinetoken needs to be set to gather token for %s" % url)
+                error("get it at https://cloud.redhat.com/openshift/token")
+                sys.exit(1)
+            if os.path.exists('%s/ai_token.txt' % os.environ['HOME']):
+                token = open('%s/ai_token.txt' % os.environ['HOME']).read()
+            token = get_token(token=token, offlinetoken=offlinetoken)
+            config.api_key['Authorization'] = token
+            config.api_key_prefix['Authorization'] = 'Bearer'
+            config.refresh_api_key_hook = None
+        self.api = ApiClient(configuration=config)
         self.client = api.InstallerApi(api_client=self.api)
 
     def set_default_values(self, overrides):

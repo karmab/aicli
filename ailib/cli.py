@@ -46,13 +46,13 @@ def create_cluster(args):
     info("Creating cluster %s" % args.cluster)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.create_cluster(args.cluster, overrides)
 
 
 def delete_cluster(args):
     info("Deleting cluster %s" % args.cluster)
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.delete_cluster(args.cluster)
 
 
@@ -64,7 +64,7 @@ def info_cluster(args):
         skipped = []
     fields = args.fields.split(',') if args.fields is not None else []
     values = args.values
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     info = ai.info_cluster(args.cluster).to_dict()
     if fields:
         for key in list(info):
@@ -82,7 +82,7 @@ def delete_host(args):
     info("Updating Host %s" % args.hostname)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.delete_host(args.hostname, overrides=overrides)
 
 
@@ -94,7 +94,7 @@ def info_host(args):
         skipped = []
     fields = args.fields.split(',') if args.fields is not None else []
     values = args.values
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     hostinfo = ai.info_host(args.host)
     if hostinfo is None:
         error("Host %s not found" % args.host)
@@ -112,7 +112,7 @@ def info_host(args):
 
 
 def list_cluster(args):
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     clusters = ai.list_clusters()
     clusterstable = PrettyTable(["Cluster", "Id", "Status", "Dns Domain"])
     for cluster in sorted(clusters, key=lambda x: x['name']):
@@ -127,7 +127,7 @@ def list_cluster(args):
 
 def list_hosts(args):
     clusterids = {}
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     hosts = ai.list_hosts()
     hoststable = PrettyTable(["Host", "Cluster", "Id", "Status", "Role", "Ip"])
     for host in sorted(hosts, key=lambda x: x['requested_hostname']):
@@ -156,32 +156,32 @@ def create_iso(args):
     paramfile = choose_parameter_file(args.paramfile)
     minimal = args.minimal
     overrides = get_overrides(paramfile=paramfile, param=args.param)
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.create_iso(args.cluster, overrides, minimal=minimal)
 
 
 def download_iso(args):
     info("Downloading Iso for Cluster %s in %s" % (args.cluster, args.path))
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.download_iso(args.cluster, args.path)
 
 
 def download_kubeadminpassword(args):
     info("Downloading KubeAdminPassword for Cluster %s in %s/kubeadmin.%s" % (args.cluster, args.path, args.cluster))
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.download_kubeadminpassword(args.cluster, args.path)
 
 
 def download_kubeconfig(args):
     info("Downloading Kubeconfig for Cluster %s in %s/kubeconfig.%s" % (args.cluster, args.path, args.cluster))
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.download_kubeconfig(args.cluster, args.path)
 
 
 def download_installconfig(args):
     info("Downloading Install Config for Cluster %s in %s/install-config.yaml.%s" % (args.cluster, args.path,
                                                                                      args.cluster))
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.download_installconfig(args.cluster, args.path)
 
 
@@ -201,7 +201,7 @@ def download_metal(args):
 
 
 def download_ignition(args):
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     role = args.role
     ai.download_ignition(args.cluster, args.path, role=role)
 
@@ -210,7 +210,7 @@ def update_host(args):
     info("Updating Host %s" % args.hostname)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.update_host(args.hostname, overrides)
 
 
@@ -218,32 +218,32 @@ def update_cluster(args):
     info("Updating Cluster %s" % args.cluster)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.update_cluster(args.cluster, overrides)
 
 
 def start_cluster(args):
     info("Starting cluster %s" % args.cluster)
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.start_cluster(args.cluster)
 
 
 def stop_cluster(args):
     info("Stopping cluster %s" % args.cluster)
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.stop_cluster(args.cluster)
 
 
 def create_manifests(args):
     info("Uploading manifests for Cluster %s" % args.cluster)
     directory = args.dir
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.upload_manifests(args.cluster, directory=directory)
 
 
 def list_manifests(args):
     info("Retrieving manifests for Cluster %s" % args.cluster)
-    ai = AssistedClient(args.url)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     manifests = ai.list_manifests(args.cluster)
     manifeststable = PrettyTable(["File", "Folder"])
     for manifest in sorted(manifests, key=lambda x: x['file_name']):
@@ -261,6 +261,8 @@ def cli():
     # PARAMETERS_HELP = 'specify parameter or keyword for rendering (multiple can be specified)'
     parser = argparse.ArgumentParser(description='Assisted installer assistant')
     parser.add_argument('-U', '--url', default=os.environ.get('AI_URL'))
+    parser.add_argument('--token', default=os.environ.get('AI_TOKEN'))
+    parser.add_argument('--offlinetoken', default=os.environ.get('AI_OFFLINETOKEN'))
     subparsers = parser.add_subparsers(metavar='', title='Available Commands')
 
     create_desc = 'Create Object'
@@ -502,8 +504,8 @@ def cli():
                 os._exit(0)
         os._exit(0)
     if args.url is None and not ('subcommand_download' in vars(args) and args.subcommand_download == 'metalassets'):
-        error("Specify a valid url with -U flag or set environment variable AI_URL")
-        os._exit(1)
+        args.url = "api.openshift.com"
+        info("Using api.openshift.com as base url")
     args.func(args)
 
 

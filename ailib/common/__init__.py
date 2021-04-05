@@ -1,8 +1,11 @@
 from ast import literal_eval
+from base64 import b64decode
 from urllib.request import urlopen
 import json
 import os
 import yaml
+from time import time
+import requests
 
 
 # colors = {'blue': '36', 'red': '31', 'green': '32', 'yellow': '33', 'pink': '35', 'white': '37'}
@@ -95,3 +98,23 @@ def get_latest_rhcos_metal(url='https://releases-art-rhcos.svc.ci.openshift.org/
             # initrd = "%s/%s/x86_64/rhcos-%s-installer-initramfs.x86_64.img" % (url, build, build)
             metal = "%s/%s/x86_64/rhcos-%s-metal.x86_64.raw.gz" % (url, build, build)
             return metal
+
+
+def get_token(token, offlinetoken=None):
+    url = 'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token'
+    if token is not None:
+        segment = token.split('.')[1]
+        padding = len(segment) % 4
+        segment += padding * '='
+        expires_on = json.loads(b64decode(segment))['exp']
+        remaining = expires_on - time()
+        if expires_on == 0 or remaining > 600:
+            return token
+    data = {"client_id": "cloud-services", "grant_type": "refresh_token", "refresh_token": offlinetoken}
+    response = requests.post(url, data=data)
+    # response.raise_for_status()
+    token = response.json()['access_token']
+    info("Storing new token in %s/ai_token.txt" % os.environ['HOME'])
+    with open("%s/ai_token.txt" % os.environ['HOME'], 'w') as f:
+        f.write(token)
+    return token
