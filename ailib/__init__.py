@@ -52,6 +52,21 @@ class AssistedClient(object):
                 sys.exit(1)
             if 'public_key' in overrides:
                 del overrides['public_key']
+        if 'sno' in overrides:
+            if overrides['sno']:
+                overrides['high_availability_mode'] = None
+            del overrides['sno']
+        if 'olm_operators' in overrides:
+            olm_operators = []
+            for operator in overrides['olm_operators']:
+                if isinstance(operator, str):
+                    olm_operators.append({'name': operator})
+                elif isinstance(operator, dict) and 'name' in operator:
+                    olm_operators.append(operator)
+                else:
+                    error("Invalid entry for olm_operators %s" % operator)
+                    sys.exit(1)
+            overrides['olm_operators'] = olm_operators
 
     def get_cluster_id(self, name):
         matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
