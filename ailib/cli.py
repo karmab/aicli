@@ -504,8 +504,8 @@ def cli():
                 os._exit(0)
         os._exit(0)
     if args.url is None and not ('subcommand_download' in vars(args) and args.subcommand_download == 'metalassets'):
-        args.url = "api.openshift.com"
-        info("Using api.openshift.com as base url")
+        args.url = "https://api.openshift.com"
+        info("Using https://api.openshift.com as base url")
     args.func(args)
 
 

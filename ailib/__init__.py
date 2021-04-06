@@ -21,17 +21,16 @@ class AssistedClient(object):
         config = Configuration()
         config.host = self.url + "/api/assisted-install/v1"
         config.verify_ssl = False
-        if url == 'api.openshift.com':
+        if url == 'https://api.openshift.com':
             if offlinetoken is None:
                 error("offlinetoken needs to be set to gather token for %s" % url)
                 error("get it at https://cloud.redhat.com/openshift/token")
                 sys.exit(1)
             if os.path.exists('%s/ai_token.txt' % os.environ['HOME']):
-                token = open('%s/ai_token.txt' % os.environ['HOME']).read()
+                token = open('%s/ai_token.txt' % os.environ['HOME']).read().strip()
             token = get_token(token=token, offlinetoken=offlinetoken)
             config.api_key['Authorization'] = token
             config.api_key_prefix['Authorization'] = 'Bearer'
-            config.refresh_api_key_hook = None
         self.api = ApiClient(configuration=config)
         self.client = api.InstallerApi(api_client=self.api)
 
