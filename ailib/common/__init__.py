@@ -1,11 +1,13 @@
 from ast import literal_eval
 from base64 import b64decode
 from urllib.request import urlopen
+from urllib.parse import urlencode
 import json
 import os
 import yaml
 from time import time
-import requests
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 # colors = {'blue': '36', 'red': '31', 'green': '32', 'yellow': '33', 'pink': '35', 'white': '37'}
@@ -111,9 +113,10 @@ def get_token(token, offlinetoken=None):
         if expires_on == 0 or remaining > 600:
             return token
     data = {"client_id": "cloud-services", "grant_type": "refresh_token", "refresh_token": offlinetoken}
-    response = requests.post(url, data=data)
-    # response.raise_for_status()
-    token = response.json()['access_token']
+    data = urlencode(data).encode("ascii")
+    result = urlopen(url, data=data).read()
+    page = result.decode("utf8")
+    token = json.loads(page)['access_token']
     info("Storing new token in %s/ai_token.txt" % os.environ['HOME'])
     with open("%s/ai_token.txt" % os.environ['HOME'], 'w') as f:
         f.write(token)
