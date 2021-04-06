@@ -237,8 +237,9 @@ def stop_cluster(args):
 def create_manifests(args):
     info("Uploading manifests for Cluster %s" % args.cluster)
     directory = args.dir
+    openshift = args.openshift
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.upload_manifests(args.cluster, directory=directory)
+    ai.upload_manifests(args.cluster, directory=directory, openshift=openshift)
 
 
 def list_manifests(args):
@@ -328,6 +329,7 @@ def cli():
                                                           help=manifestscreate_desc, epilog=manifestscreate_epilog,
                                                           formatter_class=rawhelp, aliases=['manifests'])
     manifestscreate_parser.add_argument('--dir', '--directory', help='directory with stored manifests', required=True)
+    manifestscreate_parser.add_argument('-o', '--openshift', action='store_true', help='Store in openshift folder')
     manifestscreate_parser.add_argument('cluster', metavar='CLUSTER')
     manifestscreate_parser.set_defaults(func=create_manifests)
 

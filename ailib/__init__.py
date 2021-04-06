@@ -388,7 +388,7 @@ class AssistedClient(object):
         cluster_id = self.get_cluster_id(name)
         self.client.reset_cluster(cluster_id=cluster_id)
 
-    def upload_manifests(self, name, directory):
+    def upload_manifests(self, name, directory, openshift=False):
         cluster_id = self.get_cluster_id(name)
         if not os.path.exists(directory):
             error("Directory %s not found" % directory)
@@ -404,7 +404,8 @@ class AssistedClient(object):
         for _fic in _fics:
             info("uploading manifest %s" % _fic)
             content = base64.b64encode(open("%s/%s" % (directory, _fic)).read().encode()).decode("UTF-8")
-            manifest_info = {'file_name': _fic, 'content': content}
+            folder = 'manifests' if not openshift else 'openshift'
+            manifest_info = {'file_name': _fic, 'content': content, 'folder': folder}
             create_manifest_params = models.CreateManifestParams(**manifest_info)
             manifests_api.create_cluster_manifest(cluster_id, create_manifest_params)
 
