@@ -54,8 +54,10 @@ class AssistedClient(object):
                 del overrides['public_key']
         if 'sno' in overrides:
             if overrides['sno']:
-                overrides['high_availability_mode'] = None
+                overrides['high_availability_mode'] = "None"
             del overrides['sno']
+        if 'high_availability_mode' in overrides and overrides['high_availability_mode'] is None:
+            overrides['high_availability_mode'] = "None"
         if 'olm_operators' in overrides:
             olm_operators = []
             for operator in overrides['olm_operators']:
@@ -370,8 +372,6 @@ class AssistedClient(object):
             overrides['networking'] = {'networkType': overrides['network_type']}
             del overrides['network_type']
         if 'sno' in overrides:
-            if overrides['sno']:
-                overrides['high_availability_mode'] = None
             del overrides['sno']
         if overrides:
             cluster_update_params = models.ClusterUpdateParams(**overrides)
