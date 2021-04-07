@@ -42,7 +42,7 @@ Alternatively, you can set it as an environment variable
 
 For most of the commands, you can pass parameters either on the command line by repeating `-P key=value` or by putting them in a parameter file, in yaml format.
 
-If present, the file  `ai_parameters.yml` is also parsed.
+If present, the file  `aicli_parameters.yml` is also parsed.
 
 ## Using the cli
 
