@@ -35,6 +35,8 @@ class AssistedClient(object):
         self.client = api.InstallerApi(api_client=self.api)
 
     def set_default_values(self, overrides):
+        if 'openshift_version' in overrides and isinstance(overrides['openshift_version'], float):
+            overrides['openshift_version'] = str(overrides['openshift_version'])
         if 'pull_secret' not in overrides:
             warning("Using openshift_pull.json as pull_secret file")
             overrides['pull_secret'] = "openshift_pull.json"
@@ -153,7 +155,7 @@ class AssistedClient(object):
                                                           _preload_content=False)
             data = yaml.safe_load(response.read().decode("utf-8"))
             pull_secret = data.get('pullSecret')
-        cluster_params = {"openshift_version": openshift_version, "api_vip_dnsname": api_name}
+        cluster_params = {"openshift_version": str(openshift_version), "api_vip_dnsname": api_name}
         new_cluster_id = str(uuid4())
         new_name = name + "-day2"
         new_cluster = models.AddHostsClusterCreateParams(name=new_name, id=new_cluster_id, **cluster_params)
