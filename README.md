@@ -127,3 +127,57 @@ aicli create cluster myclu-day2
 # gather the discovery iso and launch hosts as usual then
 aicli start cluster myclu-day2
 ```
+
+## Sample aicli_parameters.yml
+
+```
+openshift_version: 4.8
+sno: true
+pull_secret: my_pull_secret.json
+disconnected_url: testk-disconnecter.ipv6only:5000
+installconfig:
+   additionalTrustBundle: |
+       -----BEGIN CERTIFICATE-----
+       MIIGCzCCA/OgAwIBAgIUYwFxO7EeEDFL52wY1hoNingo3pgwDQYJKoZIhvcNAQEL
+       BQAwgYAxCzAJBgNVBAYTAlVTMQ8wDQYDVQQIDAZNYWRyaWQxFTATBgNVBAcMDFNh
+       biBCZXJuYXJkbzESMBAGA1UECgwJS2FybWFsYWJzMQ8wDQYDVQQLDAZHdWl0YXIx
+       JDAiBgNVBAMMG3Rlc3RrLWRpc2Nvbm5lY3Rlci5pcHY2b25seTAeFw0yMTA0MDgx
+       MDUzNDRaFw0yMjA0MDgxMDUzNDRaMIGAMQswCQYDVQQGEwJVUzEPMA0GA1UECAwG
+       TWFkcmlkMRUwEwYDVQQHDAxTYW4gQmVybmFyZG8xEjAQBgNVBAoMCUthcm1hbGFi
+       czEPMA0GA1UECwwGR3VpdGFyMSQwIgYDVQQDDBt0ZXN0ay1kaXNjb25uZWN0ZXIu
+       aXB2Nm9ubHkwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDVHZNDqBkG
+       e0BAs7SxVQSGzbd8bvNwNPn8pP2IRnjL2Vohz4qi7bqOpxWDI5YIY9MWyRGYAzAZ
+       A/ik8ncDl324/6o8BxbdrB8TPL4+vIpYsNKbKR4i6W138CRa+opL3QjTA6P8YqyG
+       GR/Tcb1jfDSKE6Z2alDFhFWgyexSkmsojwiFZqo5VySeR/miV783aJbgju9xwxw+
+       O4lQt8OxIt8fSW+DYV0Wkt/nrUZUlAiIQMXIq8M+zLgp+SGVuFwLTIawoU97aU0V
+       42AE29fCZFMmb0zSEZG1N8Q+dcur8Vk5O/g+ZGjwBavecYp01D0sdRSUXE2WxaI0
+       iM8dHlTtXRWOIGrTHEG1AtTqnKFELMTE0d9WeHXW/5cFBL2F8M37iH8uw1MANVFC
+       0UjAwJsHaoZgGYJ+gHsurlARSKx5G+SCopnvmEM8rleCjqT0yXwBs7YVhfDQOB6U
+       ap+af+Dq1YpXLmbIm4tVYIOe+kohsx0x0mMGq3b48yUIG6QkMAJ++yjdJVVBX2EQ
+       6NmEWDkTJIQSXG9o5XgrznICZR3zmLgbMuemoncpDRXymWZ4O7Dv2F11vLOAWg/c
+       vfhuCMZF5s3ZSVExgCv84L98OzLmdPSljNoyUTOcM95MkXAcenJ0sucmO2D3RXq9
+       UM80PpiRYcDwVH8qtvlQ0j+nd6PbzZ7y9QIDAQABo3sweTAdBgNVHQ4EFgQUDLhV
+       vXxGQXm4xJ4ZW/pk+83ZgqYwHwYDVR0jBBgwFoAUDLhVvXxGQXm4xJ4ZW/pk+83Z
+       gqYwDwYDVR0TAQH/BAUwAwEB/zAmBgNVHREEHzAdght0ZXN0ay1kaXNjb25uZWN0
+       ZXIuaXB2Nm9ubHkwDQYJKoZIhvcNAQELBQADggIBAMw6LJFimWzXRdByw2bWZoul
+       jRToZoOZdf9YddRQdxg08mllVKTBoDZ0gb8+TF3/PMGnF5Oi6+Gxm1dsNDFv+Qdt
+       7zm3zWEqKP+u3g+35alNkQgMfgDV21OVQjYwVS5BijAWuQM6exRZYs1I++19YvLW
+       NCaLuUqVxMdQUnl00+4cgOT2P5lBt1vkL4SFiR2Hy92NrhAfsbnacJN+MY77luei
+       rxfUC9qLzU+7Wl5SgnxEkalDRMYWp9u8KuhWS5yeli158gdgLBeqfJr8EWksTG2m
+       vK6w9zKcFwhYTcq7NgZJPECOg7DnjbvwDP7VdqrO2UMvHrf31ziXW1O5bzWnkqxF
+       0q8mdjiJJi1tQK/Vxb9lS64P4bbFBlVo9sEES4JnfY3pKs0s/hdzrdSJJHbSt/lG
+       aqHNpx+kHsWgC8/athDOqo66S97u39vumdWheUWPsx8sitZ9MvA6tOGbnIPvm/hB
+       +Gfpn1pUCk2rYuMY40qiAgpJsi56wfA6j2s1aX7sDp4pIgaslfoxyxXvbcpAhhQo
+       hizMMC0XdZhlUj9df4PQdPPrckha/9rrYf1GjIO4tqPPxdqPACNhR9UwDd8qJarp
+       Ig5BBu37RdjCR7JGSF/2QisMmyKoTnyD9P+lFKTgGfsbbxrp7XdeLYY7xaFRzkuZ
+       gAedh+jkW6mjkMIu5RUU
+       -----END CERTIFICATE-----
+   imageContentSources:
+   - mirrors:
+     - testk-disconnecter.ipv6only:5000/ocp4
+     source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
+   - mirrors:
+     - testk-disconnecter.ipv6only:5000/ocp4
+     source: registry.ci.openshift.org/ocp-release
+```
+

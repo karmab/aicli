@@ -1,6 +1,7 @@
 from assisted_service_client import ApiClient, Configuration, api, models
 from ailib.common import warning, error, info, get_token
 import base64
+import json
 import os
 import re
 import sys
@@ -419,3 +420,46 @@ class AssistedClient(object):
         for manifest in manifests:
             results.append({'file_name': manifest['file_name'], 'folder': manifest['folder']})
         return results
+
+    def patch_installconfig(self, name, overrides={}):
+        cluster_id = self.get_cluster_id(name)
+        installconfig = overrides.get('installconfig')
+        if installconfig is None:
+            error("installconfig is not set")
+            os._exit(1)
+        if not isinstance(installconfig, dict):
+            error("installconfig is not in correct format")
+            os._exit(1)
+        self.client.update_cluster_install_config(cluster_id, json.dumps(installconfig))
+
+    def patch_iso(self, name, overrides={}):
+        cluster_id = self.get_cluster_id(name)
+        discovery_ignition = {}
+        ailibdir = os.path.dirname(warning.__code__.co_filename)
+        disconnected_url = overrides.get('disconnected_url')
+        if disconnected_url is None:
+            error("disconnected_url is not set")
+            os._exit(1)
+        else:
+            ca = overrides.get('disconnected_ca')
+            if ca is None:
+                if 'installconfig' in overrides and isinstance(overrides['installconfig'], dict)\
+                        and 'additionalTrustBundle' in overrides['installconfig']:
+                    info("using cert from installconfig/additionalTrustBundle")
+                    ca = overrides['installconfig']['additionalTrustBundle']
+                else:
+                    error("disconnected_ca is not set")
+                    os._exit(1)
+        with open("%s/registries.conf.templ" % ailibdir) as f:
+            data = f.read()
+            registries = data % {'url': disconnected_url}
+        registries_encoded = base64.b64encode(registries.encode()).decode("UTF-8")
+        ca_encoded = base64.b64encode(ca.encode()).decode("UTF-8")
+        fil1 = {"path": "/etc/containers/registries.conf", "mode": 420, "overwrite": True, "user": {"name": "root"},
+                "contents": {"source": "data:text/plain;base64,%s" % registries_encoded}}
+        fil2 = {"path": "/etc/pki/ca-trust/source/anchors/domain.crt", "mode": 420, "overwrite": True,
+                "user": {"name": "root"}, "contents": {"source": "data:text/plain;base64,%s" % ca_encoded}}
+        discovery_ignition = {"config": json.dumps({"ignition": {"version": "3.2.0"},
+                                                    "storage": {"files": [fil1, fil2]}})}
+        discovery_ignition_params = models.DiscoveryIgnitionParams(**discovery_ignition)
+        self.client.update_discovery_ignition(cluster_id, discovery_ignition_params)

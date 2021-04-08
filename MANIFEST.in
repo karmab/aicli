@@ -1,0 +1,2 @@
+# recursive-include ailib *
+include ailib/common/registries.conf.templ

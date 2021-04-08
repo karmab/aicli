@@ -1,0 +1,33 @@
+unqualified-search-registries = ["registry.access.redhat.com", "docker.io"]
+
+[[registry]]
+   prefix = ""
+   location = "quay.io/ocpmetal"
+   mirror-by-digest-only = false
+
+   [[registry.mirror]]
+   location = "%(url)s/ocpmetal"
+
+[[registry]]
+   prefix = ""
+   location = "quay.io/openshift-release-dev/ocp-release"
+   mirror-by-digest-only = true
+
+   [[registry.mirror]]
+   location = "%(url)s/ocp4"
+
+[[registry]]
+   prefix = ""
+   location = "quay.io/openshift-release-dev/ocp-v4.0-art-dev"
+   mirror-by-digest-only = true
+
+   [[registry.mirror]]
+   location = "%(url)s/ocp4"
+
+[[registry]]
+   prefix = ""
+   location = "registry.ci.openshift.org/ocp/release"
+   mirror-by-digest-only = true
+
+   [[registry.mirror]]
+   location = "%(url)s/ocp4"

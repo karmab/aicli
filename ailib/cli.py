@@ -7,6 +7,8 @@ from prettytable import PrettyTable
 import os
 import sys
 
+PARAMHELP = "specify parameter or keyword for rendering (multiple can be specified)"
+
 
 def get_subparser_print_help(parser, subcommand):
     subparsers_actions = [
@@ -255,6 +257,22 @@ def list_manifests(args):
     print(manifeststable)
 
 
+def patch_installconfig(args):
+    info("Patching installconfig in %s" % args.cluster)
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.patch_installconfig(args.cluster, overrides)
+
+
+def patch_iso(args):
+    info("Patching iso in %s" % args.cluster)
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.patch_iso(args.cluster, overrides)
+
+
 def cli():
     """
 
@@ -287,9 +305,9 @@ def cli():
     list_parser = subparsers.add_parser('list', description=list_desc, help=list_desc, aliases=['get'])
     list_subparsers = list_parser.add_subparsers(metavar='', dest='subcommand_list')
 
-    update_desc = 'Update Object'
-    update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc)
-    update_subparsers = update_parser.add_subparsers(metavar='', dest='subcommand_update')
+    patch_desc = 'Patch Object'
+    patch_parser = subparsers.add_parser('patch', description=patch_desc, help=patch_desc)
+    patch_subparsers = patch_parser.add_subparsers(metavar='', dest='subcommand_patch')
 
     start_desc = 'Start Object'
     start_parser = subparsers.add_parser('start', description=start_desc, help=start_desc, aliases=['launch'])
@@ -299,14 +317,16 @@ def cli():
     stop_parser = subparsers.add_parser('stop', description=stop_desc, help=stop_desc, aliases=['reset'])
     stop_subparsers = stop_parser.add_subparsers(metavar='', dest='subcommand_stop')
 
+    update_desc = 'Update Object'
+    update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc)
+    update_subparsers = update_parser.add_subparsers(metavar='', dest='subcommand_update')
+
     clustercreate_desc = 'Create Cluster'
     clustercreate_epilog = None
     clustercreate_parser = create_subparsers.add_parser('cluster', description=clustercreate_desc,
                                                         help=clustercreate_desc,
                                                         epilog=clustercreate_epilog, formatter_class=rawhelp)
-    clustercreate_parser.add_argument('-P', '--param', action='append',
-                                      help='specify parameter or keyword for rendering (multiple can be specified)',
-                                      metavar='PARAM')
+    clustercreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     clustercreate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
     clustercreate_parser.add_argument('cluster', metavar='CLUSTER')
     clustercreate_parser.set_defaults(func=create_cluster)
@@ -316,9 +336,7 @@ def cli():
     isocreate_parser = create_subparsers.add_parser('iso', description=isocreate_desc, help=isocreate_desc,
                                                     epilog=isocreate_epilog, formatter_class=rawhelp)
     isocreate_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
-    isocreate_parser.add_argument('-P', '--param', action='append',
-                                  help='specify parameter or keyword for rendering (multiple can be specified)',
-                                  metavar='PARAM')
+    isocreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     isocreate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
     isocreate_parser.add_argument('cluster', metavar='CLUSTER')
     isocreate_parser.set_defaults(func=create_iso)
@@ -354,9 +372,7 @@ def cli():
 
     clusterupdate_desc = 'Update Cluster'
     clusterupdate_parser = argparse.ArgumentParser(add_help=False)
-    clusterupdate_parser.add_argument('-P', '--param', action='append',
-                                      help='specify parameter or keyword for rendering (multiple can be specified)',
-                                      metavar='PARAM')
+    clusterupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     clusterupdate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
     clusterupdate_parser.add_argument('cluster', metavar='CLUSTER')
     clusterupdate_parser.set_defaults(func=update_cluster)
@@ -445,9 +461,7 @@ def cli():
 
     hostdelete_desc = 'Delete host'
     hostdelete_parser = argparse.ArgumentParser(add_help=False)
-    hostdelete_parser.add_argument('-P', '--param', action='append',
-                                   help='specify parameter or keyword for rendering (multiple can be specified)',
-                                   metavar='PARAM')
+    hostdelete_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     hostdelete_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
     hostdelete_parser.add_argument('hostname', metavar='HOSTNAME')
     hostdelete_parser.set_defaults(func=delete_host)
@@ -472,9 +486,7 @@ def cli():
 
     hostupdate_desc = 'Update Host name and role'
     hostupdate_parser = argparse.ArgumentParser(add_help=False)
-    hostupdate_parser.add_argument('-P', '--param', action='append',
-                                   help='specify parameter or keyword for rendering (multiple can be specified)',
-                                   metavar='PARAM')
+    hostupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     hostupdate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
     hostupdate_parser.add_argument('hostname', metavar='HOSTNAME')
     hostupdate_parser.set_defaults(func=update_host)
@@ -486,6 +498,23 @@ def cli():
     manifestslist_parser.set_defaults(func=list_manifests)
     list_subparsers.add_parser('manifest', parents=[manifestslist_parser], description=manifestslist_desc,
                                help=manifestslist_desc, aliases=['manifests'])
+
+    isopatch_desc = 'Patch Iso'
+    isopatch_parser = argparse.ArgumentParser(add_help=False)
+    isopatch_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    isopatch_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
+    isopatch_parser.add_argument('cluster', metavar='CLUSTER')
+    isopatch_parser.set_defaults(func=patch_iso)
+    patch_subparsers.add_parser('iso', parents=[isopatch_parser], description=isopatch_desc, help=isopatch_desc)
+
+    installconfigpatch_desc = 'Patch Installconfig'
+    installconfigpatch_parser = argparse.ArgumentParser(add_help=False)
+    installconfigpatch_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    installconfigpatch_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
+    installconfigpatch_parser.add_argument('cluster', metavar='CLUSTER')
+    installconfigpatch_parser.set_defaults(func=patch_installconfig)
+    patch_subparsers.add_parser('installconfig', parents=[installconfigpatch_parser],
+                                description=installconfigpatch_desc, help=installconfigpatch_desc)
 
     if len(sys.argv) == 1:
         parser.print_help()
