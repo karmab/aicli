@@ -372,7 +372,8 @@ class AssistedClient(object):
             overrides['hosts_roles'] = hosts_roles
             del overrides['role']
         if 'network_type' in overrides:
-            overrides['networking'] = {'networkType': overrides['network_type']}
+            installconfig = {'networking': {'networkType': overrides['network_type']}}
+            self.client.update_cluster_install_config(cluster_id, json.dumps(installconfig))
             del overrides['network_type']
         if 'sno' in overrides:
             del overrides['sno']
@@ -423,13 +424,16 @@ class AssistedClient(object):
 
     def patch_installconfig(self, name, overrides={}):
         cluster_id = self.get_cluster_id(name)
-        installconfig = overrides.get('installconfig')
-        if installconfig is None:
-            error("installconfig is not set")
-            os._exit(1)
-        if not isinstance(installconfig, dict):
-            error("installconfig is not in correct format")
-            os._exit(1)
+        if 'network_type' in overrides:
+            installconfig = {'networking': {'networkType': overrides['network_type']}}
+        else:
+            installconfig = overrides.get('installconfig')
+            if installconfig is None:
+                error("installconfig is not set")
+                os._exit(1)
+            if not isinstance(installconfig, dict):
+                error("installconfig is not in correct format")
+                os._exit(1)
         self.client.update_cluster_install_config(cluster_id, json.dumps(installconfig))
 
     def patch_iso(self, name, overrides={}):
