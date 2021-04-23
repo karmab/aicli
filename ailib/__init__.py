@@ -371,10 +371,18 @@ class AssistedClient(object):
             hosts_roles = [{"id": host['id'], "role": role} for host in self.client.list_hosts(cluster_id=cluster_id)]
             overrides['hosts_roles'] = hosts_roles
             del overrides['role']
-        if 'network_type' in overrides:
-            installconfig = {'networking': {'networkType': overrides['network_type']}}
+        if 'network_type' in overrides or 'sno_disk' in overrides:
+            installconfig = {}
+            if 'network_type' in overrides:
+                installconfig['networking'] = {'networkType': overrides['network_type']}
+                del overrides['network_type']
+            if 'sno_disk' in overrides:
+                sno_disk = overrides['sno_disk']
+                if '/dev' not in sno_disk:
+                    sno_disk = '/dev/%s' % sno_disk
+                installconfig['BootstrapInPlace'] = {'InstallationDisk': sno_disk}
+                del overrides['sno_disk']
             self.client.update_cluster_install_config(cluster_id, json.dumps(installconfig))
-            del overrides['network_type']
         if 'sno' in overrides:
             del overrides['sno']
         if overrides:
@@ -424,8 +432,14 @@ class AssistedClient(object):
 
     def patch_installconfig(self, name, overrides={}):
         cluster_id = self.get_cluster_id(name)
+        installconfig = {}
         if 'network_type' in overrides:
-            installconfig = {'networking': {'networkType': overrides['network_type']}}
+            installconfig['networking'] = {'networkType': overrides['network_type']}
+        elif 'sno_disk' in overrides:
+            sno_disk = overrides['sno_disk']
+            if '/dev' not in sno_disk:
+                sno_disk = '/dev/%s' % sno_disk
+            installconfig['BootstrapInPlace'] = {'InstallationDisk': sno_disk}
         else:
             installconfig = overrides.get('installconfig')
             if installconfig is None:
