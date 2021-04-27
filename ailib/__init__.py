@@ -15,6 +15,8 @@ from uuid import uuid4
 #                          "service_network_cidr": "string", "vip_dhcp_allocation": False}
 default_cluster_params = {"openshift_version": "4.7", "base_dns_domain": "karmalabs.com", "vip_dhcp_allocation": False}
 
+IGNITION_VERSIONS = {'4.6': '3.1.0', '4.7': '3.2.0', '4.8': '3.2.0', '4.9': '3.2.0'}
+
 
 class AssistedClient(object):
     def __init__(self, url, token=None, offlinetoken=None):
@@ -452,6 +454,8 @@ class AssistedClient(object):
 
     def patch_iso(self, name, overrides={}):
         cluster_id = self.get_cluster_id(name)
+        openshift_version = str(self.info_cluster(name)['openshift_version'])
+        ignition_version = IGNITION_VERSIONS.get(openshift_version, '3.2.0')
         discovery_ignition = {}
         ailibdir = os.path.dirname(warning.__code__.co_filename)
         disconnected_url = overrides.get('disconnected_url')
@@ -477,7 +481,7 @@ class AssistedClient(object):
                 "contents": {"source": "data:text/plain;base64,%s" % registries_encoded}}
         fil2 = {"path": "/etc/pki/ca-trust/source/anchors/domain.crt", "mode": 420, "overwrite": True,
                 "user": {"name": "root"}, "contents": {"source": "data:text/plain;base64,%s" % ca_encoded}}
-        discovery_ignition = {"config": json.dumps({"ignition": {"version": "3.2.0"},
+        discovery_ignition = {"config": json.dumps({"ignition": {"version": ignition_version},
                                                     "storage": {"files": [fil1, fil2]}})}
         discovery_ignition_params = models.DiscoveryIgnitionParams(**discovery_ignition)
         self.client.update_discovery_ignition(cluster_id, discovery_ignition_params)
