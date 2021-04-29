@@ -435,13 +435,14 @@ class AssistedClient(object):
     def patch_installconfig(self, name, overrides={}):
         cluster_id = self.get_cluster_id(name)
         installconfig = {}
-        if 'network_type' in overrides:
-            installconfig['networking'] = {'networkType': overrides['network_type']}
-        elif 'sno_disk' in overrides:
-            sno_disk = overrides['sno_disk']
-            if '/dev' not in sno_disk:
-                sno_disk = '/dev/%s' % sno_disk
-            installconfig['BootstrapInPlace'] = {'InstallationDisk': sno_disk}
+        if 'network_type' in overrides or 'sno_disk' in overrides:
+            if 'network_type' in overrides:
+                installconfig['networking'] = {'networkType': overrides['network_type']}
+            if 'sno_disk' in overrides:
+                sno_disk = overrides['sno_disk']
+                if '/dev' not in sno_disk:
+                    sno_disk = '/dev/%s' % sno_disk
+                installconfig['BootstrapInPlace'] = {'InstallationDisk': sno_disk}
         else:
             installconfig = overrides.get('installconfig')
             if installconfig is None:
