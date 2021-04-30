@@ -455,7 +455,7 @@ class AssistedClient(object):
 
     def patch_iso(self, name, overrides={}):
         cluster_id = self.get_cluster_id(name)
-        openshift_version = str(self.info_cluster(name)['openshift_version'])
+        openshift_version = str(self.info_cluster(name).to_dict()['openshift_version'])
         ignition_version = IGNITION_VERSIONS.get(openshift_version, '3.2.0')
         discovery_ignition = {}
         ailibdir = os.path.dirname(warning.__code__.co_filename)
