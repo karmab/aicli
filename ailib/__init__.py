@@ -486,3 +486,15 @@ class AssistedClient(object):
                                                     "storage": {"files": [fil1, fil2]}})}
         discovery_ignition_params = models.DiscoveryIgnitionParams(**discovery_ignition)
         self.client.update_discovery_ignition(cluster_id, discovery_ignition_params)
+
+    def info_service(self):
+        versionapi = api.VersionsApi(api_client=self.api)
+        supported_versions = versionapi.list_supported_openshift_versions()
+        print("supported openshift versions:")
+        for version in supported_versions:
+            print(version)
+        operatorsapi = api.OperatorsApi(api_client=self.api)
+        supported_operators = operatorsapi.list_supported_operators()
+        print("supported operators:")
+        for operator in sorted(supported_operators):
+            print(operator)

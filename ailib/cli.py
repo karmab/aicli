@@ -273,6 +273,12 @@ def patch_iso(args):
     ai.patch_iso(args.cluster, overrides)
 
 
+def info_service(args):
+    info("Retrieving information on service")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.info_service()
+
+
 def cli():
     """
 
@@ -515,6 +521,12 @@ def cli():
     installconfigpatch_parser.set_defaults(func=patch_installconfig)
     patch_subparsers.add_parser('installconfig', parents=[installconfigpatch_parser],
                                 description=installconfigpatch_desc, help=installconfigpatch_desc)
+
+    serviceinfo_desc = 'Info Service'
+    serviceinfo_epilog = None
+    serviceinfo_parser = info_subparsers.add_parser('service', description=serviceinfo_desc, help=serviceinfo_desc,
+                                                    epilog=serviceinfo_epilog, formatter_class=rawhelp)
+    serviceinfo_parser.set_defaults(func=info_service)
 
     if len(sys.argv) == 1:
         parser.print_help()
