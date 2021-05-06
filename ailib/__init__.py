@@ -13,7 +13,7 @@ from uuid import uuid4
 # default_cluster_params = {"openshift_version": "4.6", "base_dns_domain": "karmalabs.com",
 #                          "cluster_network_cidr": "string", "cluster_network_host_prefix": 24,
 #                          "service_network_cidr": "string", "vip_dhcp_allocation": False}
-default_cluster_params = {"openshift_version": "4.7", "base_dns_domain": "karmalabs.com", "vip_dhcp_allocation": False}
+default_cluster_params = {"openshift_version": "4.8", "base_dns_domain": "karmalabs.com", "vip_dhcp_allocation": False}
 
 IGNITION_VERSIONS = {'4.6': '3.1.0', '4.7': '3.2.0', '4.8': '3.2.0', '4.9': '3.2.0'}
 
