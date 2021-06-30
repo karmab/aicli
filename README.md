@@ -13,11 +13,21 @@ Available features:
 
 ## Cli
 
-Install the cli with
+Install the package with
 
 ```
-python3 setup.py install
+pip3 install aicli
 ```
+
+### Container mode
+
+```
+alias aicli='docker run --net host -it --rm -e AI_OFFLINETOKEN=$AI_OFFLINETOKEN -v $HOME/.aicli:/root/.aicli -v $PWD:/workdir quay.io/karmab/aicli'
+```
+
+Where AI_OFFLINETOKEN is an environment variable used to access public saas. This token can be retrieved at [https://cloud.redhat.com/openshift/token](https://cloud.redhat.com/openshift/token)
+
+With onprem mode, you can instead use `-e AI_URL=$AI_URL`
 
 ## Assisted installer Plan
 

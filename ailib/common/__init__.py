@@ -103,6 +103,7 @@ def get_latest_rhcos_metal(url='https://releases-art-rhcos.svc.ci.openshift.org/
 
 
 def get_token(token, offlinetoken=None):
+    aihome = "%s/.aicli" % os.environ['HOME']
     url = 'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token'
     if token is not None:
         segment = token.split('.')[1]
@@ -117,7 +118,7 @@ def get_token(token, offlinetoken=None):
     result = urlopen(url, data=data).read()
     page = result.decode("utf8")
     token = json.loads(page)['access_token']
-    info("Storing new token in %s/ai_token.txt" % os.environ['HOME'])
-    with open("%s/ai_token.txt" % os.environ['HOME'], 'w') as f:
+    info("Storing new token in %s/token.txt" % aihome)
+    with open("%s/token.txt" % aihome, 'w') as f:
         f.write(token)
     return token

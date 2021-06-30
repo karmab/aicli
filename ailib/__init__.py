@@ -24,13 +24,18 @@ class AssistedClient(object):
         config = Configuration()
         config.host = self.url + "/api/assisted-install/v1"
         config.verify_ssl = False
+        aihome = "%s/.aicli" % os.environ['HOME']
+        if not os.path.exists(aihome):
+            os.mkdir(aihome)
         if url == 'https://api.openshift.com':
             if offlinetoken is None:
                 error("offlinetoken needs to be set to gather token for %s" % url)
                 error("get it at https://cloud.redhat.com/openshift/token")
+                if os.path.exists('/i_am_a_container'):
+                    error("use -e AI_OFFLINETOKEN=$AI_OFFLINETOKEN to expose it in container mode")
                 sys.exit(1)
-            if os.path.exists('%s/ai_token.txt' % os.environ['HOME']):
-                token = open('%s/ai_token.txt' % os.environ['HOME']).read().strip()
+            if os.path.exists('%s/token.txt' % aihome):
+                token = open('%s/token.txt' % aihome).read().strip()
             token = get_token(token=token, offlinetoken=offlinetoken)
             config.api_key['Authorization'] = token
             config.api_key_prefix['Authorization'] = 'Bearer'
