@@ -22,12 +22,13 @@ class AssistedClient(object):
     def __init__(self, url, token=None, offlinetoken=None):
         self.url = url
         config = Configuration()
-        config.host = self.url + "/api/assisted-install/v1"
+        config.host = self.url + "/api/assisted-install"
         config.verify_ssl = False
         aihome = "%s/.aicli" % os.environ['HOME']
         if not os.path.exists(aihome):
             os.mkdir(aihome)
         if url == 'https://api.openshift.com':
+            config.host += "/v1"
             if offlinetoken is None:
                 error("offlinetoken needs to be set to gather token for %s" % url)
                 error("get it at https://cloud.redhat.com/openshift/token")
