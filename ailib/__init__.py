@@ -28,7 +28,6 @@ class AssistedClient(object):
         if not os.path.exists(aihome):
             os.mkdir(aihome)
         if url == 'https://api.openshift.com':
-            config.host += "/v1"
             if offlinetoken is None:
                 error("offlinetoken needs to be set to gather token for %s" % url)
                 error("get it at https://cloud.redhat.com/openshift/token")
