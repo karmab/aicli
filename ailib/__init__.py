@@ -418,10 +418,13 @@ class AssistedClient(object):
         manifests_api = api.ManifestsApi(api_client=self.api)
         _fics = os.listdir(directory)
         if not _fics:
-            warning("no files found in directory %s" % directory)
+            error("No files found in directory %s" % directory)
             os._exit(0)
         for _fic in _fics:
-            info("uploading manifest %s" % _fic)
+            if not _fic.endswith('.yml') and not _fic.endswith('.yaml'):
+                warning("skipping file %s" % _fic)
+                continue
+            info("uploading file %s" % _fic)
             content = base64.b64encode(open("%s/%s" % (directory, _fic)).read().encode()).decode("UTF-8")
             folder = 'manifests' if not openshift else 'openshift'
             manifest_info = {'file_name': _fic, 'content': content, 'folder': folder}
