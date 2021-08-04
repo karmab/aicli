@@ -1,23 +1,24 @@
-name: CI-Workflow
+name: CI
 
-# Run this workflow every time a new commit pushed to your repository
-on: push
+on: [push, pull_request]
 
 jobs:
-  ci-workflow:
+  run-workflow:
     name: CI workflow
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v2
       - uses: actions/setup-python@v2
-      - name: Run lint script
+      - name: Lint Code
         run: ./.github/linting.sh
         shell: bash
-      - name: Run build script
+      - name: Build Container
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: ./.github/build.sh
         shell: bash
-      - name: Run release.sh
+      - name: Push container
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: ./.github/release.sh
         shell: bash
         env:
