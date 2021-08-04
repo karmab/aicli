@@ -30,9 +30,9 @@ class AssistedClient(object):
             proxy = proxies.get('https')
             if not re.match("^https?://", proxies.get('https')):
                 if re.match("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$", proxies.get('https')):
-                   # Potential room for improvement here if ipv6 proxy is provided
-                   proxy = "http://" + proxy 
-                   warning("Detected proxy env var without scheme (" + proxies.get('https') + "), updating proxy to " + proxy)
+                    # Potential room for improvement here if ipv6 proxy is provided
+                    proxy = "http://" + proxy 
+                    warning("Detected proxy env var without scheme (" + proxies.get('https') + "), updating proxy to " + proxy)
                 else:
                     error("non valid https_proxy env var detected (" + proxies.get('https') + ")")
                     sys.exit(1)
