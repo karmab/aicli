@@ -99,7 +99,7 @@ class AssistedClient(object):
             return matching_ids[0]
         else:
             error("Cluster %s not found" % name)
-            os._exit(1)
+            sys.exit(1)
 
     def get_cluster_name(self, _id):
         matching_names = [x['name'] for x in self.list_clusters() if x['id'] == _id]
@@ -107,7 +107,7 @@ class AssistedClient(object):
             return matching_names[0]
         else:
             error("Cluster %s not found" % _id)
-            os._exit(1)
+            sys.exit(1)
 
     def create_cluster(self, name, overrides={}):
         allowed_parameters = ["name", "openshift_version", "base_dns_domain", "cluster_network_cidr",
@@ -424,15 +424,15 @@ class AssistedClient(object):
         cluster_id = self.get_cluster_id(name)
         if not os.path.exists(directory):
             error("Directory %s not found" % directory)
-            os._exit(1)
+            sys.exit(1)
         elif not os.path.isdir(directory):
             error("%s is not a directory" % directory)
-            os._exit(1)
+            sys.exit(1)
         manifests_api = api.ManifestsApi(api_client=self.api)
         _fics = os.listdir(directory)
         if not _fics:
             error("No files found in directory %s" % directory)
-            os._exit(0)
+            sys.exit(0)
         for _fic in _fics:
             if not _fic.endswith('.yml') and not _fic.endswith('.yaml'):
                 warning("skipping file %s" % _fic)
@@ -468,10 +468,10 @@ class AssistedClient(object):
             installconfig = overrides.get('installconfig')
             if installconfig is None:
                 error("installconfig is not set")
-                os._exit(1)
+                sys.exit(1)
             if not isinstance(installconfig, dict):
                 error("installconfig is not in correct format")
-                os._exit(1)
+                sys.exit(1)
         self.client.update_cluster_install_config(cluster_id, json.dumps(installconfig))
 
     def patch_iso(self, name, overrides={}):
@@ -483,7 +483,7 @@ class AssistedClient(object):
         disconnected_url = overrides.get('disconnected_url')
         if disconnected_url is None:
             error("disconnected_url is not set")
-            os._exit(1)
+            sys.exit(1)
         else:
             ca = overrides.get('disconnected_ca')
             if ca is None:
@@ -493,7 +493,7 @@ class AssistedClient(object):
                     ca = overrides['installconfig']['additionalTrustBundle']
                 else:
                     error("disconnected_ca is not set")
-                    os._exit(1)
+                    sys.exit(1)
         with open("%s/registries.conf.templ" % ailibdir) as f:
             data = f.read()
             registries = data % {'url': disconnected_url}
