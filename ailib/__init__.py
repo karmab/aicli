@@ -26,16 +26,11 @@ class AssistedClient(object):
         config.host = self.url + "/api/assisted-install"
         config.verify_ssl = False
         proxies = urllib.request.getproxies()
-        if 'http' or 'https' in proxies:
-            proxy = proxies.get('https', proxies.get('http'))
-            if not re.match("^https?://", proxy):
-                if re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$", proxy):
-                    # Potential room for improvement here if ipv6 proxy is provided
-                    proxy = "http://" + proxy
-                    warning("Detected proxy env var without scheme, updating proxy to %s" % proxy)
-                else:
-                    error("non valid https_proxy env var detected (%s)" % proxy)
-                    sys.exit(1)
+        if proxies:
+            proxy = proxies.get('https') or proxies.get('http')
+            if 'http' not in proxy:
+                proxy = "http://" + proxy
+                warning("Detected proxy env var without scheme, updating proxy to %s" % proxy)
             config.proxy = proxy
         aihome = "%s/.aicli" % os.environ['HOME']
         if not os.path.exists(aihome):
