@@ -33,7 +33,7 @@ def get_subparser(parser, subcommand):
 
 def choose_parameter_file(paramfile):
     if os.path.exists("/i_am_a_container"):
-        if paramfile is not None:
+        if paramfile is not None and not os.path.isabs(paramfile):
             paramfile = "/workdir/%s" % paramfile
         elif os.path.exists("/workdir/aicli_parameters.yml"):
             paramfile = "/workdir/aicli_parameters.yml"
