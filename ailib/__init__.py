@@ -87,6 +87,15 @@ class AssistedClient(object):
                     error("Invalid entry for olm_operators %s" % operator)
                     sys.exit(1)
             overrides['olm_operators'] = olm_operators
+        if 'tpm' in overrides and overrides['tpm']:
+            overrides['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2"}
+            del overrides['tpm']
+        if 'tang_servers' in overrides:
+            tang_servers = overrides['tang_servers']
+            if isinstance(tang_servers, list):
+                tang_servers = ','.join(tang_servers)
+            overrides['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2", "tang_servers": tang_servers}
+            del overrides['tang_servers']
 
     def get_cluster_id(self, name):
         matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
@@ -109,7 +118,8 @@ class AssistedClient(object):
                               "cluster_network_host_prefix", "service_network_cidr", "ingress_vip", "pull_secret",
                               "ssh_public_key", "vip_dhcp_allocation", "http_proxy", "https_proxy", "no_proxy",
                               "high_availability_mode", "user_managed_networking", "additional_ntp_source",
-                              "olm_operators"]
+                              "olm_operators", "disk_encryption", "schedulable_masters", "hyperthreading",
+                              "ocp_release_image"]
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
         if existing_ids:
             error("Cluster %s already there. Leaving" % name)
@@ -397,9 +407,20 @@ class AssistedClient(object):
                     sno_disk = '/dev/%s' % sno_disk
                 installconfig['BootstrapInPlace'] = {'InstallationDisk': sno_disk}
                 del overrides['sno_disk']
+            if 'tpm' in overrides and overrides['tpm']:
+                installconfig['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2"}
+            if 'tang_servers' in overrides:
+                tang_servers = overrides['tang_servers']
+                if isinstance(tang_servers, list):
+                    tang_servers = ','.join(tang_servers)
+                installconfig['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2", "tang_servers": tang_servers}
             self.client.update_cluster_install_config(cluster_id, json.dumps(installconfig))
         if 'sno' in overrides:
             del overrides['sno']
+        if 'tpm' in overrides:
+            del overrides['tpm']
+        if 'tang_servers' in overrides:
+            del overrides['tang_servers']
         if overrides:
             cluster_update_params = models.ClusterUpdateParams(**overrides)
             self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
