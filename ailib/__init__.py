@@ -421,6 +421,8 @@ class AssistedClient(object):
             del overrides['tpm']
         if 'tang_servers' in overrides:
             del overrides['tang_servers']
+        if 'static_network_config' in overrides:
+            del overrides['static_network_config']
         if overrides:
             cluster_update_params = models.ClusterUpdateParams(**overrides)
             self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
