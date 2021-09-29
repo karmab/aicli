@@ -204,6 +204,8 @@ class AssistedClient(object):
         image_type = "minimal-iso" if minimal else "full-iso"
         static_network_config = overrides.get('static_network_config', [])
         if static_network_config:
+            if isinstance(static_network_config, dict):
+                static_network_config = [static_network_config]
             final_network_config = []
             for entry in static_network_config:
                 mac_interface_map = []
