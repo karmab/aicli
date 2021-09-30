@@ -50,7 +50,14 @@ class AssistedClient(object):
                     f.write(offlinetoken)
             if os.path.exists('%s/token.txt' % aihome):
                 token = open('%s/token.txt' % aihome).read().strip()
-            token = get_token(token=token, offlinetoken=offlinetoken)
+            try:
+                token = get_token(token=token, offlinetoken=offlinetoken)
+            except:
+                error("Hit issues when trying to set token")
+                if os.path.exists('%s/offlinetoken.txt' % aihome):
+                    error("Removing offlinetoken file")
+                    os.remove('%s/offlinetoken.txt' % aihome)
+                sys.exit(1)
             config.api_key['Authorization'] = token
             config.api_key_prefix['Authorization'] = 'Bearer'
         self.api = ApiClient(configuration=config)
