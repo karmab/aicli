@@ -223,7 +223,7 @@ class AssistedClient(object):
             for entry in static_network_config:
                 mac_interface_map = []
                 for interface in entry['interfaces']:
-                    if not 'bond' in interface['name']:                    
+                    if 'bond' not in interface['name']:
                         logical_nic_name, mac_address = interface['name'], interface['mac-address']
                         mac_interface_map.append({"mac_address": mac_address, "logical_nic_name": logical_nic_name})
                 new_entry = {'network_yaml': yaml.dump(entry), 'mac_interface_map': mac_interface_map}
