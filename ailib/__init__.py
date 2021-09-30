@@ -37,11 +37,17 @@ class AssistedClient(object):
             os.mkdir(aihome)
         if url == 'https://api.openshift.com':
             if offlinetoken is None:
-                error("offlinetoken needs to be set to gather token for %s" % url)
-                error("get it at https://cloud.redhat.com/openshift/token")
-                if os.path.exists('/i_am_a_container'):
-                    error("use -e AI_OFFLINETOKEN=$AI_OFFLINETOKEN to expose it in container mode")
-                sys.exit(1)
+                if os.path.exists('%s/offlinetoken.txt' % aihome):
+                    offlinetoken = open('%s/offlinetoken.txt' % aihome).read().strip()
+                else:
+                    error("offlinetoken needs to be set to gather token for %s" % url)
+                    error("get it at https://cloud.redhat.com/openshift/token")
+                    if os.path.exists('/i_am_a_container'):
+                        error("use -e AI_OFFLINETOKEN=$AI_OFFLINETOKEN to expose it in container mode")
+                    sys.exit(1)
+            if not os.path.exists('%s/offlinetoken.txt' % aihome):
+                with open('%s/offlinetoken.txt' % aihome, 'w') as f:
+                    f.write(offlinetoken)
             if os.path.exists('%s/token.txt' % aihome):
                 token = open('%s/token.txt' % aihome).read().strip()
             token = get_token(token=token, offlinetoken=offlinetoken)
