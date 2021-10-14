@@ -166,7 +166,7 @@ class AssistedClient(object):
                               "ssh_public_key", "vip_dhcp_allocation", "http_proxy", "https_proxy", "no_proxy",
                               "high_availability_mode", "user_managed_networking", "additional_ntp_source",
                               "disk_encryption", "schedulable_masters", "hyperthreading",
-                              "ocp_release_image"]
+                              "ocp_release_image", "api_vip", "ingress_vip"]
         cluster_id = self.get_cluster_id(name)
         alldata = self.client.get_cluster(cluster_id=cluster_id).to_dict()
         data = {}
