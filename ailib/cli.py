@@ -58,6 +58,12 @@ def delete_cluster(args):
     ai.delete_cluster(args.cluster)
 
 
+def export_cluster(args):
+    info("Exporting cluster %s" % args.cluster)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.export_cluster(args.cluster)
+
+
 def info_cluster(args):
     if not args.full:
         skipped = ['kind', 'href', 'ssh_public_key', 'http_proxy', 'https_proxy', 'no_proxy', 'pull_secret_set',
@@ -285,6 +291,7 @@ def cli():
     """
     # PARAMETERS_HELP = 'specify parameter or keyword for rendering (multiple can be specified)'
     parser = argparse.ArgumentParser(description='Assisted installer assistant')
+    parser.add_argument('--stage', action='store_true')
     parser.add_argument('-U', '--url', default=os.environ.get('AI_URL'))
     parser.add_argument('--token', default=os.environ.get('AI_TOKEN'))
     parser.add_argument('--offlinetoken', default=os.environ.get('AI_OFFLINETOKEN'))
@@ -302,6 +309,10 @@ def cli():
     download_desc = 'Download Assets like Iso'
     download_parser = subparsers.add_parser('download', description=download_desc, help=download_desc)
     download_subparsers = download_parser.add_subparsers(metavar='', dest='subcommand_download')
+
+    export_desc = 'Export Object'
+    export_parser = subparsers.add_parser('export', description=export_desc, help=export_desc)
+    export_subparsers = export_parser.add_subparsers(metavar='', dest='subcommand_export')
 
     info_desc = 'Info Object'
     info_parser = subparsers.add_parser('info', description=info_desc, help=info_desc)
@@ -459,6 +470,13 @@ def cli():
                                    description=metaldownload_desc,
                                    help=metaldownload_desc)
 
+    clusterexport_desc = 'Export Clusters'
+    clusterexport_parser = argparse.ArgumentParser(add_help=False)
+    clusterexport_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterexport_parser.set_defaults(func=export_cluster)
+    export_subparsers.add_parser('cluster', parents=[clusterexport_parser], description=clusterexport_desc,
+                                 help=clusterexport_desc, aliases=['clusters'])
+
     clusterlist_desc = 'List Clusters'
     clusterlist_parser = argparse.ArgumentParser(add_help=False)
     clusterlist_parser.set_defaults(func=list_cluster)
@@ -546,9 +564,10 @@ def cli():
                     get_subparser_print_help(subparser, subsubcommand)
                 os._exit(0)
         os._exit(0)
-    if args.url is None and not ('subcommand_download' in vars(args) and args.subcommand_download == 'metalassets'):
-        args.url = "https://api.openshift.com"
-        info("Using https://api.openshift.com as base url")
+    if args.url is not None:
+        info("Using %s as base url" % args.url)
+    elif not ('subcommand_download' in vars(args) and args.subcommand_download == 'metalassets'):
+        args.url = "https://api.openshift.com" if not args.stage else "https://api.stage.openshift.com"
     args.func(args)
 
 

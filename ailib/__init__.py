@@ -35,7 +35,7 @@ class AssistedClient(object):
         aihome = "%s/.aicli" % os.environ['HOME']
         if not os.path.exists(aihome):
             os.mkdir(aihome)
-        if url == 'https://api.openshift.com':
+        if url in ['https://api.openshift.com', 'https://api.stage.openshift.com']:
             if offlinetoken is None:
                 if os.path.exists('%s/offlinetoken.txt' % aihome):
                     offlinetoken = open('%s/offlinetoken.txt' % aihome).read().strip()
@@ -159,6 +159,23 @@ class AssistedClient(object):
     def info_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         return self.client.get_cluster(cluster_id=cluster_id)
+
+    def export_cluster(self, name):
+        allowed_parameters = ["name", "openshift_version", "base_dns_domain", "cluster_network_cidr",
+                              "cluster_network_host_prefix", "service_network_cidr", "ingress_vip",
+                              "ssh_public_key", "vip_dhcp_allocation", "http_proxy", "https_proxy", "no_proxy",
+                              "high_availability_mode", "user_managed_networking", "additional_ntp_source",
+                              "disk_encryption", "schedulable_masters", "hyperthreading",
+                              "ocp_release_image"]
+        cluster_id = self.get_cluster_id(name)
+        alldata = self.client.get_cluster(cluster_id=cluster_id).to_dict()
+        data = {}
+        for k in allowed_parameters:
+            if k in alldata and alldata[k] is not None:
+                data[k] = alldata[k]
+            if k == 'disk_encryption' and alldata[k]['enable_on'] is None:
+                del data[k]
+        print(yaml.dump(data, default_flow_style=False, indent=2))
 
     def create_day2_cluster(self, name, overrides={}):
         name = name.replace('-day2', '')
