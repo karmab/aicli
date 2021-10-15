@@ -19,6 +19,12 @@ Install the package with
 pip3 install aicli
 ```
 
+To upgrade it later on
+
+```
+pip3 install -U --upgrade-strategy eager aicli
+```
+
 ### Container mode
 
 ```
