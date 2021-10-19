@@ -22,7 +22,7 @@ pip3 install aicli
 To upgrade it later on
 
 ```
-pip3 install -U --upgrade-strategy eager aicli
+pip3 install -U aicli assisted-service-client
 ```
 
 ### Container mode
