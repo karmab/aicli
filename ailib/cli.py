@@ -96,7 +96,7 @@ def delete_host(args):
 
 def info_host(args):
     if not args.full:
-        skipped = ['kind', 'inventory', 'logs_collected_at', 'href', 'validations_info', 'discovery_agent_version',
+        skipped = ['kind', 'logs_collected_at', 'href', 'validations_info', 'discovery_agent_version',
                    'installer_version', 'progress_stages', 'connectivity']
     else:
         skipped = []
