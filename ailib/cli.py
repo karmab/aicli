@@ -96,8 +96,10 @@ def delete_host(args):
 
 def info_host(args):
     if not args.full:
-        skipped = ['kind', 'inventory', 'logs_collected_at', 'href', 'validations_info', 'discovery_agent_version',
+        skipped = ['kind', 'logs_collected_at', 'href', 'validations_info', 'discovery_agent_version',
                    'installer_version', 'progress_stages', 'connectivity']
+        if not args.inventory:
+            skipped.append('inventory')
     else:
         skipped = []
     fields = args.fields.split(',') if args.fields is not None else []
@@ -495,6 +497,7 @@ def cli():
     hostinfo_epilog = None
     hostinfo_parser = info_subparsers.add_parser('host', description=hostinfo_desc, help=hostinfo_desc,
                                                  epilog=hostinfo_epilog, formatter_class=rawhelp)
+    hostinfo_parser.add_argument('-i', '--inventory', action='store_true', help='Report host inventory')
     hostinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
                                  'separated by a comma', metavar='FIELDS')
     hostinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
