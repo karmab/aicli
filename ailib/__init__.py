@@ -111,7 +111,7 @@ class AssistedClient(object):
             del overrides['tang_servers']
 
     def get_cluster_id(self, name):
-        matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
+        matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name or x['id'] == name]
         if matching_ids:
             return matching_ids[0]
         else:
