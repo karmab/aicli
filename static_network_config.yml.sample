@@ -1,0 +1,29 @@
+static_network_config:
+- interfaces:
+    - name: ens3
+      type: ethernet
+      state: up
+      ethernet:
+        auto-negotiation: true
+        duplex: full
+        speed: 1000
+      ipv4:
+        address:
+        - ip: 192.168.125.50
+          prefix-length: 24
+        enabled: true
+      mtu: 1500
+      mac-address: de:ad:bb:ef:00:25
+  dns-resolver:
+    config:
+      server:
+      - 192.168.125.1
+  routes:
+    config:
+    - destination: 192.168.125.0/24
+      next-hop-address: 192.168.125.1
+      next-hop-interface: ens3
+    - destination: 0.0.0.0/0
+      next-hop-address: 192.168.125.1
+      next-hop-interface: ens3
+      table-id: 254
