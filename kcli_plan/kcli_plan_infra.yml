@@ -1,0 +1,12 @@
+{% for num in range(0, nodes) %}
+{{ cluster }}-node-{{ num }}:
+ pool: {{ pool }}
+ numcpus: {{ nodes_numcpus }}
+ start: {{ start }}
+ iso: cluster + ".iso"
+ memory: {{ nodes_memory }}
+ nets:
+  - name: {{ network }}
+ disks:
+  - size: {{ nodes_disks_size }}
+{% endfor %}

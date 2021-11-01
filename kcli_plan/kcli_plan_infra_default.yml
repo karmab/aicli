@@ -1,0 +1,11 @@
+numcpus: 8
+pool: default
+image: centos8
+network: default
+notify: true
+start: false
+nodes: 3
+nodes_numcpus: 8
+nodes_memory: 16384
+nodes_disks_size: 120
+cluster: testk

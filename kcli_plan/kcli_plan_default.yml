@@ -1,0 +1,25 @@
+info: |
+    This plan deploys assisted installer engine and api in a vm, with an optional number of vm nodes. Furthermore, aicli gets deployed
+    The method for deployment can either be onprem, openshift or minikube.
+    Minikube gets deployed with docker
+    Openshift requires a kubeconfig file to be specified
+    A pull secret can be provided to interact with aicli directly from the installer vm
+baseplan: kcli_plan_infra.yml
+disk_size: 80
+numcpus: 8
+memory: 17408
+pool: default
+image: centos8
+method: onprem
+network: default
+notify: true
+playbook: false
+racadm: false
+iso:
+keys: []
+cluster: testk
+api_ip: 192.168.122.253
+ingress_ip: 192.168.122.252
+domain: karmalabs.com
+kubeconfig: kubeconfig
+pullsecret: openshift_pull.json

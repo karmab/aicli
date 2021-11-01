@@ -16,19 +16,10 @@
  - origin: {{ pullsecret }}
    path: /root/openshift_pull.json
 {% endif %}
-{% if method == 'openshift' %}
- - origin: {{ kubeconfig }}
-   path: /root/kubeconfig
-{% endif %}
  cmds:
- - ssh-keygen -t rsa -N '' -f /root/.ssh/id_rsa
- - sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
- - setenforce 0
+ - dnf -y install python3-pip
+ - pip3 install aicli
  scripts:
-{% if method == "minikube" %}
- - minikube.sh
-{% endif %}
- - install.sh
- - aicli.sh
+ - deploy_cluster.sh
  notify: {{ notify }}
  notifyscript: notify.sh
