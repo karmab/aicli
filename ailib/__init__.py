@@ -86,6 +86,7 @@ class AssistedClient(object):
         if 'sno' in overrides:
             if overrides['sno']:
                 overrides['high_availability_mode'] = "None"
+                overrides['user_managed_networking'] = True
             del overrides['sno']
         if 'high_availability_mode' in overrides and overrides['high_availability_mode'] is None:
             overrides['high_availability_mode'] = "None"
