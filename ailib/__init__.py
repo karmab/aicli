@@ -460,6 +460,9 @@ class AssistedClient(object):
             del overrides['tang_servers']
         if 'static_network_config' in overrides:
             del overrides['static_network_config']
+        for key in ['openshift_version', 'sshKey']:
+            if key in overrides:
+                del overrides[key]
         if overrides:
             cluster_update_params = models.ClusterUpdateParams(**overrides)
             self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
