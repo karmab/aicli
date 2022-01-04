@@ -7,6 +7,7 @@ import re
 import sys
 import yaml
 import urllib
+from urllib.request import urlretrieve
 from shutil import copyfileobj
 from uuid import uuid4
 
@@ -15,8 +16,9 @@ from uuid import uuid4
 #                          "cluster_network_cidr": "string", "cluster_network_host_prefix": 24,
 #                          "service_network_cidr": "string", "vip_dhcp_allocation": False}
 default_cluster_params = {"openshift_version": "4.9", "base_dns_domain": "karmalabs.com", "vip_dhcp_allocation": False}
+default_infraenv_params = {"openshift_version": "4.9", "image_type": "full-iso"}
 
-IGNITION_VERSIONS = {'4.6': '3.1.0', '4.7': '3.2.0', '4.8': '3.2.0', '4.9': '3.2.0'}
+IGNITION_VERSIONS = {'4.6': '3.1.0', '4.7': '3.2.0', '4.8': '3.2.0', '4.9': '3.2.0', '4.10': '3.3.0'}
 
 
 class AssistedClient(object):
@@ -111,6 +113,31 @@ class AssistedClient(object):
             overrides['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2", "tang_servers": tang_servers}
             del overrides['tang_servers']
 
+    def set_default_infraenv_values(self, overrides):
+        if 'cluster' in overrides:
+            cluster_id = self.get_cluster_id(overrides['cluster'])
+            overrides['cluster_id'] = cluster_id
+            del overrides['cluster']
+        if 'minimal' in overrides:
+            image_type = "minimal-iso" if overrides['minimal'] else 'full-iso'
+            overrides['image_type'] = image_type
+            del overrides['minimal']
+        static_network_config = overrides.get('static_network_config', [])
+        if static_network_config:
+            if isinstance(static_network_config, dict):
+                static_network_config = [static_network_config]
+            final_network_config = []
+            for entry in static_network_config:
+                mac_interface_map = []
+                for interface in entry['interfaces']:
+                    if 'bond' not in interface['name']:
+                        logical_nic_name, mac_address = interface['name'], interface['mac-address']
+                        mac_interface_map.append({"mac_address": mac_address, "logical_nic_name": logical_nic_name})
+                new_entry = {'network_yaml': yaml.dump(entry), 'mac_interface_map': mac_interface_map}
+                final_network_config.append(models.HostStaticNetworkConfig(**new_entry))
+            static_network_config = final_network_config
+            overrides['static_network_config'] = static_network_config
+
     def get_cluster_id(self, name):
         matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name or x['id'] == name]
         if matching_ids:
@@ -138,7 +165,7 @@ class AssistedClient(object):
         if existing_ids:
             error("Cluster %s already there. Leaving" % name)
             sys.exit(1)
-        if '-day2' in name:
+        if '-day2' in name or (overrides.get('day2', False) and overrides.get('cluster') is not None):
             self.create_day2_cluster(name, overrides)
             return
         self.set_default_values(overrides)
@@ -148,18 +175,18 @@ class AssistedClient(object):
             if parameter in allowed_parameters:
                 new_cluster_params[parameter] = overrides[parameter]
         cluster_params = models.ClusterCreateParams(**new_cluster_params)
-        self.client.register_cluster(new_cluster_params=cluster_params)
+        self.client.v2_register_cluster(new_cluster_params=cluster_params)
 
     def delete_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
-        self.client.deregister_cluster(cluster_id=cluster_id)
+        self.client.v2_deregister_cluster(cluster_id=cluster_id)
         day2_matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name + '-day2']
         if day2_matching_ids:
-            self.client.deregister_cluster(cluster_id=day2_matching_ids[0])
+            self.client.v2_deregister_cluster(cluster_id=day2_matching_ids[0])
 
     def info_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
-        return self.client.get_cluster(cluster_id=cluster_id)
+        return self.client.v2_get_cluster(cluster_id=cluster_id)
 
     def export_cluster(self, name):
         allowed_parameters = ["name", "openshift_version", "base_dns_domain", "cluster_network_cidr",
@@ -169,7 +196,7 @@ class AssistedClient(object):
                               "disk_encryption", "schedulable_masters", "hyperthreading",
                               "ocp_release_image", "api_vip", "ingress_vip"]
         cluster_id = self.get_cluster_id(name)
-        alldata = self.client.get_cluster(cluster_id=cluster_id).to_dict()
+        alldata = self.client.v2_get_cluster(cluster_id=cluster_id).to_dict()
         data = {}
         for k in allowed_parameters:
             if k in alldata and alldata[k] is not None:
@@ -179,10 +206,13 @@ class AssistedClient(object):
         print(yaml.dump(data, default_flow_style=False, indent=2))
 
     def create_day2_cluster(self, name, overrides={}):
-        name = name.replace('-day2', '')
-        existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
+        if overrides.get('day2', False) and overrides.get('cluster') is not None:
+            cluster_name = overrides.get('cluster')
+        else:
+            cluster_name = name.replace('-day2', '')
+        existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == cluster_name]
         if not existing_ids:
-            warning("Base Cluster %s not found. Populating with default values" % name)
+            warning("Base Cluster %s not found. Populating with default values" % cluster_name)
             if 'version' in overrides:
                 openshift_version = overrides['version']
             elif 'openshift_version' in overrides:
@@ -199,217 +229,196 @@ class AssistedClient(object):
                 domain = default_cluster_params["base_dns_domain"]
                 warning("No base_dns_domain provided.Using %s" % domain)
             overrides['base_dns_domain'] = domain
-            api_name = "api." + name + "." + domain
+            api_name = "api." + cluster_name + "." + domain
             self.set_default_values(overrides)
             pull_secret, ssh_public_key = overrides['pull_secret'], overrides['ssh_public_key']
         else:
-            cluster_id = self.get_cluster_id(name)
-            cluster = self.client.get_cluster(cluster_id=cluster_id)
+            cluster_id = self.get_cluster_id(cluster_name)
+            cluster = self.client.v2_get_cluster(cluster_id=cluster_id)
             openshift_version = cluster.openshift_version
             ssh_public_key = cluster.image_info.ssh_public_key
-            api_name = "api." + name + "." + cluster.base_dns_domain
-            response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
-                                                          _preload_content=False)
+            api_name = "api." + cluster_name + "." + cluster.base_dns_domain
+            response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
+                                                             _preload_content=False)
             data = yaml.safe_load(response.read().decode("utf-8"))
             pull_secret = data.get('pullSecret')
         cluster_params = {"openshift_version": str(openshift_version), "api_vip_dnsname": api_name}
         new_cluster_id = str(uuid4())
-        new_name = name + "-day2"
-        new_cluster = models.AddHostsClusterCreateParams(name=new_name, id=new_cluster_id, **cluster_params)
+        new_cluster = models.AddHostsClusterCreateParams(name=name, id=new_cluster_id, **cluster_params)
         self.client.register_add_hosts_cluster(new_add_hosts_cluster_params=new_cluster)
         cluster_update_params = {'pull_secret': pull_secret, 'ssh_public_key': ssh_public_key}
         cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
-        self.client.update_cluster(cluster_id=new_cluster_id, cluster_update_params=cluster_update_params)
+        self.client.v2_update_cluster(cluster_id=new_cluster_id, cluster_update_params=cluster_update_params)
 
-    def create_iso(self, name, overrides, minimal=False):
-        cluster_id = self.get_cluster_id(name)
-        if 'ssh_public_key' in overrides:
-            ssh_public_key = overrides['ssh_public_key']
-        else:
-            pub_key = overrides.get('pub_key', '%s/.ssh/id_rsa.pub' % os.environ['HOME'])
-            if os.path.exists(pub_key):
-                ssh_public_key = open(pub_key).read().strip()
-            else:
-                error("Missing public key file %s" % pub_key)
-                sys.exit(1)
-        image_type = "minimal-iso" if minimal else "full-iso"
-        static_network_config = overrides.get('static_network_config', [])
-        if static_network_config:
-            if isinstance(static_network_config, dict):
-                static_network_config = [static_network_config]
-            final_network_config = []
-            for entry in static_network_config:
-                mac_interface_map = []
-                for interface in entry['interfaces']:
-                    if 'bond' not in interface['name']:
-                        logical_nic_name, mac_address = interface['name'], interface['mac-address']
-                        mac_interface_map.append({"mac_address": mac_address, "logical_nic_name": logical_nic_name})
-                new_entry = {'network_yaml': yaml.dump(entry), 'mac_interface_map': mac_interface_map}
-                final_network_config.append(models.HostStaticNetworkConfig(**new_entry))
-            static_network_config = final_network_config
-        image_create_params = models.ImageCreateParams(ssh_public_key=ssh_public_key, image_type=image_type,
-                                                       static_network_config=static_network_config)
-        self.client.generate_cluster_iso(cluster_id=cluster_id, image_create_params=image_create_params)
-        iso_url = "%s/api/assisted-install/v1/clusters/%s/downloads/image" % (self.url, cluster_id)
-        info("Iso available at %s" % iso_url)
+    def info_iso(self, name, overrides, minimal=False):
+        infra_env = self.info_infra_env(name).to_dict()
+        iso_url = infra_env['download_url']
+        info(iso_url)
 
     def download_iso(self, name, path):
-        cluster_id = self.get_cluster_id(name)
-        response = self.client.download_cluster_iso(cluster_id=cluster_id, _preload_content=False)
-        with open("%s/%s.iso" % (path, name), "wb") as f:
-            copyfileobj(response, f)
+        infra_env = self.info_infra_env(name).to_dict()
+        iso_url = infra_env['download_url']
+        urlretrieve(iso_url, "%s/%s.iso" % (path, name))
+
+    def download_initrd(self, name, path):
+        print("not implemented")
+        return
+        infra_env_id = self.get_infra_env_id(name)
+        response = self.client.download_minimal_initrd(infra_env_id=infra_env_id, _preload_content=False)
+        with open("%s/initrd.%s" % (path, name), "wb") as f:
+            for line in response:
+                f.write(line)
 
     def download_installconfig(self, name, path):
         cluster_id = self.get_cluster_id(name)
-        response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
-                                                      _preload_content=False)
+        response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
+                                                         _preload_content=False)
         with open("%s/install-config.yaml.%s" % (path, name), "wb") as f:
             copyfileobj(response, f)
 
     def download_kubeadminpassword(self, name, path):
         cluster_id = self.get_cluster_id(name)
-        response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="kubeadmin-password",
-                                                      _preload_content=False)
+        response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id, file_name="kubeadmin-password",
+                                                               _preload_content=False)
         with open("%s/kubeadmin-password.%s" % (path, name), "wb") as f:
             copyfileobj(response, f)
 
     def download_kubeconfig(self, name, path):
         cluster_id = self.get_cluster_id(name)
-        response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="kubeconfig-noingress",
-                                                      _preload_content=False)
+        response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id, file_name="kubeconfig-noingress",
+                                                               _preload_content=False)
         with open("%s/kubeconfig.%s" % (path, name), "wb") as f:
+            copyfileobj(response, f)
+
+    def download_discovery_ignition(self, name, path):
+        infra_env_id = self.get_infra_env_id(name)
+        response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="discovery.ign",
+                                                           _preload_content=False)
+        with open("%s/discovery.ign.%s" % (path, name), "wb") as f:
             copyfileobj(response, f)
 
     def download_ignition(self, name, path, role='bootstrap'):
         cluster_id = self.get_cluster_id(name)
-        response = self.client.download_cluster_files(cluster_id=cluster_id, file_name="%s.ign" % role,
-                                                      _preload_content=False)
+        response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name="%s.ign" % role,
+                                                         _preload_content=False)
         with open("%s/%s.ign.%s" % (path, role, name), "wb") as f:
             copyfileobj(response, f)
 
     def list_clusters(self):
-        return self.client.list_clusters()
+        return self.client.v2_list_clusters()
 
     def list_hosts(self):
         allhosts = []
-        for cluster in self.client.list_clusters():
-            cluster_id = cluster['id']
-            hosts = self.client.list_hosts(cluster_id=cluster_id)
+        for infra_env in self.client.list_infra_envs():
+            infra_env_id = infra_env['id']
+            hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
             allhosts.extend(hosts)
         return allhosts
 
     def delete_host(self, hostname, overrides={}):
-        clusters = {}
-        if 'cluster' in overrides:
-            cluster = overrides['cluster']
-            cluster_id = self.get_cluster_id(cluster)
-            hosts = self.client.list_hosts(cluster_id=cluster_id)
+        infra_envs = {}
+        if 'infraenv' in overrides:
+            infraenv = overrides['infraenv']
+            infra_env_id = self.get_infra_env_id(infraenv)
+            hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
             matchingids = [host['id'] for host in hosts
                            if host['requested_hostname'] == hostname or host['id'] == hostname]
         else:
-            for cluster in self.client.list_clusters():
-                cluster_id = cluster['id']
-                hosts = self.client.list_hosts(cluster_id=cluster_id)
+            for infra_env in self.client.list_infra_envs():
+                infra_env_id = infra_env['id']
+                hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
                 matchingids = [host['id'] for host in hosts
                                if host['requested_hostname'] == hostname or host['id'] == hostname]
                 if matchingids:
-                    clusters[cluster_id] = matchingids
-        if not clusters:
+                    infra_envs[infra_env_id] = matchingids
+        if not infra_envs:
             error("No Matching Host with name %s found" % hostname)
-        for cluster_id in clusters:
-            hostids = clusters[cluster_id]
-            for host_id in hostids:
-                info("Deleting Host with id %s in cluster %s" % (host_id, cluster_id))
-                self.client.deregister_host(cluster_id, host_id)
+        for infra_env_id in infra_envs:
+            host_ids = infra_envs[infra_env_id]
+            for host_id in host_ids:
+                info("Deleting Host with id %s in infraenv %s" % (host_id, infra_env_id))
+                self.client.v2_deregister_host(infra_env_id, host_id)
 
     def info_host(self, hostname):
         hostinfo = None
-        for cluster in self.client.list_clusters():
-            cluster_id = cluster['id']
-            cluster_hosts = self.client.list_hosts(cluster_id=cluster_id)
-            hosts = [h for h in cluster_hosts if h['requested_hostname'] == hostname or h['id'] == hostname]
+        for infra_env in self.client.list_infra_envs():
+            infra_env_id = infra_env['id']
+            infra_env_hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+            hosts = [h for h in infra_env_hosts if h['requested_hostname'] == hostname or h['id'] == hostname]
             if hosts:
                 hostinfo = hosts[0]
                 break
         return hostinfo
 
     def update_host(self, hostname, overrides):
-        clusters = {}
-        if 'cluster' in overrides:
-            cluster = overrides['cluster']
-            cluster_id = self.get_cluster_id(cluster)
-            hosts = self.client.list_hosts(cluster_id=cluster_id)
+        infra_envs = {}
+        if 'infraenv' in overrides:
+            infra_env = overrides['infraenv']
+            infra_env_id = self.get_infra_env_id(infra_env)
+            hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
             matchingids = [host['id'] for host in hosts
                            if host['requested_hostname'] == hostname or host['id'] == hostname]
         else:
-            for cluster in self.client.list_clusters():
-                cluster_id = cluster['id']
-                hosts = self.client.list_hosts(cluster_id=cluster_id)
+            for infra_env in self.client.list_infra_envs():
+                infra_env_id = infra_env['id']
+                hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
                 matchingids = [host['id'] for host in hosts
                                if host['requested_hostname'] == hostname or host['id'] == hostname]
                 if matchingids:
-                    clusters[cluster_id] = matchingids
-        if not clusters:
+                    infra_envs[infra_env_id] = matchingids
+        if not infra_envs:
             error("No Matching Host with name %s found" % hostname)
-        for cluster_id in clusters:
-            base_cluster = self.client.get_cluster(cluster_id=cluster_id)
-            cluster_name = base_cluster.name
-            hostids = clusters[cluster_id]
-            cluster_update_params = {}
-            role = None
-            if 'role' in overrides:
-                role = overrides['role']
-                hosts_roles = [{"id": hostid, "role": role} for hostid in hostids]
-                cluster_update_params['hosts_roles'] = hosts_roles
-            if 'name' in overrides or 'requested_hostname' in overrides:
-                newname = overrides.get('name', overrides.get('requested_hostname'))
-                hosts_names = []
-                if len(hostids) > 1:
-                    node = role if role is not None else 'node'
-                    for index, hostid in enumerate(hostids):
-                        newname = "%s-%s" % (node, index)
-                        info("Renaming node %s as %s in cluster %s" % (hostid, newname, cluster_name))
-                        new_host = {"id": hostid, "hostname": newname}
-                        hosts_names.append(new_host)
-                else:
-                    info("Renaming node %s as %s in cluster %s" % (hostname, newname, cluster_name))
-                    hosts_names = [{"id": hostids[0], "hostname": newname}]
-                cluster_update_params['hosts_names'] = hosts_names
-            if 'ignition' in overrides:
-                for host_id in hostids:
-                    # ignition_ori = self.client.get_host_ignition(cluster_id, host_id)
+        for infra_env_id in infra_envs:
+            host_ids = infra_envs[infra_env_id]
+            for index, host_id in enumerate(host_ids):
+                role = None
+                bind_updated = False
+                host_update_params = {}
+                if 'cluster' in overrides:
+                    cluster = overrides['cluster']
+                    if cluster is None or cluster == '':
+                        self.client.unbind_host(infra_env_id=infra_env_id, host_id=host_id)
+                    else:
+                        cluster_id = self.get_cluster_id(cluster)
+                        bind_host_params = {'cluster_id': cluster_id}
+                        bind_host_params = models.BindHostParams(**bind_host_params)
+                        self.client.bind_host(infra_env_id, host_id, bind_host_params)
+                    bind_updated = True
+                if 'role' in overrides:
+                    role = overrides['role']
+                    host_update_params['host_role'] = role
+                if 'name' in overrides or 'requested_hostname' in overrides:
+                    newname = overrides.get('name', overrides.get('requested_hostname'))
+                    if len(host_ids) > 1:
+                        newname = "%s-%s" % (newname, index)
+                    host_update_params['host_name'] = newname
+                if 'ignition' in overrides:
                     ignition_path = overrides['ignition']
                     if not os.path.exists(ignition_path):
                         warning("Ignition %s not found. Ignoring" % ignition_path)
                     else:
                         ignition_data = open(ignition_path).read()
                         host_ignition_params = models.HostIgnitionParams(config=ignition_data)
-                        self.client.update_host_ignition(cluster_id, host_id, host_ignition_params=host_ignition_params)
-            if 'extra_args' in overrides:
-                for host_id in hostids:
+                        self.client.v2_update_host_ignition(infra_env_id, host_id, host_ignition_params)
+                if 'extra_args' in overrides and cluster_id is not None:
                     extra_args = overrides['extra_args']
                     installer_args_params = models.InstallerArgsParams(args=extra_args)
-                    self.client.update_host_installer_args(cluster_id, host_id,
-                                                           installer_args_params=installer_args_params)
-            if 'mcp' in overrides:
-                valid_status = ["discovering", "known", "disconnected", "insufficient", "pending-for-input"]
-                valid_hostids = []
-                for hostid in hostids:
-                    currenthost = self.client.get_host(cluster_id=cluster_id, host_id=hostid)
+                    self.client.v2_update_host_installer_args(cluster_id, host_id, installer_args_params)
+                if 'mcp' in overrides:
+                    valid_status = ["discovering", "known", "disconnected", "insufficient", "pending-for-input"]
+                    currenthost = self.client.v2_get_host(infra_env_id=infra_env_id, host_id=host_id)
                     currentstatus = currenthost.status
-                    if currentstatus in valid_status:
-                        valid_hostids.append(hostid)
-                    else:
+                    if currentstatus not in valid_status:
                         error("Mcp can't be set for host %s because of incorrect status" % hostname, currentstatus)
-                if valid_hostids:
-                    mcp = overrides['mcp']
-                    hosts_mcps = [{"id": hostid, "machine_config_pool_name": mcp} for hostid in valid_hostids]
-                    cluster_update_params['hosts_machine_config_pool_names'] = hosts_mcps
-            if cluster_update_params:
-                cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
-                self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
-            else:
-                warning("Nothing updated for this host")
+                    else:
+                        mcp = overrides['mcp']
+                        host_update_params['machine_config_pool_name'] = mcp
+                if host_update_params:
+                    host_update_params = models.HostUpdateParams(**host_update_params)
+                    self.client.v2_update_host(infra_env_id=infra_env_id, host_id=host_id,
+                                               host_update_params=host_update_params)
+                elif not bind_updated:
+                    warning("Nothing updated for this host")
 
     def update_cluster(self, name, overrides):
         cluster_id = self.get_cluster_id(name)
@@ -451,7 +460,7 @@ class AssistedClient(object):
             installconfig = overrides['installconfig']
             del overrides['installconfig']
         if installconfig:
-            self.client.update_cluster_install_config(cluster_id, json.dumps(installconfig))
+            self.client.v2_update_cluster_install_config(cluster_id, json.dumps(installconfig))
         if 'sno' in overrides:
             del overrides['sno']
         if 'tpm' in overrides:
@@ -465,18 +474,19 @@ class AssistedClient(object):
                 del overrides[key]
         if overrides:
             cluster_update_params = models.ClusterUpdateParams(**overrides)
-            self.client.update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
+            self.client.v2_update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
 
     def start_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
-        if '-day2' in name:
+        cluster_info = self.client.v2_get_cluster(cluster_id=cluster_id).to_dict()
+        if cluster_info['status'] == 'adding-hosts':
             self.client.install_hosts(cluster_id=cluster_id)
         else:
-            self.client.install_cluster(cluster_id=cluster_id)
+            self.client.v2_install_cluster(cluster_id=cluster_id)
 
     def stop_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
-        self.client.reset_cluster(cluster_id=cluster_id)
+        self.client.v2_reset_cluster(cluster_id=cluster_id)
 
     def upload_manifests(self, name, directory, openshift=False):
         cluster_id = self.get_cluster_id(name)
@@ -500,13 +510,13 @@ class AssistedClient(object):
             folder = 'manifests' if not openshift else 'openshift'
             manifest_info = {'file_name': _fic, 'content': content, 'folder': folder}
             create_manifest_params = models.CreateManifestParams(**manifest_info)
-            manifests_api.create_cluster_manifest(cluster_id, create_manifest_params)
+            manifests_api.v2_create_cluster_manifest(cluster_id, create_manifest_params)
 
     def list_manifests(self, name):
         results = []
         cluster_id = self.get_cluster_id(name)
         manifests_api = api.ManifestsApi(api_client=self.api)
-        manifests = manifests_api.list_cluster_manifests(cluster_id)
+        manifests = manifests_api.v2_list_cluster_manifests(cluster_id)
         for manifest in manifests:
             results.append({'file_name': manifest['file_name'], 'folder': manifest['folder']})
         return results
@@ -530,13 +540,13 @@ class AssistedClient(object):
             if not isinstance(installconfig, dict):
                 error("installconfig is not in correct format")
                 sys.exit(1)
-        self.client.update_cluster_install_config(cluster_id, json.dumps(installconfig))
+        self.client.v2_update_cluster_install_config(cluster_id, json.dumps(installconfig))
 
     def patch_iso(self, name, overrides={}):
-        cluster_id = self.get_cluster_id(name)
-        openshift_version = str(self.info_cluster(name).to_dict()['openshift_version'])
+        infra_env_id = self.get_infra_env_id(name)
+        infra_env_info = self.client.get_infra_env(infra_env_id=infra_env_id).to_dict()
+        openshift_version = str(infra_env_info['openshift_version'])
         ignition_version = IGNITION_VERSIONS.get(openshift_version, '3.2.0')
-        discovery_ignition = {}
         ailibdir = os.path.dirname(warning.__code__.co_filename)
         disconnected_url = overrides.get('disconnected_url')
         if disconnected_url is None:
@@ -561,19 +571,80 @@ class AssistedClient(object):
                 "contents": {"source": "data:text/plain;base64,%s" % registries_encoded}}
         fil2 = {"path": "/etc/pki/ca-trust/source/anchors/domain.crt", "mode": 420, "overwrite": True,
                 "user": {"name": "root"}, "contents": {"source": "data:text/plain;base64,%s" % ca_encoded}}
-        discovery_ignition = {"config": json.dumps({"ignition": {"version": ignition_version},
-                                                    "storage": {"files": [fil1, fil2]}})}
-        discovery_ignition_params = models.DiscoveryIgnitionParams(**discovery_ignition)
-        self.client.update_discovery_ignition(cluster_id, discovery_ignition_params)
+        infra_env_update_params = {"ignition_config_override": json.dumps({"ignition": {"version": ignition_version},
+                                                                           "storage": {"files": [fil1, fil2]}})}
+        infra_env_update_params = models.InfraEnvUpdateParams(**infra_env_update_params)
+        self.client.update_infra_env(infra_env_id=infra_env_id, infra_env_update_params=infra_env_update_params)
 
     def info_service(self):
         versionapi = api.VersionsApi(api_client=self.api)
-        supported_versions = versionapi.list_supported_openshift_versions()
+        supported_versions = versionapi.v2_list_supported_openshift_versions()
         print("supported openshift versions:")
         for version in supported_versions:
             print(version)
         operatorsapi = api.OperatorsApi(api_client=self.api)
-        supported_operators = operatorsapi.list_supported_operators()
+        supported_operators = operatorsapi.v2_list_supported_operators()
         print("supported operators:")
         for operator in sorted(supported_operators):
             print(operator)
+
+    def get_infra_env_id(self, name):
+        matching_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == name or x['id'] == name]
+        if matching_ids:
+            return matching_ids[0]
+        else:
+            error("Infraenv %s not found" % name)
+            sys.exit(1)
+
+    def get_infra_env_name(self, _id):
+        matching_names = [x['name'] for x in self.list_infra_envs() if x['id'] == _id]
+        if matching_names:
+            return matching_names[0]
+        else:
+            error("Infraenv %s not found" % _id)
+            sys.exit(1)
+
+    def create_infra_env(self, name, overrides={}):
+        allowed_parameters = ["name", "openshift_version", "proxy", "cpu_architecture", "pull_secret",
+                              "ssh_authorized_key", "static_network_config", "additional_ntp_sources",
+                              "image_type", "ignition_config_override", "cluster_id"]
+        existing_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == name]
+        if existing_ids:
+            error("Infraenv %s already there. Leaving" % name)
+            sys.exit(1)
+        self.set_default_values(overrides)
+        self.set_default_infraenv_values(overrides)
+        new_infraenv_params = default_infraenv_params
+        new_infraenv_params['name'] = name
+        for parameter in overrides:
+            if parameter in allowed_parameters:
+                new_infraenv_params[parameter] = overrides[parameter]
+        infraenv_create_params = models.InfraEnvCreateParams(**new_infraenv_params)
+        self.client.register_infra_env(infraenv_create_params=infraenv_create_params)
+
+    def delete_infra_env(self, name):
+        infra_env_id = self.get_infra_env_id(name)
+        self.client.deregister_infra_env(infra_env_id=infra_env_id)
+        day2_matching_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == name + '-day2']
+        if day2_matching_ids:
+            self.client.deregister_infra_env(infra_env_id=day2_matching_ids[0])
+
+    def info_infra_env(self, name):
+        infra_env_id = self.get_infra_env_id(name)
+        return self.client.get_infra_env(infra_env_id=infra_env_id)
+
+    def list_infra_envs(self):
+        return self.client.list_infra_envs()
+
+    def update_infra_env(self, name, overrides={}):
+        allowed_parameters = ["proxy", "pull_secret", "ssh_authorized_key", "static_network_config",
+                              "additional_ntp_sources", "image_type", "ignition_config_override"]
+        infra_env_id = self.get_infra_env_id(name)
+        self.set_default_values(overrides)
+        self.set_default_infraenv_values(overrides)
+        infra_env_update_params = {}
+        for parameter in overrides:
+            if parameter in allowed_parameters:
+                infra_env_update_params[parameter] = overrides[parameter]
+        infra_env_update_params = models.InfraEnvUpdateParams(**infra_env_update_params)
+        self.client.update_infra_env(infra_env_id=infra_env_id, infra_env_update_params=infra_env_update_params)

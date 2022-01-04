@@ -79,29 +79,6 @@ def get_overrides(paramfile=None, param=[]):
     return overrides
 
 
-def get_commit_rhcos_metal(commitid):
-    buildurl = "https://raw.githubusercontent.com/openshift/installer/%s/data/data/rhcos.json" % commitid
-    with urlopen(buildurl) as b:
-        data = json.loads(b.read().decode())
-        baseuri = data['baseURI']
-        metal = "%s%s" % (baseuri, data['images']['metal']['path'])
-        return metal
-
-
-def get_latest_rhcos_metal(url='https://releases-art-rhcos.svc.ci.openshift.org/art/storage/releases/rhcos',
-                           version='4.6'):
-    url += "-%s" % version
-    buildurl = '%s/builds.json' % url
-    with urlopen(buildurl) as b:
-        data = json.loads(b.read().decode())
-        for build in data['builds']:
-            build = build['id']
-            # kernel = "%s/%s/x86_64/rhcos-%s-installer-kernel-x86_64" % (url, build, build)
-            # initrd = "%s/%s/x86_64/rhcos-%s-installer-initramfs.x86_64.img" % (url, build, build)
-            metal = "%s/%s/x86_64/rhcos-%s-metal.x86_64.raw.gz" % (url, build, build)
-            return metal
-
-
 def get_token(token, offlinetoken=None):
     aihome = "%s/.aicli" % os.environ['HOME']
     url = 'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token'
