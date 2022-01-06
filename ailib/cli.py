@@ -55,20 +55,19 @@ def create_cluster(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.create_cluster(args.cluster, overrides)
     if infraenv:
-        info("Creating infraenv %s" % args.cluster)
-        ai.create_infra_env(args.cluster, infraenv_overrides)
+        infraenv = "%s_infra-env" % args.cluster
+        info("Creating infraenv %s" % infraenv)
+        ai.create_infra_env(infraenv, infraenv_overrides)
 
 
 def delete_cluster(args):
     info("Deleting cluster %s" % args.cluster)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    cluster_id = ai.info_cluster(args.cluster).to_dict()['id']
     ai.delete_cluster(args.cluster)
     for infra_env in ai.list_infra_envs():
-        infra_env_cluster_id = infra_env.get('cluster_id')
-        if infra_env_cluster_id is not None and infra_env_cluster_id == cluster_id:
+        infra_env_name = infra_env.get('name')
+        if infra_env_name is not None and infra_env_name == "%s_infra-env" % args.cluster:
             infra_env_id = infra_env['id']
-            infra_env_name = infra_env['name']
             info("Deleting associated infraenv %s" % infra_env_name)
             ai.delete_infra_env(infra_env_id)
 
@@ -260,15 +259,18 @@ def list_infra_env(args):
         cluster = None
         cluster_id = infra_env.get('cluster_id')
         if cluster_id is not None and cluster_id not in cluster_ids:
-            cluster_ids[cluster_id] = ai.get_cluster_name(cluster_id)
-            cluster = cluster_ids[cluster_id]
+            try:
+                cluster_ids[cluster_id] = ai.get_cluster_name(cluster_id)
+                cluster = cluster_ids[cluster_id]
+            except:
+                cluster = 'N/A'
         entry = [name, _id, cluster, openshift_version, iso_type]
         infra_envs_table.add_row(entry)
     print(infra_envs_table)
 
 
 def update_infra_env(args):
-    info("Updating Cluster %s" % args.infraenv)
+    info("Updating infraenv %s" % args.infraenv)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
@@ -277,27 +279,27 @@ def update_infra_env(args):
 
 def create_iso(args):
     warning("This api call is deprecated")
-    info("Getting Iso url for Infraenv %s" % args.cluster)
+    info("Getting Iso url for infraenv %s" % args.infraenv)
     paramfile = choose_parameter_file(args.paramfile)
     minimal = args.minimal
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.info_iso(args.cluster, overrides, minimal=minimal)
+    ai.info_iso(args.infraenv, overrides, minimal=minimal)
 
 
 def info_iso(args):
-    info("Getting Iso url for Infraenv %s" % args.cluster)
+    info("Getting Iso url for infraenv %s" % args.infraenv)
     paramfile = choose_parameter_file(args.paramfile)
     minimal = args.minimal
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.info_iso(args.cluster, overrides, minimal=minimal)
+    ai.info_iso(args.infraenv, overrides, minimal=minimal)
 
 
 def download_iso(args):
-    info("Downloading Iso for Cluster %s in %s" % (args.cluster, args.path))
+    info("Downloading Iso for infraenv %s in %s" % (args.infraenv, args.path))
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.download_iso(args.cluster, args.path)
+    ai.download_iso(args.infraenv, args.path)
 
 
 def download_kubeadminpassword(args):
@@ -313,9 +315,9 @@ def download_kubeconfig(args):
 
 
 def download_initrd(args):
-    info("Downloading Initrd Config for Infraenv %s in %s/initrd.%s" % (args.cluster, args.path, args.cluster))
+    info("Downloading Initrd Config for infraenv %s in %s/initrd.%s" % (args.infraenv, args.path, args.infraenv))
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.download_initrd(args.cluster, args.path)
+    ai.download_initrd(args.infraenv, args.path)
 
 
 def download_installconfig(args):
@@ -333,9 +335,9 @@ def download_ignition(args):
 
 
 def download_discovery_ignition(args):
-    info("Downloading Discovery ignition for Cluster %s in %s" % (args.cluster, args.path))
+    info("Downloading Discovery ignition for infraenv %s in %s" % (args.infraenv, args.path))
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.download_discovery_ignition(args.cluster, args.path)
+    ai.download_discovery_ignition(args.infraenv, args.path)
 
 
 def update_host(args):
@@ -368,11 +370,11 @@ def update_installconfig(args):
 
 
 def update_iso(args):
-    info("Updating iso in %s" % args.cluster)
+    info("Updating iso in %s" % args.infraenv)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.update_iso(args.cluster, overrides)
+    ai.update_iso(args.infraenv, overrides)
 
 
 def info_service(args):
@@ -579,7 +581,7 @@ def cli():
     isocreate_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
     isocreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     isocreate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
-    isocreate_parser.add_argument('cluster', metavar='CLUSTER')
+    isocreate_parser.add_argument('infraenv', metavar='INFRAENV')
     isocreate_parser.set_defaults(func=create_iso)
 
     isoinfo_desc = 'Get iso url'
@@ -589,13 +591,13 @@ def cli():
     isoinfo_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
     isoinfo_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     isoinfo_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
-    isoinfo_parser.add_argument('cluster', metavar='CLUSTER')
+    isoinfo_parser.add_argument('infraenv', metavar='INFRAENV')
     isoinfo_parser.set_defaults(func=info_iso)
 
     initrddownload_desc = 'Download Initrd'
     initrddownload_parser = argparse.ArgumentParser(add_help=False)
     initrddownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
-    initrddownload_parser.add_argument('cluster', metavar='CLUSTER')
+    initrddownload_parser.add_argument('infraenv', metavar='INFRAENV')
     initrddownload_parser.set_defaults(func=download_initrd)
     download_subparsers.add_parser('initrd', parents=[initrddownload_parser], description=initrddownload_desc,
                                    help=initrddownload_desc)
@@ -603,7 +605,7 @@ def cli():
     isodownload_desc = 'Download Iso'
     isodownload_parser = argparse.ArgumentParser(add_help=False)
     isodownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
-    isodownload_parser.add_argument('cluster', metavar='CLUSTER')
+    isodownload_parser.add_argument('infraenv', metavar='INFRAENV')
     isodownload_parser.set_defaults(func=download_iso)
     download_subparsers.add_parser('iso', parents=[isodownload_parser],
                                    description=isodownload_desc,
@@ -681,7 +683,7 @@ def cli():
     isopatch_parser = argparse.ArgumentParser(add_help=False)
     isopatch_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     isopatch_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
-    isopatch_parser.add_argument('cluster', metavar='CLUSTER')
+    isopatch_parser.add_argument('infraenv', metavar='INFRAENV')
     isopatch_parser.set_defaults(func=update_iso)
     update_subparsers.add_parser('iso', parents=[isopatch_parser], description=isopatch_desc, help=isopatch_desc)
 

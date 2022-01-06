@@ -589,7 +589,8 @@ class AssistedClient(object):
             print(operator)
 
     def get_infra_env_id(self, name):
-        matching_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == name or x['id'] == name]
+        valid_names = [name, '%s_infra-env' % name]
+        matching_ids = [x['id'] for x in self.list_infra_envs() if x['name'] in valid_names or x['id'] == name]
         if matching_ids:
             return matching_ids[0]
         else:
