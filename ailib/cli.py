@@ -85,6 +85,9 @@ def info_cluster(args):
     fields = args.fields.split(',') if args.fields is not None else []
     values = args.values
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    if args.preflight:
+        print(ai.preflight_cluster(args.cluster))
+        return
     info = ai.info_cluster(args.cluster).to_dict()
     if fields:
         for key in list(info):
@@ -463,6 +466,7 @@ def cli():
                                     'separated by a comma', metavar='FIELDS')
     clusterinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
     clusterinfo_parser.add_argument('--full', action='store_true', help='Full output')
+    clusterinfo_parser.add_argument('-p', '--preflight', action='store_true', help='Show preflight')
     clusterinfo_parser.add_argument('cluster', metavar='CLUSTER')
     clusterinfo_parser.set_defaults(func=info_cluster)
 

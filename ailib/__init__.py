@@ -186,6 +186,10 @@ class AssistedClient(object):
         cluster_id = self.get_cluster_id(name)
         return self.client.v2_get_cluster(cluster_id=cluster_id)
 
+    def preflight_cluster(self, name):
+        cluster_id = self.get_cluster_id(name)
+        return self.client.v2_get_preflight_requirements(cluster_id=cluster_id)
+
     def export_cluster(self, name):
         allowed_parameters = ["name", "openshift_version", "base_dns_domain", "cluster_network_cidr",
                               "cluster_network_host_prefix", "service_network_cidr", "ingress_vip",
