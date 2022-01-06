@@ -9,7 +9,6 @@ import yaml
 import urllib
 from urllib.request import urlretrieve
 from shutil import copyfileobj
-from uuid import uuid4
 
 
 # default_cluster_params = {"openshift_version": "4.6", "base_dns_domain": "karmalabs.com",
@@ -253,12 +252,13 @@ class AssistedClient(object):
                                                              _preload_content=False)
             data = yaml.safe_load(response.read().decode("utf-8"))
             pull_secret = data.get('pullSecret')
-        cluster_params = {"openshift_version": str(openshift_version), "api_vip_dnsname": api_name}
-        new_cluster_id = str(uuid4())
-        new_cluster = models.AddHostsClusterCreateParams(name=name, id=new_cluster_id, **cluster_params)
-        self.client.register_add_hosts_cluster(new_add_hosts_cluster_params=new_cluster)
+        new_import_cluster_params = {"name": name, "openshift_version": str(openshift_version),
+                                     "api_vip_dnsname": api_name, 'openshift_cluster_id': cluster_id}
+        new_import_cluster_params = models.ImportClusterParams(**new_import_cluster_params)
+        self.client.v2_import_cluster(new_import_cluster_params=new_import_cluster_params)
         cluster_update_params = {'pull_secret': pull_secret, 'ssh_public_key': ssh_public_key}
         cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
+        new_cluster_id = self.get_cluster_id(name)
         self.client.v2_update_cluster(cluster_id=new_cluster_id, cluster_update_params=cluster_update_params)
 
     def info_iso(self, name, overrides, minimal=False):
@@ -494,7 +494,10 @@ class AssistedClient(object):
         cluster_id = self.get_cluster_id(name)
         cluster_info = self.client.v2_get_cluster(cluster_id=cluster_id).to_dict()
         if cluster_info['status'] == 'adding-hosts':
-            self.client.install_hosts(cluster_id=cluster_id)
+            infra_env_id = self.get_infra_env_id(name)
+            for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
+                host_id = host['id']
+                self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
         else:
             self.client.v2_install_cluster(cluster_id=cluster_id)
 
