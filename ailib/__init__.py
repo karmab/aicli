@@ -18,8 +18,6 @@ from uuid import uuid4
 default_cluster_params = {"openshift_version": "4.9", "base_dns_domain": "karmalabs.com", "vip_dhcp_allocation": False}
 default_infraenv_params = {"openshift_version": "4.9", "image_type": "full-iso"}
 
-IGNITION_VERSIONS = {'4.6': '3.1.0', '4.7': '3.2.0', '4.8': '3.2.0', '4.9': '3.2.0', '4.10': '3.3.0'}
-
 
 class AssistedClient(object):
     def __init__(self, url, token=None, offlinetoken=None):
@@ -544,10 +542,11 @@ class AssistedClient(object):
 
     def update_iso(self, name, overrides={}):
         infra_env_id = self.get_infra_env_id(name)
-        # infra_env_info = self.client.get_infra_env(infra_env_id=infra_env_id).to_dict()
-        # openshift_version = str(infra_env_info['openshift_version'])
-        # ignition_version = IGNITION_VERSIONS.get(openshift_version, '3.2.0')
-        ignition_version = '3.1.0'
+        ignition_version = overrides.get('ignition_version')
+        if ignition_version is None:
+            ori = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="discovery.ign",
+                                                          _preload_content=False)
+            ignition_version = json.loads(ori.read().decode("utf-8"))['ignition']['version']
         ailibdir = os.path.dirname(warning.__code__.co_filename)
         disconnected_url = overrides.get('disconnected_url')
         if disconnected_url is None:
