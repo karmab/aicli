@@ -102,7 +102,7 @@ def list_cluster(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     clusters = ai.list_clusters()
     clusterstable = PrettyTable(["Cluster", "Id", "Status", "Dns Domain"])
-    for cluster in sorted(clusters, key=lambda x: x.get('name', 'zzz')):
+    for cluster in sorted(clusters, key=lambda x: x['name'] or 'zzz'):
         name = cluster['name']
         status = cluster['status']
         _id = cluster['id']
@@ -181,7 +181,7 @@ def list_hosts(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     hosts = ai.list_hosts()
     hoststable = PrettyTable(["Host", "Id", "Cluster", "Infraenv", "Status", "Role", "Ip"])
-    for host in sorted(hosts, key=lambda x: x.get('requested_hostname', 'zzz')):
+    for host in sorted(hosts, key=lambda x: x['requested_hostname'] or 'zzz'):
         name = host['requested_hostname']
         cluster_name = None
         cluster_id = host.get('cluster_id')
@@ -249,7 +249,7 @@ def list_infra_env(args):
     infra_envs = ai.list_infra_envs()
     cluster_ids = {}
     infra_envs_table = PrettyTable(["Infraenv", "Id", "Cluster", "Openshift Version", "Iso Type"])
-    for infra_env in sorted(infra_envs, key=lambda x: x.get('name', 'zzz')):
+    for infra_env in sorted(infra_envs, key=lambda x: x['name'] or 'zzz'):
         name = infra_env['name']
         openshift_version = infra_env['openshift_version']
         iso_type = infra_env['type']
