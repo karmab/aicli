@@ -75,7 +75,7 @@ class AssistedClient(object):
             sys.exit(1)
         overrides['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
         if 'ssh_public_key' not in overrides:
-            pub_key = overrides.get('pub_key', '%s/.ssh/id_rsa.pub' % os.environ['HOME'])
+            pub_key = overrides.get('public_key', '%s/.ssh/id_rsa.pub' % os.environ['HOME'])
             if os.path.exists(pub_key):
                 overrides['ssh_public_key'] = open(pub_key).read().strip()
             else:
@@ -135,6 +135,15 @@ class AssistedClient(object):
                 final_network_config.append(models.HostStaticNetworkConfig(**new_entry))
             static_network_config = final_network_config
             overrides['static_network_config'] = static_network_config
+        if 'ssh_authorized_key' not in overrides:
+            pub_key = overrides.get('public_key', '%s/.ssh/id_rsa.pub' % os.environ['HOME'])
+            if os.path.exists(pub_key):
+                overrides['ssh_authorized_key'] = open(pub_key).read().strip()
+            else:
+                error("Missing public key file %s" % pub_key)
+                sys.exit(1)
+            if 'public_key' in overrides:
+                del overrides['public_key']
 
     def get_cluster_id(self, name):
         matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name or x['id'] == name]
