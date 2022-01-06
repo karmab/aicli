@@ -541,40 +541,36 @@ class AssistedClient(object):
         self.client.v2_update_cluster_install_config(cluster_id, json.dumps(installconfig))
 
     def update_iso(self, name, overrides={}):
+        iso_overrides = overrides.copy()
         infra_env_id = self.get_infra_env_id(name)
-        ignition_version = overrides.get('ignition_version')
-        if ignition_version is None:
-            ori = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="discovery.ign",
-                                                          _preload_content=False)
-            ignition_version = json.loads(ori.read().decode("utf-8"))['ignition']['version']
-        ailibdir = os.path.dirname(warning.__code__.co_filename)
         disconnected_url = overrides.get('disconnected_url')
-        if disconnected_url is None:
-            error("disconnected_url is not set")
-            sys.exit(1)
-        else:
-            ca = overrides.get('disconnected_ca')
-            if ca is None:
-                if 'installconfig' in overrides and isinstance(overrides['installconfig'], dict)\
-                        and 'additionalTrustBundle' in overrides['installconfig']:
-                    info("using cert from installconfig/additionalTrustBundle")
-                    ca = overrides['installconfig']['additionalTrustBundle']
-                else:
-                    error("disconnected_ca is not set")
-                    sys.exit(1)
-        with open("%s/registries.conf.templ" % ailibdir) as f:
-            data = f.read()
-            registries = data % {'url': disconnected_url}
-        registries_encoded = base64.b64encode(registries.encode()).decode("UTF-8")
-        ca_encoded = base64.b64encode(ca.encode()).decode("UTF-8")
-        fil1 = {"path": "/etc/containers/registries.conf", "mode": 420, "overwrite": True, "user": {"name": "root"},
-                "contents": {"source": "data:text/plain;base64,%s" % registries_encoded}}
-        fil2 = {"path": "/etc/pki/ca-trust/source/anchors/domain.crt", "mode": 420, "overwrite": True,
-                "user": {"name": "root"}, "contents": {"source": "data:text/plain;base64,%s" % ca_encoded}}
-        ignition_config_override = json.dumps({"ignition": {"version": ignition_version},
-                                               "storage": {"files": [fil1, fil2]}})
-        infra_env_update_params = models.InfraEnvUpdateParams(ignition_config_override=ignition_config_override)
-        self.client.update_infra_env(infra_env_id=infra_env_id, infra_env_update_params=infra_env_update_params)
+        ca = overrides.get('disconnected_ca')
+        if ca is None:
+            if 'installconfig' in overrides and isinstance(overrides['installconfig'], dict)\
+                    and 'additionalTrustBundle' in overrides['installconfig']:
+                info("using cert from installconfig/additionalTrustBundle")
+                ca = overrides['installconfig']['additionalTrustBundle']
+        if 'ignition_config_override' not in overrides and disconnected_url is not None and ca is not None:
+            ignition_version = overrides.get('ignition_version')
+            if ignition_version is None:
+                ori = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="discovery.ign",
+                                                              _preload_content=False)
+                ignition_version = json.loads(ori.read().decode("utf-8"))['ignition']['version']
+            ailibdir = os.path.dirname(warning.__code__.co_filename)
+            with open("%s/registries.conf.templ" % ailibdir) as f:
+                data = f.read()
+                registries = data % {'url': disconnected_url}
+            registries_encoded = base64.b64encode(registries.encode()).decode("UTF-8")
+            ca_encoded = base64.b64encode(ca.encode()).decode("UTF-8")
+            fil1 = {"path": "/etc/containers/registries.conf", "mode": 420, "overwrite": True,
+                    "user": {"name": "root"},
+                    "contents": {"source": "data:text/plain;base64,%s" % registries_encoded}}
+            fil2 = {"path": "/etc/pki/ca-trust/source/anchors/domain.crt", "mode": 420, "overwrite": True,
+                    "user": {"name": "root"}, "contents": {"source": "data:text/plain;base64,%s" % ca_encoded}}
+            ignition_config_override = json.dumps({"ignition": {"version": ignition_version},
+                                                   "storage": {"files": [fil1, fil2]}})
+            iso_overrides['ignition_config_override'] = ignition_config_override
+        self.update_infra_env(name, overrides=iso_overrides)
 
     def info_service(self):
         versionapi = api.VersionsApi(api_client=self.api)
@@ -638,6 +634,7 @@ class AssistedClient(object):
         return self.client.list_infra_envs()
 
     def update_infra_env(self, name, overrides={}):
+        infra_env_update_params = {}
         allowed_parameters = ["proxy", "pull_secret", "ssh_authorized_key", "static_network_config",
                               "additional_ntp_sources", "image_type", "ignition_config_override"]
         infra_env_id = self.get_infra_env_id(name)
@@ -647,5 +644,6 @@ class AssistedClient(object):
         for parameter in overrides:
             if parameter in allowed_parameters:
                 infra_env_update_params[parameter] = overrides[parameter]
-        infra_env_update_params = models.InfraEnvUpdateParams(**infra_env_update_params)
-        self.client.update_infra_env(infra_env_id=infra_env_id, infra_env_update_params=infra_env_update_params)
+        if infra_env_update_params:
+            infra_env_update_params = models.InfraEnvUpdateParams(**infra_env_update_params)
+            self.client.update_infra_env(infra_env_id=infra_env_id, infra_env_update_params=infra_env_update_params)

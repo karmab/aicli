@@ -56,7 +56,6 @@ def create_cluster(args):
     ai.create_cluster(args.cluster, overrides)
     if infraenv:
         infraenv = "%s_infra-env" % args.cluster
-        info("Creating infraenv %s" % infraenv)
         ai.create_infra_env(infraenv, infraenv_overrides)
 
 
@@ -68,7 +67,6 @@ def delete_cluster(args):
         infra_env_name = infra_env.get('name')
         if infra_env_name is not None and infra_env_name == "%s_infra-env" % args.cluster:
             infra_env_id = infra_env['id']
-            info("Deleting associated infraenv %s" % infra_env_name)
             ai.delete_infra_env(infra_env_id)
 
 
