@@ -1,11 +1,11 @@
 import argparse
 from argparse import RawDescriptionHelpFormatter as rawhelp
-from ailib import AssistedClient
-from ailib.common import get_overrides, info, error, get_latest_rhcos_metal, get_commit_rhcos_metal
+from ailib.common import get_overrides, info, error, warning
 import json
 from prettytable import PrettyTable
 import os
 import sys
+from ailib import AssistedClient
 
 PARAMHELP = "specify parameter or keyword for rendering (multiple can be specified)"
 
@@ -48,14 +48,29 @@ def create_cluster(args):
     info("Creating cluster %s" % args.cluster)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
+    infraenv = overrides.get('infraenv', True)
+    if infraenv:
+        infraenv_overrides = overrides.copy()
+        infraenv_overrides['cluster'] = args.cluster
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.create_cluster(args.cluster, overrides)
+    if infraenv:
+        info("Creating infraenv %s" % args.cluster)
+        ai.create_infra_env(args.cluster, infraenv_overrides)
 
 
 def delete_cluster(args):
     info("Deleting cluster %s" % args.cluster)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    cluster_id = ai.info_cluster(args.cluster).to_dict()['id']
     ai.delete_cluster(args.cluster)
+    for infra_env in ai.list_infra_envs():
+        infra_env_cluster_id = infra_env.get('cluster_id')
+        if infra_env_cluster_id is not None and infra_env_cluster_id == cluster_id:
+            infra_env_id = infra_env['id']
+            infra_env_name = infra_env['name']
+            info("Deleting associated infraenv %s" % infra_env_name)
+            ai.delete_infra_env(infra_env_id)
 
 
 def export_cluster(args):
@@ -84,6 +99,48 @@ def info_cluster(args):
     for entry in sorted(info):
         currententry = "%s: %s" % (entry, info[entry]) if not values else info[entry]
         print(currententry)
+
+
+def list_cluster(args):
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    clusters = ai.list_clusters()
+    clusterstable = PrettyTable(["Cluster", "Id", "Status", "Dns Domain"])
+    for cluster in sorted(clusters, key=lambda x: x.get('name', 'zzz')):
+        name = cluster['name']
+        status = cluster['status']
+        _id = cluster['id']
+        base_dns_domain = cluster.get('base_dns_domain', 'N/A')
+        entry = [name, _id, status, base_dns_domain]
+        clusterstable.add_row(entry)
+    print(clusterstable)
+
+
+def update_cluster(args):
+    info("Updating Cluster %s" % args.cluster)
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.update_cluster(args.cluster, overrides)
+
+
+def start_cluster(args):
+    info("Starting cluster %s" % args.cluster)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.start_cluster(args.cluster)
+
+
+def stop_cluster(args):
+    info("Stopping cluster %s" % args.cluster)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.stop_cluster(args.cluster)
+
+
+def create_manifests(args):
+    info("Uploading manifests for Cluster %s" % args.cluster)
+    directory = args.dir
+    openshift = args.openshift
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.upload_manifests(args.cluster, directory=directory, openshift=openshift)
 
 
 def delete_host(args):
@@ -121,31 +178,24 @@ def info_host(args):
             print(currententry)
 
 
-def list_cluster(args):
-    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    clusters = ai.list_clusters()
-    clusterstable = PrettyTable(["Cluster", "Id", "Status", "Dns Domain"])
-    for cluster in sorted(clusters, key=lambda x: x['name']):
-        name = cluster['name']
-        status = cluster['status']
-        _id = cluster['id']
-        base_dns_domain = cluster.get('base_dns_domain', 'N/A')
-        entry = [name, _id, status, base_dns_domain]
-        clusterstable.add_row(entry)
-    print(clusterstable)
-
-
 def list_hosts(args):
-    clusterids = {}
+    infra_env_ids = {}
+    cluster_ids = {}
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     hosts = ai.list_hosts()
-    hoststable = PrettyTable(["Host", "Cluster", "Id", "Status", "Role", "Ip"])
-    for host in sorted(hosts, key=lambda x: x['requested_hostname']):
+    hoststable = PrettyTable(["Host", "Id", "Cluster", "Infraenv", "Status", "Role", "Ip"])
+    for host in sorted(hosts, key=lambda x: x.get('requested_hostname', 'zzz')):
         name = host['requested_hostname']
-        clusterid = host['cluster_id']
-        if clusterid not in clusterids:
-            clusterids[clusterid] = ai.get_cluster_name(clusterid)
-        clustername = clusterids[clusterid]
+        cluster_name = None
+        cluster_id = host.get('cluster_id')
+        if cluster_id is not None:
+            if cluster_id not in cluster_ids:
+                cluster_ids[cluster_id] = ai.get_cluster_name(cluster_id)
+            cluster_name = cluster_ids[cluster_id]
+        infra_env_id = host.get('infra_env_id')
+        if infra_env_id not in infra_env_ids:
+            infra_env_ids[infra_env_id] = ai.get_infra_env_name(infra_env_id)
+        infra_env_name = infra_env_ids[infra_env_id]
         _id = host['id']
         role = host['role']
         status = host['status']
@@ -156,18 +206,92 @@ def list_hosts(args):
                 ip = inventory['interfaces'][0]['ipv6_addresses'][0].split('/')[0]
             if 'ipv4_addresses' in inventory['interfaces'][0] and inventory['interfaces'][0]['ipv4_addresses']:
                 ip = inventory['interfaces'][0]['ipv4_addresses'][0].split('/')[0]
-        entry = [name, clustername, _id, status, role, ip]
+        entry = [name, _id, cluster_name, infra_env_name, status, role, ip]
         hoststable.add_row(entry)
     print(hoststable)
 
 
+def create_infra_env(args):
+    info("Creating infraenv %s" % args.infraenv)
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.create_infra_env(args.infraenv, overrides)
+
+
+def delete_infra_env(args):
+    info("Deleting infraenv %s" % args.infraenv)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.delete_infra_env(args.infraenv)
+
+
+def info_infra_env(args):
+    if not args.full:
+        skipped = ['kind', 'href', 'ssh_public_key', 'http_proxy', 'https_proxy', 'no_proxy', 'pull_secret_set',
+                   'vip_dhcp_allocation', 'validations_info', 'hosts', 'image_info', 'host_networks']
+    else:
+        skipped = []
+    fields = args.fields.split(',') if args.fields is not None else []
+    values = args.values
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    info = ai.info_infra_env(args.infraenv).to_dict()
+    if fields:
+        for key in list(info):
+            if key not in fields:
+                del info[key]
+    for key in list(info):
+        if key in skipped or info[key] is None:
+            del info[key]
+    for entry in sorted(info):
+        currententry = "%s: %s" % (entry, info[entry]) if not values else info[entry]
+        print(currententry)
+
+
+def list_infra_env(args):
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    infra_envs = ai.list_infra_envs()
+    cluster_ids = {}
+    infra_envs_table = PrettyTable(["Infraenv", "Id", "Cluster", "Openshift Version", "Iso Type"])
+    for infra_env in sorted(infra_envs, key=lambda x: x.get('name', 'zzz')):
+        name = infra_env['name']
+        openshift_version = infra_env['openshift_version']
+        iso_type = infra_env['type']
+        _id = infra_env['id']
+        cluster = None
+        cluster_id = infra_env.get('cluster_id')
+        if cluster_id is not None and cluster_id not in cluster_ids:
+            cluster_ids[cluster_id] = ai.get_cluster_name(cluster_id)
+            cluster = cluster_ids[cluster_id]
+        entry = [name, _id, cluster, openshift_version, iso_type]
+        infra_envs_table.add_row(entry)
+    print(infra_envs_table)
+
+
+def update_infra_env(args):
+    info("Updating Cluster %s" % args.infraenv)
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.update_infra_env(args.infraenv, overrides)
+
+
 def create_iso(args):
-    info("Creating Iso for Cluster %s" % args.cluster)
+    warning("This api call is deprecated")
+    info("Getting Iso url for Infraenv %s" % args.cluster)
     paramfile = choose_parameter_file(args.paramfile)
     minimal = args.minimal
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.create_iso(args.cluster, overrides, minimal=minimal)
+    ai.info_iso(args.cluster, overrides, minimal=minimal)
+
+
+def info_iso(args):
+    info("Getting Iso url for Infraenv %s" % args.cluster)
+    paramfile = choose_parameter_file(args.paramfile)
+    minimal = args.minimal
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.info_iso(args.cluster, overrides, minimal=minimal)
 
 
 def download_iso(args):
@@ -188,6 +312,12 @@ def download_kubeconfig(args):
     ai.download_kubeconfig(args.cluster, args.path)
 
 
+def download_initrd(args):
+    info("Downloading Initrd Config for Infraenv %s in %s/initrd.%s" % (args.cluster, args.path, args.cluster))
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.download_initrd(args.cluster, args.path)
+
+
 def download_installconfig(args):
     info("Downloading Install Config for Cluster %s in %s/install-config.yaml.%s" % (args.cluster, args.path,
                                                                                      args.cluster))
@@ -195,25 +325,17 @@ def download_installconfig(args):
     ai.download_installconfig(args.cluster, args.path)
 
 
-def download_metal(args):
-    path = args.path
-    if args.commit:
-        commitcmd = "oc adm release info quay.io/ocpmetal/ocp-release:$(oc get clusterversion -o "
-        commitcmd += "jsonpath='{.items[0].status.desired.version}') --commits | "
-        commitcmd += "awk -F' ' ''/baremetal-installer/ {print $3}'"
-        commitid = os.popen(commitcmd).read()
-        metal = get_commit_rhcos_metal(commitid)
-    else:
-        metal = get_latest_rhcos_metal(version=args.version)
-    info("Downloading metal %s in %s" % (metal, path))
-    downloadcmd = "curl -L %s > %s/%s" % (metal, path, os.path.basename(metal))
-    os.system(downloadcmd)
-
-
 def download_ignition(args):
-    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     role = args.role
+    info("Downloading %s ignition for Cluster %s in %s" % (role, args.cluster, args.path))
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.download_ignition(args.cluster, args.path, role=role)
+
+
+def download_discovery_ignition(args):
+    info("Downloading Discovery ignition for Cluster %s in %s" % (args.cluster, args.path))
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.download_discovery_ignition(args.cluster, args.path)
 
 
 def update_host(args):
@@ -222,34 +344,6 @@ def update_host(args):
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.update_host(args.hostname, overrides)
-
-
-def update_cluster(args):
-    info("Updating Cluster %s" % args.cluster)
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
-    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.update_cluster(args.cluster, overrides)
-
-
-def start_cluster(args):
-    info("Starting cluster %s" % args.cluster)
-    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.start_cluster(args.cluster)
-
-
-def stop_cluster(args):
-    info("Stopping cluster %s" % args.cluster)
-    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.stop_cluster(args.cluster)
-
-
-def create_manifests(args):
-    info("Uploading manifests for Cluster %s" % args.cluster)
-    directory = args.dir
-    openshift = args.openshift
-    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.upload_manifests(args.cluster, directory=directory, openshift=openshift)
 
 
 def list_manifests(args):
@@ -350,26 +444,6 @@ def cli():
     clustercreate_parser.add_argument('cluster', metavar='CLUSTER')
     clustercreate_parser.set_defaults(func=create_cluster)
 
-    isocreate_desc = 'Create iso'
-    isocreate_epilog = None
-    isocreate_parser = create_subparsers.add_parser('iso', description=isocreate_desc, help=isocreate_desc,
-                                                    epilog=isocreate_epilog, formatter_class=rawhelp)
-    isocreate_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
-    isocreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    isocreate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
-    isocreate_parser.add_argument('cluster', metavar='CLUSTER')
-    isocreate_parser.set_defaults(func=create_iso)
-
-    manifestscreate_desc = 'Upload manifests to cluster'
-    manifestscreate_epilog = None
-    manifestscreate_parser = create_subparsers.add_parser('manifest', description=manifestscreate_desc,
-                                                          help=manifestscreate_desc, epilog=manifestscreate_epilog,
-                                                          formatter_class=rawhelp, aliases=['manifests'])
-    manifestscreate_parser.add_argument('--dir', '--directory', help='directory with stored manifests', required=True)
-    manifestscreate_parser.add_argument('-o', '--openshift', action='store_true', help='Store in openshift folder')
-    manifestscreate_parser.add_argument('cluster', metavar='CLUSTER')
-    manifestscreate_parser.set_defaults(func=create_manifests)
-
     clusterdelete_desc = 'Delete Cluster'
     clusterdelete_epilog = None
     clusterdelete_parser = delete_subparsers.add_parser('cluster', description=clusterdelete_desc,
@@ -377,6 +451,13 @@ def cli():
                                                         epilog=clusterdelete_epilog, formatter_class=rawhelp)
     clusterdelete_parser.add_argument('cluster', metavar='CLUSTER')
     clusterdelete_parser.set_defaults(func=delete_cluster)
+
+    clusterexport_desc = 'Export Clusters'
+    clusterexport_parser = argparse.ArgumentParser(add_help=False)
+    clusterexport_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterexport_parser.set_defaults(func=export_cluster)
+    export_subparsers.add_parser('cluster', parents=[clusterexport_parser], description=clusterexport_desc,
+                                 help=clusterexport_desc, aliases=['clusters'])
 
     clusterinfo_desc = 'Info Cluster'
     clusterinfo_epilog = None
@@ -389,14 +470,21 @@ def cli():
     clusterinfo_parser.add_argument('cluster', metavar='CLUSTER')
     clusterinfo_parser.set_defaults(func=info_cluster)
 
-    clusterupdate_desc = 'Update Cluster'
-    clusterupdate_parser = argparse.ArgumentParser(add_help=False)
-    clusterupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    clusterupdate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
-    clusterupdate_parser.add_argument('cluster', metavar='CLUSTER')
-    clusterupdate_parser.set_defaults(func=update_cluster)
-    update_subparsers.add_parser('cluster', parents=[clusterupdate_parser], description=clusterupdate_desc,
-                                 help=clusterupdate_desc)
+    clusterlist_desc = 'List Clusters'
+    clusterlist_parser = argparse.ArgumentParser(add_help=False)
+    clusterlist_parser.set_defaults(func=list_cluster)
+    list_subparsers.add_parser('cluster', parents=[clusterlist_parser], description=clusterlist_desc,
+                               help=clusterlist_desc, aliases=['clusters'])
+
+    manifestscreate_desc = 'Upload manifests to cluster'
+    manifestscreate_epilog = None
+    manifestscreate_parser = create_subparsers.add_parser('manifest', description=manifestscreate_desc,
+                                                          help=manifestscreate_desc, epilog=manifestscreate_epilog,
+                                                          formatter_class=rawhelp, aliases=['manifests'])
+    manifestscreate_parser.add_argument('--dir', '--directory', help='directory with stored manifests', required=True)
+    manifestscreate_parser.add_argument('-o', '--openshift', action='store_true', help='Store in openshift folder')
+    manifestscreate_parser.add_argument('cluster', metavar='CLUSTER')
+    manifestscreate_parser.set_defaults(func=create_manifests)
 
     clusterstart_desc = 'Start Cluster'
     clusterstart_epilog = None
@@ -414,6 +502,25 @@ def cli():
     clusterstop_parser.add_argument('cluster', metavar='CLUSTER')
     clusterstop_parser.set_defaults(func=stop_cluster)
 
+    clusterupdate_desc = 'Update Cluster'
+    clusterupdate_parser = argparse.ArgumentParser(add_help=False)
+    clusterupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    clusterupdate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
+    clusterupdate_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterupdate_parser.set_defaults(func=update_cluster)
+    update_subparsers.add_parser('cluster', parents=[clusterupdate_parser], description=clusterupdate_desc,
+                                 help=clusterupdate_desc)
+
+    ignitiondiscoverydownload_desc = 'Download Discovery Ignition file'
+    ignitiondiscoverydownload_parser = argparse.ArgumentParser(add_help=False)
+    ignitiondiscoverydownload_parser.add_argument('-p', '--path', metavar='PATH', default='.',
+                                                  help='Where to download asset')
+    ignitiondiscoverydownload_parser.add_argument('cluster', metavar='CLUSTER')
+    ignitiondiscoverydownload_parser.set_defaults(func=download_discovery_ignition)
+    download_subparsers.add_parser('discovery-ignition', parents=[ignitiondiscoverydownload_parser],
+                                   description=ignitiondiscoverydownload_desc,
+                                   help=ignitiondiscoverydownload_desc)
+
     ignitiondownload_desc = 'Download Ignition file'
     ignitiondownload_parser = argparse.ArgumentParser(add_help=False)
     ignitiondownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
@@ -424,6 +531,78 @@ def cli():
     download_subparsers.add_parser('ignition', parents=[ignitiondownload_parser],
                                    description=ignitiondownload_desc,
                                    help=ignitiondownload_desc)
+
+    infraenvcreate_desc = 'Create Infraenv'
+    infraenvcreate_epilog = None
+    infraenvcreate_parser = create_subparsers.add_parser('infraenv', description=infraenvcreate_desc,
+                                                         help=infraenvcreate_desc,
+                                                         epilog=infraenvcreate_epilog, formatter_class=rawhelp)
+    infraenvcreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    infraenvcreate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
+    infraenvcreate_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvcreate_parser.set_defaults(func=create_infra_env)
+
+    infraenvdelete_desc = 'Delete Infraenv'
+    infraenvdelete_epilog = None
+    infraenvdelete_parser = delete_subparsers.add_parser('infraenv', description=infraenvdelete_desc,
+                                                         help=infraenvdelete_desc,
+                                                         epilog=infraenvdelete_epilog, formatter_class=rawhelp)
+    infraenvdelete_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvdelete_parser.set_defaults(func=delete_infra_env)
+
+    infraenvinfo_desc = 'Info Infraenv'
+    infraenvinfo_epilog = None
+    infraenvinfo_parser = info_subparsers.add_parser('infraenv', description=infraenvinfo_desc, help=infraenvinfo_desc,
+                                                     epilog=infraenvinfo_epilog, formatter_class=rawhelp)
+    infraenvinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
+                                     'separated by a comma', metavar='FIELDS')
+    infraenvinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
+    infraenvinfo_parser.add_argument('--full', action='store_true', help='Full output')
+    infraenvinfo_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvinfo_parser.set_defaults(func=info_infra_env)
+
+    infraenvlist_desc = 'List Infraenvs'
+    infraenvlist_parser = argparse.ArgumentParser(add_help=False)
+    infraenvlist_parser.set_defaults(func=list_infra_env)
+    list_subparsers.add_parser('infraenv', parents=[infraenvlist_parser], description=infraenvlist_desc,
+                               help=infraenvlist_desc, aliases=['infraenvs'])
+
+    infraenvupdate_desc = 'Update Infraenv'
+    infraenvupdate_parser = argparse.ArgumentParser(add_help=False)
+    infraenvupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    infraenvupdate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
+    infraenvupdate_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvupdate_parser.set_defaults(func=update_infra_env)
+    update_subparsers.add_parser('infraenv', parents=[infraenvupdate_parser], description=infraenvupdate_desc,
+                                 help=infraenvupdate_desc)
+
+    isocreate_desc = 'Create iso'
+    isocreate_epilog = None
+    isocreate_parser = create_subparsers.add_parser('iso', description=isocreate_desc, help=isocreate_desc,
+                                                    epilog=isocreate_epilog, formatter_class=rawhelp)
+    isocreate_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
+    isocreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    isocreate_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
+    isocreate_parser.add_argument('cluster', metavar='CLUSTER')
+    isocreate_parser.set_defaults(func=create_iso)
+
+    isoinfo_desc = 'Get iso url'
+    isoinfo_epilog = None
+    isoinfo_parser = info_subparsers.add_parser('iso', description=isoinfo_desc, help=isoinfo_desc,
+                                                epilog=isoinfo_epilog, formatter_class=rawhelp)
+    isoinfo_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
+    isoinfo_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    isoinfo_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
+    isoinfo_parser.add_argument('cluster', metavar='CLUSTER')
+    isoinfo_parser.set_defaults(func=info_iso)
+
+    initrddownload_desc = 'Download Initrd'
+    initrddownload_parser = argparse.ArgumentParser(add_help=False)
+    initrddownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
+    initrddownload_parser.add_argument('cluster', metavar='CLUSTER')
+    initrddownload_parser.set_defaults(func=download_initrd)
+    download_subparsers.add_parser('initrd', parents=[initrddownload_parser], description=initrddownload_desc,
+                                   help=initrddownload_desc)
 
     isodownload_desc = 'Download Iso'
     isodownload_parser = argparse.ArgumentParser(add_help=False)
@@ -460,30 +639,6 @@ def cli():
     download_subparsers.add_parser('kubeconfig', parents=[kubeconfigdownload_parser],
                                    description=kubeconfigdownload_desc,
                                    help=kubeconfigdownload_desc)
-
-    metaldownload_desc = 'Download Metal file'
-    metaldownload_parser = argparse.ArgumentParser(add_help=False)
-    metaldownload_parser.add_argument('--commit', action='store_true', help='Use commit id')
-    metaldownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
-    metaldownload_parser.add_argument('-v', '--version', metavar='VERSION', default='4.6',
-                                      help='Version to use.Defaults to 4.6')
-    metaldownload_parser.set_defaults(func=download_metal)
-    download_subparsers.add_parser('metalfile', parents=[metaldownload_parser],
-                                   description=metaldownload_desc,
-                                   help=metaldownload_desc)
-
-    clusterexport_desc = 'Export Clusters'
-    clusterexport_parser = argparse.ArgumentParser(add_help=False)
-    clusterexport_parser.add_argument('cluster', metavar='CLUSTER')
-    clusterexport_parser.set_defaults(func=export_cluster)
-    export_subparsers.add_parser('cluster', parents=[clusterexport_parser], description=clusterexport_desc,
-                                 help=clusterexport_desc, aliases=['clusters'])
-
-    clusterlist_desc = 'List Clusters'
-    clusterlist_parser = argparse.ArgumentParser(add_help=False)
-    clusterlist_parser.set_defaults(func=list_cluster)
-    list_subparsers.add_parser('cluster', parents=[clusterlist_parser], description=clusterlist_desc,
-                               help=clusterlist_desc, aliases=['clusters'])
 
     hostdelete_desc = 'Delete host'
     hostdelete_parser = argparse.ArgumentParser(add_help=False)
