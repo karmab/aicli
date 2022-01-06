@@ -359,20 +359,20 @@ def list_manifests(args):
     print(manifeststable)
 
 
-def patch_installconfig(args):
-    info("Patching installconfig in %s" % args.cluster)
+def update_installconfig(args):
+    info("Updating installconfig in %s" % args.cluster)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.patch_installconfig(args.cluster, overrides)
+    ai.update_installconfig(args.cluster, overrides)
 
 
-def patch_iso(args):
-    info("Patching iso in %s" % args.cluster)
+def update_iso(args):
+    info("Updating iso in %s" % args.cluster)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.patch_iso(args.cluster, overrides)
+    ai.update_iso(args.cluster, overrides)
 
 
 def info_service(args):
@@ -418,10 +418,6 @@ def cli():
     list_parser = subparsers.add_parser('list', description=list_desc, help=list_desc, aliases=['get'])
     list_subparsers = list_parser.add_subparsers(metavar='', dest='subcommand_list')
 
-    patch_desc = 'Patch Object'
-    patch_parser = subparsers.add_parser('patch', description=patch_desc, help=patch_desc)
-    patch_subparsers = patch_parser.add_subparsers(metavar='', dest='subcommand_patch')
-
     start_desc = 'Start Object'
     start_parser = subparsers.add_parser('start', description=start_desc, help=start_desc, aliases=['launch'])
     start_subparsers = start_parser.add_subparsers(metavar='', dest='subcommand_start')
@@ -431,7 +427,7 @@ def cli():
     stop_subparsers = stop_parser.add_subparsers(metavar='', dest='subcommand_stop')
 
     update_desc = 'Update Object'
-    update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc)
+    update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc, aliases=['patch'])
     update_subparsers = update_parser.add_subparsers(metavar='', dest='subcommand_update')
 
     clustercreate_desc = 'Create Cluster'
@@ -681,22 +677,22 @@ def cli():
     list_subparsers.add_parser('manifest', parents=[manifestslist_parser], description=manifestslist_desc,
                                help=manifestslist_desc, aliases=['manifests'])
 
-    isopatch_desc = 'Patch Iso'
+    isopatch_desc = 'Update Discovery Iso'
     isopatch_parser = argparse.ArgumentParser(add_help=False)
     isopatch_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     isopatch_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
     isopatch_parser.add_argument('cluster', metavar='CLUSTER')
-    isopatch_parser.set_defaults(func=patch_iso)
-    patch_subparsers.add_parser('iso', parents=[isopatch_parser], description=isopatch_desc, help=isopatch_desc)
+    isopatch_parser.set_defaults(func=update_iso)
+    update_subparsers.add_parser('iso', parents=[isopatch_parser], description=isopatch_desc, help=isopatch_desc)
 
-    installconfigpatch_desc = 'Patch Installconfig'
+    installconfigpatch_desc = 'Update Installconfig'
     installconfigpatch_parser = argparse.ArgumentParser(add_help=False)
     installconfigpatch_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     installconfigpatch_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
     installconfigpatch_parser.add_argument('cluster', metavar='CLUSTER')
-    installconfigpatch_parser.set_defaults(func=patch_installconfig)
-    patch_subparsers.add_parser('installconfig', parents=[installconfigpatch_parser],
-                                description=installconfigpatch_desc, help=installconfigpatch_desc)
+    installconfigpatch_parser.set_defaults(func=update_installconfig)
+    update_subparsers.add_parser('installconfig', parents=[installconfigpatch_parser],
+                                 description=installconfigpatch_desc, help=installconfigpatch_desc)
 
     serviceinfo_desc = 'Info Service'
     serviceinfo_epilog = None

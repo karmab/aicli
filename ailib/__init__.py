@@ -521,7 +521,7 @@ class AssistedClient(object):
             results.append({'file_name': manifest['file_name'], 'folder': manifest['folder']})
         return results
 
-    def patch_installconfig(self, name, overrides={}):
+    def update_installconfig(self, name, overrides={}):
         cluster_id = self.get_cluster_id(name)
         installconfig = {}
         if 'network_type' in overrides or 'sno_disk' in overrides:
@@ -542,7 +542,7 @@ class AssistedClient(object):
                 sys.exit(1)
         self.client.v2_update_cluster_install_config(cluster_id, json.dumps(installconfig))
 
-    def patch_iso(self, name, overrides={}):
+    def update_iso(self, name, overrides={}):
         infra_env_id = self.get_infra_env_id(name)
         # infra_env_info = self.client.get_infra_env(infra_env_id=infra_env_id).to_dict()
         # openshift_version = str(infra_env_info['openshift_version'])
