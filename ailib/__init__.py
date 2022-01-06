@@ -470,6 +470,9 @@ class AssistedClient(object):
         for key in ['openshift_version', 'sshKey']:
             if key in overrides:
                 del overrides[key]
+        if 'olm_operators' in overrides:
+            olm_operators = overrides['olm_operators']
+            overrides['olm_operators'] = [{"name": operator} for operator in olm_operators]
         if overrides:
             cluster_update_params = models.ClusterUpdateParams(**overrides)
             self.client.v2_update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
