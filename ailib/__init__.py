@@ -544,9 +544,10 @@ class AssistedClient(object):
 
     def patch_iso(self, name, overrides={}):
         infra_env_id = self.get_infra_env_id(name)
-        infra_env_info = self.client.get_infra_env(infra_env_id=infra_env_id).to_dict()
-        openshift_version = str(infra_env_info['openshift_version'])
-        ignition_version = IGNITION_VERSIONS.get(openshift_version, '3.2.0')
+        # infra_env_info = self.client.get_infra_env(infra_env_id=infra_env_id).to_dict()
+        # openshift_version = str(infra_env_info['openshift_version'])
+        # ignition_version = IGNITION_VERSIONS.get(openshift_version, '3.2.0')
+        ignition_version = '3.1.0'
         ailibdir = os.path.dirname(warning.__code__.co_filename)
         disconnected_url = overrides.get('disconnected_url')
         if disconnected_url is None:
@@ -571,9 +572,9 @@ class AssistedClient(object):
                 "contents": {"source": "data:text/plain;base64,%s" % registries_encoded}}
         fil2 = {"path": "/etc/pki/ca-trust/source/anchors/domain.crt", "mode": 420, "overwrite": True,
                 "user": {"name": "root"}, "contents": {"source": "data:text/plain;base64,%s" % ca_encoded}}
-        infra_env_update_params = {"ignition_config_override": json.dumps({"ignition": {"version": ignition_version},
-                                                                           "storage": {"files": [fil1, fil2]}})}
-        infra_env_update_params = models.InfraEnvUpdateParams(**infra_env_update_params)
+        ignition_config_override = json.dumps({"ignition": {"version": ignition_version},
+                                               "storage": {"files": [fil1, fil2]}})
+        infra_env_update_params = models.InfraEnvUpdateParams(ignition_config_override=ignition_config_override)
         self.client.update_infra_env(infra_env_id=infra_env_id, infra_env_update_params=infra_env_update_params)
 
     def info_service(self):
