@@ -271,6 +271,20 @@ def list_infra_env(args):
     print(infra_envs_table)
 
 
+def bind_infra_env(args):
+    info("binding Infra Env %s to Cluster %s" % (args.infraenv, args.cluster))
+    info("this will bind all hosts of the infraenv to given cluster")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.bind_infra_env(args.infraenv, args.cluster)
+
+
+def unbind_infra_env(args):
+    info("Unbinding Infra Env %s" % args.infraenv)
+    info("this will unbind all hosts of the infraenv from any cluster")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.unbind_infra_env(args.infraenv)
+
+
 def update_infra_env(args):
     info("Updating infraenv %s" % args.infraenv)
     paramfile = choose_parameter_file(args.paramfile)
@@ -555,6 +569,14 @@ def cli():
                                    description=ignitiondownload_desc,
                                    help=ignitiondownload_desc)
 
+    infraenvbind_desc = 'Bind Infraenv'
+    infraenvbind_parser = argparse.ArgumentParser(add_help=False)
+    infraenvbind_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvbind_parser.add_argument('cluster', metavar='CLUSTER')
+    infraenvbind_parser.set_defaults(func=bind_infra_env)
+    bind_subparsers.add_parser('infraenv', parents=[infraenvbind_parser], description=infraenvbind_desc,
+                               help=infraenvbind_desc)
+
     infraenvcreate_desc = 'Create Infraenv'
     infraenvcreate_epilog = None
     infraenvcreate_parser = create_subparsers.add_parser('infraenv', description=infraenvcreate_desc,
@@ -589,6 +611,13 @@ def cli():
     infraenvlist_parser.set_defaults(func=list_infra_env)
     list_subparsers.add_parser('infraenv', parents=[infraenvlist_parser], description=infraenvlist_desc,
                                help=infraenvlist_desc, aliases=['infraenvs'])
+
+    infraenvunbind_desc = 'Unbind Infra Env'
+    infraenvunbind_parser = argparse.ArgumentParser(add_help=False)
+    infraenvunbind_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvunbind_parser.set_defaults(func=unbind_infra_env)
+    unbind_subparsers.add_parser('infraenv', parents=[infraenvunbind_parser],
+                                 description=infraenvunbind_desc, help=infraenvunbind_desc)
 
     infraenvupdate_desc = 'Update Infraenv'
     infraenvupdate_parser = argparse.ArgumentParser(add_help=False)
@@ -696,7 +725,7 @@ def cli():
     list_subparsers.add_parser('host', parents=[hostslist_parser], description=hostslist_desc,
                                help=clusterlist_desc, aliases=['hosts'])
 
-    hostunbind_desc = 'Bind Host'
+    hostunbind_desc = 'Unbind Host'
     hostunbind_parser = argparse.ArgumentParser(add_help=False)
     hostunbind_parser.add_argument('hostname', metavar='HOSTNAME')
     hostunbind_parser.set_defaults(func=unbind_host)

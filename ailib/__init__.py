@@ -6,6 +6,7 @@ import os
 import re
 import socket
 import sys
+from time import sleep
 import yaml
 import urllib
 from urllib.request import urlretrieve
@@ -697,3 +698,42 @@ class AssistedClient(object):
         if infra_env_update_params:
             infra_env_update_params = models.InfraEnvUpdateParams(**infra_env_update_params)
             self.client.update_infra_env(infra_env_id=infra_env_id, infra_env_update_params=infra_env_update_params)
+
+    def bind_infra_env(self, name, cluster):
+        infra_env_id = self.get_infra_env_id(name)
+        cluster_id = self.get_cluster_id(cluster)
+        for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
+            host_id = host['id']
+            host_name = host['requested_hostname']
+            host_cluster_id = host.get('cluster_id')
+            if host_cluster_id is not None:
+                if host_cluster_id == cluster_id:
+                    info("Host %s already bound to Cluster %s" % (host_name, cluster))
+                    continue
+                else:
+                    host_cluster = self.get_cluster_name(host_cluster_id)
+                    info("Unbinding Host %s from Cluster %s" % (host_name, host_cluster))
+                    self.client.unbind_host(infra_env_id=infra_env_id, host_id=host_id)
+                    while True:
+                        currenthost = self.client.v2_get_host(infra_env_id=infra_env_id, host_id=host_id)
+                        currentstatus = currenthost.status
+                        if currentstatus == 'known-unbound':
+                            break
+                        else:
+                            sleep(5)
+            info("Binding Host %s to Cluster %s" % (host_name, cluster))
+            bind_host_params = {'cluster_id': cluster_id}
+            bind_host_params = models.BindHostParams(**bind_host_params)
+            self.client.bind_host(infra_env_id, host_id, bind_host_params)
+
+    def unbind_infra_env(self, name):
+        infra_env_id = self.get_infra_env_id(name)
+        for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
+            host_id = host['id']
+            host_cluster_id = host.get('cluster_id')
+            host_name = host['requested_hostname']
+            if host_cluster_id is None:
+                info("Host %s already unbound" % host_name)
+                continue
+            info("Unbinding Host %s" % host_name)
+            self.client.unbind_host(infra_env_id=infra_env_id, host_id=host_id)
