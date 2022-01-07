@@ -90,16 +90,7 @@ class AssistedClient(object):
         if 'high_availability_mode' in overrides and overrides['high_availability_mode'] is None:
             overrides['high_availability_mode'] = "None"
         if 'olm_operators' in overrides:
-            olm_operators = []
-            for operator in overrides['olm_operators']:
-                if isinstance(operator, str):
-                    olm_operators.append({'name': operator})
-                elif isinstance(operator, dict) and 'name' in operator:
-                    olm_operators.append(operator)
-                else:
-                    error("Invalid entry for olm_operators %s" % operator)
-                    sys.exit(1)
-            overrides['olm_operators'] = olm_operators
+            overrides['olm_operators'] = self.set_olm_operators(overrides['olm_operators'])
         if 'tpm' in overrides and overrides['tpm']:
             overrides['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2"}
             del overrides['tpm']
@@ -180,6 +171,24 @@ class AssistedClient(object):
             ignition_config_override = json.dumps({"ignition": {"version": ignition_version},
                                                    "storage": {"files": [fil1, fil2]}})
         return ignition_config_override
+
+    def set_olm_operators(self, olm_operators_data):
+        operatorsapi = api.OperatorsApi(api_client=self.api)
+        supported_operators = operatorsapi.v2_list_supported_operators()
+        olm_operators = []
+        for operator in olm_operators_data:
+            if isinstance(operator, str):
+                operator_name = operator
+            elif isinstance(operator, dict) and 'name' in operator:
+                operator_name = operator['name']
+            else:
+                error("Invalid entry for olm_operators %s" % operator)
+                sys.exit(1)
+            if operator_name not in supported_operators:
+                error("Incorrect olm_operator %s. Should be one of %s" % (operator_name, supported_operators))
+                sys.exit(1)
+            olm_operators.append({'name': operator_name})
+        return olm_operators
 
     def get_cluster_id(self, name):
         matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name or x['id'] == name]
@@ -518,8 +527,7 @@ class AssistedClient(object):
             if key in overrides:
                 del overrides[key]
         if 'olm_operators' in overrides:
-            olm_operators = overrides['olm_operators']
-            overrides['olm_operators'] = [{"name": operator} for operator in olm_operators]
+            overrides['olm_operators'] = self.set_olm_operators(overrides['olm_operators'])
         if overrides:
             cluster_update_params = models.ClusterUpdateParams(**overrides)
             self.client.v2_update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
