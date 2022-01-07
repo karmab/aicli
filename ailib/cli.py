@@ -60,15 +60,16 @@ def create_cluster(args):
 
 
 def delete_cluster(args):
-    info("Deleting cluster %s" % args.cluster)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.delete_cluster(args.cluster)
-    for infra_env in ai.list_infra_envs():
-        infra_env_name = infra_env.get('name')
-        associated_infra_envs = ["%s_infra-env" % args.cluster, "%s-day2_infra-env" % args.cluster]
-        if infra_env_name is not None and infra_env_name in associated_infra_envs:
-            infra_env_id = infra_env['id']
-            ai.delete_infra_env(infra_env_id)
+    for cluster in args.clusters:
+        info("Deleting cluster %s" % cluster)
+        ai.delete_cluster(cluster)
+        for infra_env in ai.list_infra_envs():
+            infra_env_name = infra_env.get('name')
+            associated_infra_envs = ["%s_infra-env" % cluster, "%s-day2_infra-env" % cluster]
+            if infra_env_name is not None and infra_env_name in associated_infra_envs:
+                infra_env_id = infra_env['id']
+                ai.delete_infra_env(infra_env_id)
 
 
 def export_cluster(args):
@@ -145,11 +146,12 @@ def create_manifests(args):
 
 
 def delete_host(args):
-    info("Updating Host %s" % args.hostname)
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.delete_host(args.hostname, overrides=overrides)
+    for hostname in args.hostnames:
+        info("Deleting Host %s" % hostname)
+        ai.delete_host(hostname, overrides=overrides)
 
 
 def info_host(args):
@@ -221,9 +223,10 @@ def create_infra_env(args):
 
 
 def delete_infra_env(args):
-    info("Deleting infraenv %s" % args.infraenv)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.delete_infra_env(args.infraenv)
+    for infraenv in args.infraenvs:
+        info("Deleting infraenv %s" % infraenv)
+        ai.delete_infra_env(infraenv)
 
 
 def info_infra_env(args):
@@ -485,7 +488,7 @@ def cli():
     clusterdelete_parser = delete_subparsers.add_parser('cluster', description=clusterdelete_desc,
                                                         help=clusterdelete_desc,
                                                         epilog=clusterdelete_epilog, formatter_class=rawhelp)
-    clusterdelete_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterdelete_parser.add_argument('clusters', metavar='CLUSTERS', nargs='*')
     clusterdelete_parser.set_defaults(func=delete_cluster)
 
     clusterexport_desc = 'Export Clusters'
@@ -592,7 +595,7 @@ def cli():
     infraenvdelete_parser = delete_subparsers.add_parser('infraenv', description=infraenvdelete_desc,
                                                          help=infraenvdelete_desc,
                                                          epilog=infraenvdelete_epilog, formatter_class=rawhelp)
-    infraenvdelete_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvdelete_parser.add_argument('infraenvs', metavar='INFRAENVS', nargs='*')
     infraenvdelete_parser.set_defaults(func=delete_infra_env)
 
     infraenvinfo_desc = 'Info Infraenv'
@@ -703,7 +706,7 @@ def cli():
     hostdelete_parser = argparse.ArgumentParser(add_help=False)
     hostdelete_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     hostdelete_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
-    hostdelete_parser.add_argument('hostname', metavar='HOSTNAME')
+    hostdelete_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
     hostdelete_parser.set_defaults(func=delete_host)
     delete_subparsers.add_parser('host', parents=[hostdelete_parser], description=hostdelete_desc, help=hostdelete_desc)
 
