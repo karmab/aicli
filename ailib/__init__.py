@@ -14,6 +14,7 @@ import sys
 from time import sleep
 from uuid import uuid1
 import urllib
+from pathlib import Path
 from urllib.request import urlretrieve
 import yaml
 
@@ -91,6 +92,11 @@ class AssistedClient(object):
         allowed.extend(self._allowed_parameters(models.InstallerArgsParams))
         return allowed
 
+    @staticmethod
+    def get_default_ssh_pub():
+        for key in Path('%s/.ssh/' % os.environ['HOME']).glob("*.pub"):
+            return str(key)
+
     def set_default_values(self, overrides, existing=False):
         if 'openshift_version' in overrides and isinstance(overrides['openshift_version'], float):
             overrides['openshift_version'] = str(overrides['openshift_version'])
@@ -106,7 +112,7 @@ class AssistedClient(object):
                 sys.exit(1)
             overrides['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
             if 'ssh_public_key' not in overrides:
-                pub_key = overrides.get('public_key', f"{os.environ['HOME']}/.ssh/id_rsa.pub")
+                pub_key = overrides.get('public_key', self.get_default_ssh_pub())
                 if os.path.exists(pub_key):
                     overrides['ssh_public_key'] = open(pub_key).read().strip()
                 else:
@@ -159,7 +165,7 @@ class AssistedClient(object):
             if 'ssh_public_key' in overrides:
                 overrides['ssh_authorized_key'] = overrides['ssh_public_key']
             else:
-                pub_key = overrides.get('public_key', f"{os.environ['HOME']}/.ssh/id_rsa.pub")
+                pub_key = overrides.get('public_key', self.get_default_ssh_pub())
                 if os.path.exists(pub_key):
                     overrides['ssh_authorized_key'] = open(pub_key).read().strip()
                 else:
