@@ -341,6 +341,20 @@ def download_discovery_ignition(args):
     ai.download_discovery_ignition(args.infraenv, args.path)
 
 
+def bind_host(args):
+    info("binding Host %s to Cluster %s" % (args.hostname, args.cluster))
+    overrides = {'cluster': args.cluster}
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.update_host(args.hostname, overrides)
+
+
+def unbind_host(args):
+    info("Unbinding Host %s" % args.hostname)
+    overrides = {'cluster': None}
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.update_host(args.hostname, overrides)
+
+
 def update_host(args):
     info("Updating Host %s" % args.hostname)
     paramfile = choose_parameter_file(args.paramfile)
@@ -396,6 +410,10 @@ def cli():
     parser.add_argument('--offlinetoken', default=os.environ.get('AI_OFFLINETOKEN'))
     subparsers = parser.add_subparsers(metavar='', title='Available Commands')
 
+    bind_desc = 'bind Object'
+    bind_parser = subparsers.add_parser('bind', description=bind_desc, help=bind_desc)
+    bind_subparsers = bind_parser.add_subparsers(metavar='', dest='subcommand_bind')
+
     create_desc = 'Create Object'
     create_parser = subparsers.add_parser('create', description=create_desc, help=create_desc, aliases=['add'])
     create_subparsers = create_parser.add_subparsers(metavar='', dest='subcommand_create')
@@ -428,6 +446,10 @@ def cli():
     stop_desc = 'Stop Object'
     stop_parser = subparsers.add_parser('stop', description=stop_desc, help=stop_desc, aliases=['reset'])
     stop_subparsers = stop_parser.add_subparsers(metavar='', dest='subcommand_stop')
+
+    unbind_desc = 'Unbind Object'
+    unbind_parser = subparsers.add_parser('unbind', description=unbind_desc, help=unbind_desc)
+    unbind_subparsers = unbind_parser.add_subparsers(metavar='', dest='subcommand_unbind')
 
     update_desc = 'Update Object'
     update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc, aliases=['patch'])
@@ -640,6 +662,13 @@ def cli():
                                    description=kubeconfigdownload_desc,
                                    help=kubeconfigdownload_desc)
 
+    hostbind_desc = 'Bind Host'
+    hostbind_parser = argparse.ArgumentParser(add_help=False)
+    hostbind_parser.add_argument('hostname', metavar='HOSTNAME')
+    hostbind_parser.add_argument('cluster', metavar='CLUSTER')
+    hostbind_parser.set_defaults(func=bind_host)
+    bind_subparsers.add_parser('host', parents=[hostbind_parser], description=hostbind_desc, help=hostbind_desc)
+
     hostdelete_desc = 'Delete host'
     hostdelete_parser = argparse.ArgumentParser(add_help=False)
     hostdelete_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
@@ -665,6 +694,12 @@ def cli():
     hostslist_parser.set_defaults(func=list_hosts)
     list_subparsers.add_parser('host', parents=[hostslist_parser], description=hostslist_desc,
                                help=clusterlist_desc, aliases=['hosts'])
+
+    hostunbind_desc = 'Bind Host'
+    hostunbind_parser = argparse.ArgumentParser(add_help=False)
+    hostunbind_parser.add_argument('hostname', metavar='HOSTNAME')
+    hostunbind_parser.set_defaults(func=unbind_host)
+    unbind_subparsers.add_parser('host', parents=[hostunbind_parser], description=hostunbind_desc, help=hostunbind_desc)
 
     hostupdate_desc = 'Update Host name and role'
     hostupdate_parser = argparse.ArgumentParser(add_help=False)
