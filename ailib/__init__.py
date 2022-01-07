@@ -171,7 +171,7 @@ class AssistedClient(object):
         if existing_ids:
             error("Cluster %s already there. Leaving" % name)
             sys.exit(1)
-        if '-day2' in name or (overrides.get('day2', False) and overrides.get('cluster') is not None):
+        if name.endswith('-day2'):
             self.create_day2_cluster(name, overrides)
             return
         self.set_default_values(overrides)
@@ -186,7 +186,7 @@ class AssistedClient(object):
     def delete_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         self.client.v2_deregister_cluster(cluster_id=cluster_id)
-        day2_matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name + '-day2']
+        day2_matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == '%s-day2' % name]
         if day2_matching_ids:
             self.client.v2_deregister_cluster(cluster_id=day2_matching_ids[0])
 
@@ -216,10 +216,7 @@ class AssistedClient(object):
         print(yaml.dump(data, default_flow_style=False, indent=2))
 
     def create_day2_cluster(self, name, overrides={}):
-        if overrides.get('day2', False) and overrides.get('cluster') is not None:
-            cluster_name = overrides.get('cluster')
-        else:
-            cluster_name = name.replace('-day2', '')
+        cluster_name = name.replace('-day2', '')
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == cluster_name]
         if not existing_ids:
             warning("Base Cluster %s not found. Populating with default values" % cluster_name)
@@ -641,7 +638,7 @@ class AssistedClient(object):
     def delete_infra_env(self, name):
         infra_env_id = self.get_infra_env_id(name)
         self.client.deregister_infra_env(infra_env_id=infra_env_id)
-        day2_matching_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == name + '-day2']
+        day2_matching_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == '%s-day2' % name]
         if day2_matching_ids:
             self.client.deregister_infra_env(infra_env_id=day2_matching_ids[0])
 
