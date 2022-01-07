@@ -4,6 +4,7 @@ import base64
 import json
 import os
 import re
+import socket
 import sys
 import yaml
 import urllib
@@ -264,6 +265,7 @@ class AssistedClient(object):
     def create_day2_cluster(self, name, overrides={}):
         cluster_name = name.replace('-day2', '')
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == cluster_name]
+        api_ip = None
         if not existing_ids:
             warning("Base Cluster %s not found. Populating with default values" % cluster_name)
             if 'version' in overrides:
@@ -291,10 +293,20 @@ class AssistedClient(object):
             openshift_version = cluster.openshift_version
             ssh_public_key = cluster.image_info.ssh_public_key
             api_name = "api." + cluster_name + "." + cluster.base_dns_domain
+            api_ip = cluster.api_vip
             response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
                                                              _preload_content=False)
             data = yaml.safe_load(response.read().decode("utf-8"))
             pull_secret = data.get('pullSecret')
+        try:
+            socket.gethostbyname(api_name)
+        except:
+            if api_ip is not None:
+                warning("Forcing api_vip_dnsname to %s" % api_ip)
+                api_name = api_ip
+            else:
+                warning("%s doesn't resolve" % api_name)
+                warning("run aicli update cluster %s -P api_vip_dnsname=$api_ip " % name)
         new_import_cluster_params = {"name": name, "openshift_version": str(openshift_version),
                                      "api_vip_dnsname": api_name, 'openshift_cluster_id': cluster_id}
         new_import_cluster_params = models.ImportClusterParams(**new_import_cluster_params)
