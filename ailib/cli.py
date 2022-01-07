@@ -65,7 +65,8 @@ def delete_cluster(args):
     ai.delete_cluster(args.cluster)
     for infra_env in ai.list_infra_envs():
         infra_env_name = infra_env.get('name')
-        if infra_env_name is not None and infra_env_name == "%s_infra-env" % args.cluster:
+        associated_infra_envs = ["%s_infra-env" % args.cluster, "%s-day2_infra-env" % args.cluster]
+        if infra_env_name is not None and infra_env_name in associated_infra_envs:
             infra_env_id = infra_env['id']
             ai.delete_infra_env(infra_env_id)
 
