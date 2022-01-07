@@ -405,7 +405,7 @@ def cli():
     delete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation', dest="yes_top")
     delete_subparsers = delete_parser.add_subparsers(metavar='', dest='subcommand_delete')
 
-    download_desc = 'Download Assets like Iso'
+    download_desc = 'Download Assets'
     download_parser = subparsers.add_parser('download', description=download_desc, help=download_desc)
     download_subparsers = download_parser.add_subparsers(metavar='', dest='subcommand_download')
 
