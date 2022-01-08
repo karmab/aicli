@@ -278,7 +278,7 @@ def bind_infra_env(args):
     info("binding Infra Env %s to Cluster %s" % (args.infraenv, args.cluster))
     info("this will bind all hosts of the infraenv to given cluster")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.bind_infra_env(args.infraenv, args.cluster)
+    ai.bind_infra_env(args.infraenv, args.cluster, force=args.force)
 
 
 def unbind_infra_env(args):
@@ -574,6 +574,7 @@ def cli():
 
     infraenvbind_desc = 'Bind Infraenv'
     infraenvbind_parser = argparse.ArgumentParser(add_help=False)
+    infraenvbind_parser.add_argument('-f', '--force', action='store_true', help='Force')
     infraenvbind_parser.add_argument('infraenv', metavar='INFRAENV')
     infraenvbind_parser.add_argument('cluster', metavar='CLUSTER')
     infraenvbind_parser.set_defaults(func=bind_infra_env)

@@ -699,7 +699,7 @@ class AssistedClient(object):
             infra_env_update_params = models.InfraEnvUpdateParams(**infra_env_update_params)
             self.client.update_infra_env(infra_env_id=infra_env_id, infra_env_update_params=infra_env_update_params)
 
-    def bind_infra_env(self, name, cluster):
+    def bind_infra_env(self, name, cluster, force=False):
         infra_env_id = self.get_infra_env_id(name)
         cluster_id = self.get_cluster_id(cluster)
         for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
@@ -709,6 +709,9 @@ class AssistedClient(object):
             if host_cluster_id is not None:
                 if host_cluster_id == cluster_id:
                     info("Host %s already bound to Cluster %s" % (host_name, cluster))
+                    continue
+                elif not force:
+                    info("Host %s already bound another cluster" % host_name)
                     continue
                 else:
                     host_cluster = self.get_cluster_name(host_cluster_id)
