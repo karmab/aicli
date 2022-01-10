@@ -381,6 +381,13 @@ def update_host(args):
     ai.update_host(args.hostname, overrides)
 
 
+def wait_hosts(args):
+    info("Wait for hosts")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    filter_installed = args.filter
+    ai.wait_hosts(args.infraenv, args.number, filter_installed=filter_installed)
+
+
 def list_manifests(args):
     info("Retrieving manifests for Cluster %s" % args.cluster)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
@@ -472,6 +479,10 @@ def cli():
     update_desc = 'Update Object'
     update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc, aliases=['patch'])
     update_subparsers = update_parser.add_subparsers(metavar='', dest='subcommand_update')
+
+    wait_desc = 'Wait Object'
+    wait_parser = subparsers.add_parser('wait', description=wait_desc, help=wait_desc)
+    wait_subparsers = wait_parser.add_subparsers(metavar='', dest='subcommand_wait')
 
     clustercreate_desc = 'Create Cluster'
     clustercreate_epilog = None
@@ -772,6 +783,16 @@ def cli():
     serviceinfo_parser = info_subparsers.add_parser('service', description=serviceinfo_desc, help=serviceinfo_desc,
                                                     epilog=serviceinfo_epilog, formatter_class=rawhelp)
     serviceinfo_parser.set_defaults(func=info_service)
+
+    hostswait_desc = 'Wait for hosts'
+    hostswait_parser = argparse.ArgumentParser(add_help=False)
+    hostswait_parser.add_argument('-f', '--filter', action='store_true', help='Filter installed hosts')
+    hostswait_parser.add_argument('-n', '--number', help='Number of nodes to wait for. Default to 3', type=int,
+                                  default=3)
+    hostswait_parser.add_argument('infraenv', metavar='INFRAENV')
+    hostswait_parser.set_defaults(func=wait_hosts)
+    wait_subparsers.add_parser('host', parents=[hostswait_parser], description=hostswait_desc, help=hostswait_desc,
+                               aliases=['hosts'])
 
     if len(sys.argv) == 1:
         parser.print_help()

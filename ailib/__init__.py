@@ -487,6 +487,18 @@ class AssistedClient(object):
                 elif not bind_updated:
                     warning("Nothing updated for this host")
 
+    def wait_hosts(self, name, number=3, filter_installed=False):
+        infra_env_id = self.get_infra_env_id(name)
+        while True:
+            current_hosts = [host for host in self.client.v2_list_hosts(infra_env_id=infra_env_id)]
+            if filter_installed:
+                current_hosts = [host for host in current_hosts if host['status'] != 'installed']
+            if len(current_hosts) >= number:
+                return
+            else:
+                info("Waiting 5s for hosts to reach expected number")
+                sleep(5)
+
     def update_cluster(self, name, overrides):
         cluster_id = self.get_cluster_id(name)
         if 'api_ip' in overrides:
@@ -723,6 +735,7 @@ class AssistedClient(object):
                         if currentstatus == 'known-unbound':
                             break
                         else:
+                            info("Waiting 5s for host %s to get unbound" % host_name)
                             sleep(5)
             info("Binding Host %s to Cluster %s" % (host_name, cluster))
             bind_host_params = {'cluster_id': cluster_id}
