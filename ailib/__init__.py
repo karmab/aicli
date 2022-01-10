@@ -481,6 +481,7 @@ class AssistedClient(object):
                         mcp = overrides['mcp']
                         host_update_params['machine_config_pool_name'] = mcp
                 if host_update_params:
+                    info("Updating host with id %s" % host_id)
                     host_update_params = models.HostUpdateParams(**host_update_params)
                     self.client.v2_update_host(infra_env_id=infra_env_id, host_id=host_id,
                                                host_update_params=host_update_params)
