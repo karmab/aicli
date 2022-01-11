@@ -13,22 +13,22 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # colors = {'blue': '36', 'red': '31', 'green': '32', 'yellow': '33', 'pink': '35', 'white': '37'}
 def error(text):
     color = "31"
-    print('\033[0;%sm%s\033[0;0m' % (color, text))
+    print(f'\033[0;{color}m{text}\033[0;0m')
 
 
 def warning(text):
     color = "33"
-    print('\033[0;%sm%s\033[0;0m' % (color, text))
+    print(f'\033[0;{color}m{text}\033[0;0m')
 
 
 def info(text):
     color = "36"
-    print('\033[0;%sm%s\033[0;0m' % (color, text))
+    print(f'\033[0;{color}m{text}\033[0;0m')
 
 
 def success(text):
     color = "32"
-    print('\033[0;%sm%s\033[0;0m' % (color, text))
+    print(f'\033[0;{color}m{text}\033[0;0m')
 
 
 def get_overrides(paramfile=None, param=[]):
@@ -44,7 +44,7 @@ def get_overrides(paramfile=None, param=[]):
             try:
                 overrides = yaml.safe_load(f)
             except:
-                error("Couldn't parse your parameters file %s. Leaving" % paramfile)
+                error(f"Couldn't parse your parameters file {paramfile}. Leaving")
                 os._exit(1)
     if param is not None:
         for x in param:
@@ -56,7 +56,7 @@ def get_overrides(paramfile=None, param=[]):
                 else:
                     split = x.split('=')
                     key = split[0]
-                    value = x.replace("%s=" % key, '')
+                    value = x.replace(f"{key}=", '')
                 if value.isdigit():
                     value = int(value)
                 elif value.lower() == 'true':
@@ -80,7 +80,7 @@ def get_overrides(paramfile=None, param=[]):
 
 
 def get_token(token, offlinetoken=None):
-    aihome = "%s/.aicli" % os.environ['HOME']
+    aihome = f"{os.environ['HOME']}/.aicli"
     url = 'https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token'
     if token is not None:
         segment = token.split('.')[1]
@@ -95,7 +95,7 @@ def get_token(token, offlinetoken=None):
     result = urlopen(url, data=data).read()
     page = result.decode("utf8")
     token = json.loads(page)['access_token']
-    info("Storing new token in %s/token.txt" % aihome)
-    with open("%s/token.txt" % aihome, 'w') as f:
+    info(f"Storing new token in {aihome}/token.txt")
+    with open(f"{aihome}/token.txt", 'w') as f:
         f.write(token)
     return token

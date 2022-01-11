@@ -31,33 +31,33 @@ class AssistedClient(object):
             proxy = proxies.get('https') or proxies.get('http')
             if 'http' not in proxy:
                 proxy = "http://" + proxy
-                warning("Detected proxy env var without scheme, updating proxy to %s" % proxy)
+                warning(f"Detected proxy env var without scheme, updating proxy to {proxy}")
             config.proxy = proxy
-        aihome = "%s/.aicli" % os.environ['HOME']
+        aihome = f"{os.environ['HOME']}/.aicli"
         if not os.path.exists(aihome):
             os.mkdir(aihome)
         if url in ['https://api.openshift.com', 'https://api.stage.openshift.com']:
             if offlinetoken is None:
-                if os.path.exists('%s/offlinetoken.txt' % aihome):
-                    offlinetoken = open('%s/offlinetoken.txt' % aihome).read().strip()
+                if os.path.exists(f'{aihome}/offlinetoken.txt'):
+                    offlinetoken = open(f'{aihome}/offlinetoken.txt').read().strip()
                 else:
-                    error("offlinetoken needs to be set to gather token for %s" % url)
+                    error(f"offlinetoken needs to be set to gather token for {url}")
                     error("get it at https://cloud.redhat.com/openshift/token")
                     if os.path.exists('/i_am_a_container'):
                         error("use -e AI_OFFLINETOKEN=$AI_OFFLINETOKEN to expose it in container mode")
                     sys.exit(1)
-            if not os.path.exists('%s/offlinetoken.txt' % aihome):
-                with open('%s/offlinetoken.txt' % aihome, 'w') as f:
+            if not os.path.exists(f'{aihome}/offlinetoken.txt'):
+                with open(f'{aihome}/offlinetoken.txt', 'w') as f:
                     f.write(offlinetoken)
-            if os.path.exists('%s/token.txt' % aihome):
-                token = open('%s/token.txt' % aihome).read().strip()
+            if os.path.exists(f'{aihome}/token.txt'):
+                token = open(f'{aihome}/token.txt').read().strip()
             try:
                 token = get_token(token=token, offlinetoken=offlinetoken)
             except:
                 error("Hit issues when trying to set token")
-                if os.path.exists('%s/offlinetoken.txt' % aihome):
+                if os.path.exists(f'{aihome}/offlinetoken.txt'):
                     error("Removing offlinetoken file")
-                    os.remove('%s/offlinetoken.txt' % aihome)
+                    os.remove(f'{aihome}/offlinetoken.txt')
                 sys.exit(1)
             config.api_key['Authorization'] = token
             config.api_key_prefix['Authorization'] = 'Bearer'
@@ -72,15 +72,15 @@ class AssistedClient(object):
             overrides['pull_secret'] = "openshift_pull.json"
         pull_secret = os.path.expanduser(overrides['pull_secret'])
         if not os.path.exists(pull_secret):
-            error("Missing pull secret file %s" % pull_secret)
+            error(f"Missing pull secret file {pull_secret}")
             sys.exit(1)
         overrides['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
         if 'ssh_public_key' not in overrides:
-            pub_key = overrides.get('public_key', '%s/.ssh/id_rsa.pub' % os.environ['HOME'])
+            pub_key = overrides.get('public_key', f"{os.environ['HOME']}/.ssh/id_rsa.pub")
             if os.path.exists(pub_key):
                 overrides['ssh_public_key'] = open(pub_key).read().strip()
             else:
-                error("Missing public key file %s" % pub_key)
+                error(f"Missing public key file {pub_key}")
                 sys.exit(1)
             if 'public_key' in overrides:
                 del overrides['public_key']
@@ -128,11 +128,11 @@ class AssistedClient(object):
             static_network_config = final_network_config
             overrides['static_network_config'] = static_network_config
         if 'ssh_authorized_key' not in overrides:
-            pub_key = overrides.get('public_key', '%s/.ssh/id_rsa.pub' % os.environ['HOME'])
+            pub_key = overrides.get('public_key', f"{os.environ['HOME']}/.ssh/id_rsa.pub")
             if os.path.exists(pub_key):
                 overrides['ssh_authorized_key'] = open(pub_key).read().strip()
             else:
-                error("Missing public key file %s" % pub_key)
+                error(f"Missing public key file {pub_key}")
                 sys.exit(1)
             if 'public_key' in overrides:
                 del overrides['public_key']
@@ -160,16 +160,16 @@ class AssistedClient(object):
                                                               _preload_content=False)
                 ignition_version = json.loads(ori.read().decode("utf-8"))['ignition']['version']
             ailibdir = os.path.dirname(warning.__code__.co_filename)
-            with open("%s/registries.conf.templ" % ailibdir) as f:
+            with open(f"{ailibdir}/registries.conf.templ") as f:
                 data = f.read()
                 registries = data % {'url': disconnected_url}
             registries_encoded = base64.b64encode(registries.encode()).decode("UTF-8")
             ca_encoded = base64.b64encode(ca.encode()).decode("UTF-8")
             fil1 = {"path": "/etc/containers/registries.conf", "mode": 420, "overwrite": True,
                     "user": {"name": "root"},
-                    "contents": {"source": "data:text/plain;base64,%s" % registries_encoded}}
+                    "contents": {"source": f"data:text/plain;base64,{registries_encoded}"}}
             fil2 = {"path": "/etc/pki/ca-trust/source/anchors/domain.crt", "mode": 420, "overwrite": True,
-                    "user": {"name": "root"}, "contents": {"source": "data:text/plain;base64,%s" % ca_encoded}}
+                    "user": {"name": "root"}, "contents": {"source": f"data:text/plain;base64,{ca_encoded}"}}
             ignition_config_override = json.dumps({"ignition": {"version": ignition_version},
                                                    "storage": {"files": [fil1, fil2]}})
         return ignition_config_override
@@ -184,10 +184,10 @@ class AssistedClient(object):
             elif isinstance(operator, dict) and 'name' in operator:
                 operator_name = operator['name']
             else:
-                error("Invalid entry for olm_operators %s" % operator)
+                error(f"Invalid entry for olm_operators {operator}")
                 sys.exit(1)
             if operator_name not in supported_operators:
-                error("Incorrect olm_operator %s. Should be one of %s" % (operator_name, supported_operators))
+                error(f"Incorrect olm_operator {operator_name}. Should be one of {supported_operators}")
                 sys.exit(1)
             olm_operators.append({'name': operator_name})
         return olm_operators
@@ -197,7 +197,7 @@ class AssistedClient(object):
         if matching_ids:
             return matching_ids[0]
         else:
-            error("Cluster %s not found" % name)
+            error(f"Cluster {name} not found")
             sys.exit(1)
 
     def get_cluster_name(self, _id):
@@ -205,7 +205,7 @@ class AssistedClient(object):
         if matching_names:
             return matching_names[0]
         else:
-            error("Cluster %s not found" % _id)
+            error(f"Cluster {_id} not found")
             sys.exit(1)
 
     def create_cluster(self, name, overrides={}):
@@ -217,7 +217,7 @@ class AssistedClient(object):
                               "ocp_release_image"]
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
         if existing_ids:
-            error("Cluster %s already there. Leaving" % name)
+            error(f"Cluster {name} already there. Leaving")
             sys.exit(1)
         if name.endswith('-day2'):
             self.create_day2_cluster(name, overrides)
@@ -234,7 +234,7 @@ class AssistedClient(object):
     def delete_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         self.client.v2_deregister_cluster(cluster_id=cluster_id)
-        day2_matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == '%s-day2' % name]
+        day2_matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == f'{name}-day2']
         if day2_matching_ids:
             self.client.v2_deregister_cluster(cluster_id=day2_matching_ids[0])
 
@@ -268,14 +268,14 @@ class AssistedClient(object):
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == cluster_name]
         api_ip = None
         if not existing_ids:
-            warning("Base Cluster %s not found. Populating with default values" % cluster_name)
+            warning(f"Base Cluster {cluster_name} not found. Populating with default values")
             if 'version' in overrides:
                 openshift_version = overrides['version']
             elif 'openshift_version' in overrides:
                 openshift_version = overrides['openshift_version']
             else:
                 openshift_version = default_cluster_params["openshift_version"]
-                warning("No openshift_version provided.Using %s" % openshift_version)
+                warning(f"No openshift_version provided.Using {openshift_version}")
             if 'domain' in overrides:
                 domain = overrides['domain']
                 del overrides['domain']
@@ -283,7 +283,7 @@ class AssistedClient(object):
                 domain = overrides['base_dns_domain']
             else:
                 domain = default_cluster_params["base_dns_domain"]
-                warning("No base_dns_domain provided.Using %s" % domain)
+                warning(f"No base_dns_domain provided.Using {domain}")
             overrides['base_dns_domain'] = domain
             api_name = "api." + cluster_name + "." + domain
             self.set_default_values(overrides)
@@ -303,11 +303,11 @@ class AssistedClient(object):
             socket.gethostbyname(api_name)
         except:
             if api_ip is not None:
-                warning("Forcing api_vip_dnsname to %s" % api_ip)
+                warning(f"Forcing api_vip_dnsname to {api_ip}")
                 api_name = api_ip
             else:
-                warning("%s doesn't resolve" % api_name)
-                warning("run aicli update cluster %s -P api_vip_dnsname=$api_ip " % name)
+                warning(f"{api_name} doesn't resolve")
+                warning(f"run aicli update cluster {name} -P api_vip_dnsname=$api_ip")
         new_import_cluster_params = {"name": name, "openshift_version": str(openshift_version),
                                      "api_vip_dnsname": api_name, 'openshift_cluster_id': cluster_id}
         new_import_cluster_params = models.ImportClusterParams(**new_import_cluster_params)
@@ -325,14 +325,14 @@ class AssistedClient(object):
     def download_iso(self, name, path):
         infra_env = self.info_infra_env(name).to_dict()
         iso_url = infra_env['download_url']
-        urlretrieve(iso_url, "%s/%s.iso" % (path, name))
+        urlretrieve(iso_url, f"{path}/{name}.iso")
 
     def download_initrd(self, name, path):
         print("not implemented")
         return
         infra_env_id = self.get_infra_env_id(name)
         response = self.client.download_minimal_initrd(infra_env_id=infra_env_id, _preload_content=False)
-        with open("%s/initrd.%s" % (path, name), "wb") as f:
+        with open(f"{path}/initrd.{name}", "wb") as f:
             for line in response:
                 f.write(line)
 
@@ -340,35 +340,35 @@ class AssistedClient(object):
         cluster_id = self.get_cluster_id(name)
         response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
                                                          _preload_content=False)
-        with open("%s/install-config.yaml.%s" % (path, name), "wb") as f:
+        with open(f"{path}/install-config.yaml.{name}", "wb") as f:
             copyfileobj(response, f)
 
     def download_kubeadminpassword(self, name, path):
         cluster_id = self.get_cluster_id(name)
         response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id, file_name="kubeadmin-password",
                                                                _preload_content=False)
-        with open("%s/kubeadmin-password.%s" % (path, name), "wb") as f:
+        with open(f"{path}/kubeadmin-password.{name}", "wb") as f:
             copyfileobj(response, f)
 
     def download_kubeconfig(self, name, path):
         cluster_id = self.get_cluster_id(name)
         response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id, file_name="kubeconfig-noingress",
                                                                _preload_content=False)
-        with open("%s/kubeconfig.%s" % (path, name), "wb") as f:
+        with open(f"{path}/kubeconfig.{name}", "wb") as f:
             copyfileobj(response, f)
 
     def download_discovery_ignition(self, name, path):
         infra_env_id = self.get_infra_env_id(name)
         response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="discovery.ign",
                                                            _preload_content=False)
-        with open("%s/discovery.ign.%s" % (path, name), "wb") as f:
+        with open(f"{path}/discovery.ign.{name}", "wb") as f:
             copyfileobj(response, f)
 
     def download_ignition(self, name, path, role='bootstrap'):
         cluster_id = self.get_cluster_id(name)
-        response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name="%s.ign" % role,
+        response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name=f"{role}.ign",
                                                          _preload_content=False)
-        with open("%s/%s.ign.%s" % (path, role, name), "wb") as f:
+        with open(f"{path}/{role}.ign.{name}", "wb") as f:
             copyfileobj(response, f)
 
     def list_clusters(self):
@@ -399,11 +399,11 @@ class AssistedClient(object):
                 if matchingids:
                     infra_envs[infra_env_id] = matchingids
         if not infra_envs:
-            error("No Matching Host with name %s found" % hostname)
+            error(f"No Matching Host with name {hostname} found")
         for infra_env_id in infra_envs:
             host_ids = infra_envs[infra_env_id]
             for host_id in host_ids:
-                info("Deleting Host with id %s in infraenv %s" % (host_id, infra_env_id))
+                info(f"Deleting Host with id {host_id} in infraenv {infra_env_id}")
                 self.client.v2_deregister_host(infra_env_id, host_id)
 
     def info_host(self, hostname):
@@ -434,7 +434,7 @@ class AssistedClient(object):
                 if matchingids:
                     infra_envs[infra_env_id] = matchingids
         if not infra_envs:
-            error("No Matching Host with name %s found" % hostname)
+            error(f"No Matching Host with name {hostname} found")
         for infra_env_id in infra_envs:
             host_ids = infra_envs[infra_env_id]
             for index, host_id in enumerate(host_ids):
@@ -457,12 +457,12 @@ class AssistedClient(object):
                 if 'name' in overrides or 'requested_hostname' in overrides:
                     newname = overrides.get('name', overrides.get('requested_hostname'))
                     if len(host_ids) > 1:
-                        newname = "%s-%s" % (newname, index)
+                        newname = f"{newname}-{index}"
                     host_update_params['host_name'] = newname
                 if 'ignition' in overrides:
                     ignition_path = overrides['ignition']
                     if not os.path.exists(ignition_path):
-                        warning("Ignition %s not found. Ignoring" % ignition_path)
+                        warning(f"Ignition {ignition_path} not found. Ignoring")
                     else:
                         ignition_data = open(ignition_path).read()
                         host_ignition_params = models.HostIgnitionParams(config=ignition_data)
@@ -476,12 +476,12 @@ class AssistedClient(object):
                     currenthost = self.client.v2_get_host(infra_env_id=infra_env_id, host_id=host_id)
                     currentstatus = currenthost.status
                     if currentstatus not in valid_status:
-                        error("Mcp can't be set for host %s because of incorrect status" % hostname, currentstatus)
+                        error(f"Mcp can't be set for host {hostname} because of incorrect status {currentstatus}")
                     else:
                         mcp = overrides['mcp']
                         host_update_params['machine_config_pool_name'] = mcp
                 if host_update_params:
-                    info("Updating host with id %s" % host_id)
+                    info(f"Updating host with id {host_id}")
                     host_update_params = models.HostUpdateParams(**host_update_params)
                     self.client.v2_update_host(infra_env_id=infra_env_id, host_id=host_id,
                                                host_update_params=host_update_params)
@@ -526,7 +526,7 @@ class AssistedClient(object):
         if 'sno_disk' in overrides:
             sno_disk = overrides['sno_disk']
             if '/dev' not in sno_disk:
-                sno_disk = '/dev/%s' % sno_disk
+                sno_disk = f'/dev/{sno_disk}'
             installconfig['BootstrapInPlace'] = {'InstallationDisk': sno_disk}
             del overrides['sno_disk']
         if 'tpm' in overrides and overrides['tpm']:
@@ -576,22 +576,22 @@ class AssistedClient(object):
     def upload_manifests(self, name, directory, openshift=False):
         cluster_id = self.get_cluster_id(name)
         if not os.path.exists(directory):
-            error("Directory %s not found" % directory)
+            error(f"Directory {directory} not found")
             sys.exit(1)
         elif not os.path.isdir(directory):
-            error("%s is not a directory" % directory)
+            error(f"{directory} is not a directory")
             sys.exit(1)
         manifests_api = api.ManifestsApi(api_client=self.api)
         _fics = os.listdir(directory)
         if not _fics:
-            error("No files found in directory %s" % directory)
+            error(f"No files found in directory {directory}")
             sys.exit(0)
         for _fic in _fics:
             if not _fic.endswith('.yml') and not _fic.endswith('.yaml'):
-                warning("skipping file %s" % _fic)
+                warning(f"skipping file {_fic}")
                 continue
-            info("uploading file %s" % _fic)
-            content = base64.b64encode(open("%s/%s" % (directory, _fic)).read().encode()).decode("UTF-8")
+            info(f"uploading file {_fic}")
+            content = base64.b64encode(open(f"{directory}/{_fic}").read().encode()).decode("UTF-8")
             folder = 'manifests' if not openshift else 'openshift'
             manifest_info = {'file_name': _fic, 'content': content, 'folder': folder}
             create_manifest_params = models.CreateManifestParams(**manifest_info)
@@ -615,7 +615,7 @@ class AssistedClient(object):
             if 'sno_disk' in overrides:
                 sno_disk = overrides['sno_disk']
                 if '/dev' not in sno_disk:
-                    sno_disk = '/dev/%s' % sno_disk
+                    sno_disk = f'/dev/{sno_disk}'
                 installconfig['BootstrapInPlace'] = {'InstallationDisk': sno_disk}
         else:
             installconfig = overrides.get('installconfig')
@@ -649,12 +649,12 @@ class AssistedClient(object):
             print(operator)
 
     def get_infra_env_id(self, name):
-        valid_names = [name, '%s_infra-env' % name]
+        valid_names = [name, f'{name}_infra-env']
         matching_ids = [x['id'] for x in self.list_infra_envs() if x['name'] in valid_names or x['id'] == name]
         if matching_ids:
             return matching_ids[0]
         else:
-            error("Infraenv %s not found" % name)
+            error(f"Infraenv {name} not found")
             sys.exit(1)
 
     def get_infra_env_name(self, _id):
@@ -662,7 +662,7 @@ class AssistedClient(object):
         if matching_names:
             return matching_names[0]
         else:
-            error("Infraenv %s not found" % _id)
+            error(f"Infraenv {_id} not found")
             sys.exit(1)
 
     def create_infra_env(self, name, overrides={}):
@@ -671,7 +671,7 @@ class AssistedClient(object):
                               "image_type", "ignition_config_override", "cluster_id"]
         existing_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == name]
         if existing_ids:
-            error("Infraenv %s already there. Leaving" % name)
+            error(f"Infraenv {name} already there. Leaving")
             sys.exit(1)
         self.set_default_values(overrides)
         self.set_default_infraenv_values(overrides)
@@ -686,7 +686,7 @@ class AssistedClient(object):
     def delete_infra_env(self, name):
         infra_env_id = self.get_infra_env_id(name)
         self.client.deregister_infra_env(infra_env_id=infra_env_id)
-        day2_matching_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == '%s-day2' % name]
+        day2_matching_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == f'{name}-day2']
         if day2_matching_ids:
             self.client.deregister_infra_env(infra_env_id=day2_matching_ids[0])
 
@@ -721,14 +721,14 @@ class AssistedClient(object):
             host_cluster_id = host.get('cluster_id')
             if host_cluster_id is not None:
                 if host_cluster_id == cluster_id:
-                    info("Host %s already bound to Cluster %s" % (host_name, cluster))
+                    info(f"Host {host_name} already bound to Cluster {cluster}")
                     continue
                 elif not force:
-                    info("Host %s already bound another cluster" % host_name)
+                    info(f"Host {host_name} already bound another cluster")
                     continue
                 else:
                     host_cluster = self.get_cluster_name(host_cluster_id)
-                    info("Unbinding Host %s from Cluster %s" % (host_name, host_cluster))
+                    info(f"Unbinding Host {host_name} from Cluster {host_cluster}")
                     self.client.unbind_host(infra_env_id=infra_env_id, host_id=host_id)
                     while True:
                         currenthost = self.client.v2_get_host(infra_env_id=infra_env_id, host_id=host_id)
@@ -736,9 +736,9 @@ class AssistedClient(object):
                         if currentstatus == 'known-unbound':
                             break
                         else:
-                            info("Waiting 5s for host %s to get unbound" % host_name)
+                            info(f"Waiting 5s for host {host_name} to get unbound")
                             sleep(5)
-            info("Binding Host %s to Cluster %s" % (host_name, cluster))
+            info(f"Binding Host {host_name} to Cluster {cluster}")
             bind_host_params = {'cluster_id': cluster_id}
             bind_host_params = models.BindHostParams(**bind_host_params)
             self.client.bind_host(infra_env_id, host_id, bind_host_params)
@@ -750,7 +750,7 @@ class AssistedClient(object):
             host_cluster_id = host.get('cluster_id')
             host_name = host['requested_hostname']
             if host_cluster_id is None:
-                info("Host %s already unbound" % host_name)
+                info(f"Host {host_name} already unbound")
                 continue
-            info("Unbinding Host %s" % host_name)
+            info(f"Unbinding Host {host_name}")
             self.client.unbind_host(infra_env_id=infra_env_id, host_id=host_id)

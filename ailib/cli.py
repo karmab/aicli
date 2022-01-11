@@ -34,7 +34,7 @@ def get_subparser(parser, subcommand):
 def choose_parameter_file(paramfile):
     if os.path.exists("/i_am_a_container"):
         if paramfile is not None and not os.path.isabs(paramfile):
-            paramfile = "/workdir/%s" % paramfile
+            paramfile = f"/workdir/{paramfile}"
         elif os.path.exists("/workdir/aicli_parameters.yml"):
             paramfile = "/workdir/aicli_parameters.yml"
             info("Using default parameter file aicli_parameters.yml")
@@ -45,7 +45,7 @@ def choose_parameter_file(paramfile):
 
 
 def create_cluster(args):
-    info("Creating cluster %s" % args.cluster)
+    info(f"Creating cluster {args.cluster}")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     infraenv = overrides.get('infraenv', True)
@@ -55,25 +55,25 @@ def create_cluster(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.create_cluster(args.cluster, overrides)
     if infraenv:
-        infraenv = "%s_infra-env" % args.cluster
+        infraenv = f"{args.cluster}_infra-env"
         ai.create_infra_env(infraenv, infraenv_overrides)
 
 
 def delete_cluster(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     for cluster in args.clusters:
-        info("Deleting cluster %s" % cluster)
+        info(f"Deleting cluster {cluster}")
         ai.delete_cluster(cluster)
         for infra_env in ai.list_infra_envs():
             infra_env_name = infra_env.get('name')
-            associated_infra_envs = ["%s_infra-env" % cluster, "%s-day2_infra-env" % cluster]
+            associated_infra_envs = [f"{cluster}_infra-env", f"{cluster}-day2_infra-env"]
             if infra_env_name is not None and infra_env_name in associated_infra_envs:
                 infra_env_id = infra_env['id']
                 ai.delete_infra_env(infra_env_id)
 
 
 def export_cluster(args):
-    info("Exporting cluster %s" % args.cluster)
+    info(f"Exporting cluster {args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.export_cluster(args.cluster)
 
@@ -99,7 +99,7 @@ def info_cluster(args):
         if key in skipped or info[key] is None:
             del info[key]
     for entry in sorted(info):
-        currententry = "%s: %s" % (entry, info[entry]) if not values else info[entry]
+        currententry = f"{entry}: {info[entry]}" if not values else info[entry]
         print(currententry)
 
 
@@ -118,7 +118,7 @@ def list_cluster(args):
 
 
 def update_cluster(args):
-    info("Updating Cluster %s" % args.cluster)
+    info(f"Updating Cluster {args.cluster}")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
@@ -126,19 +126,19 @@ def update_cluster(args):
 
 
 def start_cluster(args):
-    info("Starting cluster %s" % args.cluster)
+    info(f"Starting cluster {args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.start_cluster(args.cluster)
 
 
 def stop_cluster(args):
-    info("Stopping cluster %s" % args.cluster)
+    info(f"Stopping cluster {args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.stop_cluster(args.cluster)
 
 
 def create_manifests(args):
-    info("Uploading manifests for Cluster %s" % args.cluster)
+    info(f"Uploading manifests for Cluster {args.cluster}")
     directory = args.dir
     openshift = args.openshift
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
@@ -150,7 +150,7 @@ def delete_host(args):
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     for hostname in args.hostnames:
-        info("Deleting Host %s" % hostname)
+        info(f"Deleting Host {hostname}")
         ai.delete_host(hostname, overrides=overrides)
 
 
@@ -167,7 +167,7 @@ def info_host(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     hostinfo = ai.info_host(args.host)
     if hostinfo is None:
-        error("Host %s not found" % args.host)
+        error(f"Host {args.host} not found")
     else:
         if fields:
             for key in list(hostinfo):
@@ -177,7 +177,7 @@ def info_host(args):
             if key in skipped or hostinfo[key] is None:
                 del hostinfo[key]
         for entry in sorted(hostinfo):
-            currententry = "%s: %s" % (entry, hostinfo[entry]) if not values else hostinfo[entry]
+            currententry = f"{entry}: hostinfo[entry]" if not values else hostinfo[entry]
             print(currententry)
 
 
@@ -215,7 +215,7 @@ def list_hosts(args):
 
 
 def create_infra_env(args):
-    info("Creating infraenv %s" % args.infraenv)
+    info(f"Creating infraenv {args.infraenv}")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
@@ -225,7 +225,7 @@ def create_infra_env(args):
 def delete_infra_env(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     for infraenv in args.infraenvs:
-        info("Deleting infraenv %s" % infraenv)
+        info(f"Deleting infraenv {infraenv}")
         ai.delete_infra_env(infraenv)
 
 
@@ -247,7 +247,7 @@ def info_infra_env(args):
         if key in skipped or info[key] is None:
             del info[key]
     for entry in sorted(info):
-        currententry = "%s: %s" % (entry, info[entry]) if not values else info[entry]
+        currententry = f"{entry}: {info[entry]}" if not values else info[entry]
         print(currententry)
 
 
@@ -275,21 +275,21 @@ def list_infra_env(args):
 
 
 def bind_infra_env(args):
-    info("binding Infra Env %s to Cluster %s" % (args.infraenv, args.cluster))
+    info(f"binding Infra Env {args.infraenv} to Cluster {args.cluster}")
     info("this will bind all hosts of the infraenv to given cluster")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.bind_infra_env(args.infraenv, args.cluster, force=args.force)
 
 
 def unbind_infra_env(args):
-    info("Unbinding Infra Env %s" % args.infraenv)
+    info(f"Unbinding Infra Env {args.infraenv}")
     info("this will unbind all hosts of the infraenv from any cluster")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.unbind_infra_env(args.infraenv)
 
 
 def update_infra_env(args):
-    info("Updating infraenv %s" % args.infraenv)
+    info(f"Updating infraenv {args.infraenv}")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
@@ -298,7 +298,7 @@ def update_infra_env(args):
 
 def create_iso(args):
     warning("This api call is deprecated")
-    info("Getting Iso url for infraenv %s" % args.infraenv)
+    info(f"Getting Iso url for infraenv {args.infraenv}")
     paramfile = choose_parameter_file(args.paramfile)
     minimal = args.minimal
     overrides = get_overrides(paramfile=paramfile, param=args.param)
@@ -307,7 +307,7 @@ def create_iso(args):
 
 
 def info_iso(args):
-    info("Getting Iso url for infraenv %s" % args.infraenv)
+    info(f"Getting Iso url for infraenv {args.infraenv}")
     paramfile = choose_parameter_file(args.paramfile)
     minimal = args.minimal
     overrides = get_overrides(paramfile=paramfile, param=args.param)
@@ -316,65 +316,64 @@ def info_iso(args):
 
 
 def download_iso(args):
-    info("Downloading Iso for infraenv %s in %s" % (args.infraenv, args.path))
+    info(f"Downloading Iso for infraenv {args.infraenv} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.download_iso(args.infraenv, args.path)
 
 
 def download_kubeadminpassword(args):
-    info("Downloading KubeAdminPassword for Cluster %s in %s/kubeadmin.%s" % (args.cluster, args.path, args.cluster))
+    info(f"Downloading KubeAdminPassword for Cluster {args.cluster} in {args.path}/kubeadmin.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.download_kubeadminpassword(args.cluster, args.path)
 
 
 def download_kubeconfig(args):
-    info("Downloading Kubeconfig for Cluster %s in %s/kubeconfig.%s" % (args.cluster, args.path, args.cluster))
+    info(f"Downloading Kubeconfig for Cluster {args.cluster} in {args.path}/kubeconfig.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.download_kubeconfig(args.cluster, args.path)
 
 
 def download_initrd(args):
-    info("Downloading Initrd Config for infraenv %s in %s/initrd.%s" % (args.infraenv, args.path, args.infraenv))
+    info(f"Downloading Initrd Config for infraenv {args.infraenv} in {args.path}/initrd.{args.infraenv}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.download_initrd(args.infraenv, args.path)
 
 
 def download_installconfig(args):
-    info("Downloading Install Config for Cluster %s in %s/install-config.yaml.%s" % (args.cluster, args.path,
-                                                                                     args.cluster))
+    info(f"Downloading Install Config for Cluster {args.cluster} in {args.path}/install-config.yaml.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.download_installconfig(args.cluster, args.path)
 
 
 def download_ignition(args):
     role = args.role
-    info("Downloading %s ignition for Cluster %s in %s" % (role, args.cluster, args.path))
+    info(f"Downloading {role} ignition for Cluster {args.cluster} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.download_ignition(args.cluster, args.path, role=role)
 
 
 def download_discovery_ignition(args):
-    info("Downloading Discovery ignition for infraenv %s in %s" % (args.infraenv, args.path))
+    info(f"Downloading Discovery ignition for infraenv {args.infraenv} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.download_discovery_ignition(args.infraenv, args.path)
 
 
 def bind_host(args):
-    info("binding Host %s to Cluster %s" % (args.hostname, args.cluster))
+    info(f"binding Host {args.hostname} to Cluster {args.cluster}")
     overrides = {'cluster': args.cluster}
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.update_host(args.hostname, overrides)
 
 
 def unbind_host(args):
-    info("Unbinding Host %s" % args.hostname)
+    info(f"Unbinding Host {args.hostname}")
     overrides = {'cluster': None}
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.update_host(args.hostname, overrides)
 
 
 def update_host(args):
-    info("Updating Host %s" % args.hostname)
+    info(f"Updating Host {args.hostname}")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
@@ -389,7 +388,7 @@ def wait_hosts(args):
 
 
 def list_manifests(args):
-    info("Retrieving manifests for Cluster %s" % args.cluster)
+    info(f"Retrieving manifests for Cluster {args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     manifests = ai.list_manifests(args.cluster)
     manifeststable = PrettyTable(["File", "Folder"])
@@ -402,7 +401,7 @@ def list_manifests(args):
 
 
 def update_installconfig(args):
-    info("Updating installconfig in %s" % args.cluster)
+    info(f"Updating installconfig in {args.cluster}")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
@@ -410,7 +409,7 @@ def update_installconfig(args):
 
 
 def update_iso(args):
-    info("Updating iso in %s" % args.infraenv)
+    info(f"Updating iso in {args.infraenv}")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
@@ -813,7 +812,7 @@ def cli():
                 os._exit(0)
         os._exit(0)
     if args.url is not None:
-        info("Using %s as base url" % args.url)
+        info(f"Using {args.url} as base url")
     elif not ('subcommand_download' in vars(args) and args.subcommand_download == 'metalassets'):
         args.url = "https://api.openshift.com" if not args.stage else "https://api.stage.openshift.com"
     args.func(args)
