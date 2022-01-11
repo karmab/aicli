@@ -53,8 +53,8 @@ class AssistedClient(object):
                 token = open(f'{aihome}/token.txt').read().strip()
             try:
                 token = get_token(token=token, offlinetoken=offlinetoken)
-            except:
-                error("Hit issues when trying to set token")
+            except Exception as e:
+                error(f"Hit issue when trying to set token. Got {e}")
                 if os.path.exists(f'{aihome}/offlinetoken.txt'):
                     error("Removing offlinetoken file")
                     os.remove(f'{aihome}/offlinetoken.txt')
