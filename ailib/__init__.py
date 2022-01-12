@@ -1,6 +1,7 @@
 from assisted_service_client import ApiClient, Configuration, api, models
 from ailib.common import warning, error, info, get_token
 import base64
+from ipaddress import ip_network
 import json
 import os
 import re
@@ -184,13 +185,72 @@ class AssistedClient(object):
             elif isinstance(operator, dict) and 'name' in operator:
                 operator_name = operator['name']
             else:
-                error(f"Invalid entry for olm_operators {operator}")
+                error(f"Invalid entry for olm_operator {operator}")
                 sys.exit(1)
             if operator_name not in supported_operators:
                 error(f"Incorrect olm_operator {operator_name}. Should be one of {supported_operators}")
                 sys.exit(1)
             olm_operators.append({'name': operator_name})
         return olm_operators
+
+    def set_cluster_networks(self, cluster_id, cluster_networks_data):
+        cluster_networks = []
+        for cluster_network in cluster_networks_data:
+            host_prefix = None
+            if isinstance(cluster_network, str):
+                cidr = cluster_network
+            elif isinstance(cluster_network, dict) and 'cidr' in cluster_network:
+                cidr = cluster_network['cidr']
+                if 'host_prefix' in cluster_network:
+                    host_prefix = cluster_network['host_prefix']
+            else:
+                error(f"Invalid entry for cluster_network {cluster_network}")
+                sys.exit(1)
+            try:
+                ip_network(cidr)
+            except:
+                error(f"Invalid cidr for cluster_network {cluster_network}")
+                sys.exit(1)
+            if host_prefix is None:
+                host_prefix = 64 if ':' in cidr else 23
+            cluster_networks.append({'cidr': cidr, 'cluster_id': cluster_id, 'host_prefix': host_prefix})
+        return cluster_networks
+
+    def set_machine_networks(self, cluster_id, machine_networks_data):
+        machine_networks = []
+        for machine_network in machine_networks_data:
+            if isinstance(machine_network, str):
+                cidr = machine_network
+            elif isinstance(machine_network, dict) and 'cidr' in machine_network:
+                cidr = machine_network['cidr']
+            else:
+                error(f"Invalid entry for machine_network {machine_network}")
+                sys.exit(1)
+            try:
+                ip_network(cidr)
+            except:
+                error(f"Invalid cidr for machine_network {machine_network}")
+                sys.exit(1)
+            machine_networks.append({'cidr': cidr, 'cluster_id': cluster_id})
+        return machine_networks
+
+    def set_service_networks(self, cluster_id, service_networks_data):
+        service_networks = []
+        for service_network in service_networks_data:
+            if isinstance(service_network, str):
+                cidr = service_network
+            elif isinstance(service_network, dict) and 'cidr' in service_network:
+                cidr = service_network['cidr']
+            else:
+                error(f"Invalid entry for service_network {service_network}")
+                sys.exit(1)
+            try:
+                ip_network(cidr)
+            except:
+                error(f"Invalid cidr for service_network {service_network}")
+                sys.exit(1)
+            service_networks.append({'cidr': cidr, 'cluster_id': cluster_id})
+        return service_networks
 
     def get_cluster_id(self, name):
         matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == name or x['id'] == name]
@@ -554,8 +614,14 @@ class AssistedClient(object):
                 del overrides[key]
         if 'olm_operators' in overrides:
             overrides['olm_operators'] = self.set_olm_operators(overrides['olm_operators'])
+        if 'machine_networks' in overrides:
+            overrides['machine_networks'] = self.set_machine_networks(cluster_id, overrides['machine_networks'])
+        if 'service_networks' in overrides:
+            overrides['service_networks'] = self.set_service_networks(cluster_id, overrides['service_networks'])
+        if 'cluster_networks' in overrides:
+            overrides['cluster_networks'] = self.set_cluster_networks(cluster_id, overrides['cluster_networks'])
         if overrides:
-            cluster_update_params = models.ClusterUpdateParams(**overrides)
+            cluster_update_params = models.V2ClusterUpdateParams(**overrides)
             self.client.v2_update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
 
     def start_cluster(self, name):
