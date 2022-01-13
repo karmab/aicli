@@ -177,7 +177,7 @@ def info_host(args):
             if key in skipped or hostinfo[key] is None:
                 del hostinfo[key]
         for entry in sorted(hostinfo):
-            currententry = f"{entry}: hostinfo[entry]" if not values else hostinfo[entry]
+            currententry = f"{entry}: {hostinfo[entry]}" if not values else hostinfo[entry]
             print(currententry)
 
 
