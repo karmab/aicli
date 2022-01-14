@@ -1,6 +1,7 @@
 from assisted_service_client import ApiClient, Configuration, api, models
 from ailib.common import warning, error, info, get_token
 import base64
+from datetime import datetime
 from ipaddress import ip_network
 import json
 import os
@@ -377,14 +378,34 @@ class AssistedClient(object):
         new_cluster_id = self.get_cluster_id(name)
         self.client.v2_update_cluster(cluster_id=new_cluster_id, cluster_update_params=cluster_update_params)
 
+    def _expired_iso(self, iso_url):
+        search = re.search(r".*&image_token=(.*)&type=.*", iso_url)
+        if search is not None:
+            encoded_token = search.group(1)
+            token = str(base64.urlsafe_b64decode(encoded_token + '==='))
+            expiration_date = int(re.search(r'.*"exp":(.*),"sub".*"', token).group(1))
+            if datetime.fromtimestamp(expiration_date) < datetime.now():
+                return True
+            else:
+                return False
+        else:
+            error("couldn't parse iso_url")
+            sys.exit(1)
+
     def info_iso(self, name, overrides, minimal=False):
         infra_env = self.info_infra_env(name).to_dict()
         iso_url = infra_env['download_url']
+        if self._expired_iso(iso_url):
+            warning("Generating new iso url")
+            iso_url = self.client.get_infra_env_download_url(infra_env['id']).url
         info(iso_url)
 
     def download_iso(self, name, path):
         infra_env = self.info_infra_env(name).to_dict()
         iso_url = infra_env['download_url']
+        if self._expired_iso(iso_url):
+            warning("Generating new iso url")
+            iso_url = self.client.get_infra_env_download_url(infra_env['id']).url
         urlretrieve(iso_url, f"{path}/{name}.iso")
 
     def download_initrd(self, name, path):
