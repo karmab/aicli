@@ -396,7 +396,6 @@ class AssistedClient(object):
         infra_env = self.info_infra_env(name).to_dict()
         iso_url = infra_env['download_url']
         if self._expired_iso(iso_url):
-            warning("Generating new iso url")
             iso_url = self.client.get_infra_env_download_url(infra_env['id']).url
         info(iso_url)
 

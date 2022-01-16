@@ -307,7 +307,8 @@ def create_iso(args):
 
 
 def info_iso(args):
-    info(f"Getting Iso url for infraenv {args.infraenv}")
+    if not args.short:
+        info(f"Getting Iso url for infraenv {args.infraenv}")
     paramfile = choose_parameter_file(args.paramfile)
     minimal = args.minimal
     overrides = get_overrides(paramfile=paramfile, param=args.param)
@@ -657,6 +658,7 @@ def cli():
     isoinfo_parser = info_subparsers.add_parser('iso', description=isoinfo_desc, help=isoinfo_desc,
                                                 epilog=isoinfo_epilog, formatter_class=rawhelp)
     isoinfo_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
+    isoinfo_parser.add_argument('-s', '--short', action='store_true', help='Only print iso url')
     isoinfo_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     isoinfo_parser.add_argument('--paramfile', help='Parameters file', metavar='PARAMFILE')
     isoinfo_parser.add_argument('infraenv', metavar='INFRAENV')
