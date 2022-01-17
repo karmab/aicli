@@ -286,11 +286,16 @@ class AssistedClient(object):
         self.set_default_values(overrides)
         new_cluster_params = default_cluster_params
         new_cluster_params['name'] = name
+        extra_overrides = {}
         for parameter in overrides:
             if parameter in allowed_parameters:
                 new_cluster_params[parameter] = overrides[parameter]
+            else:
+                extra_overrides[parameter] = overrides[parameter]
         cluster_params = models.ClusterCreateParams(**new_cluster_params)
         self.client.v2_register_cluster(new_cluster_params=cluster_params)
+        if extra_overrides:
+            self.update_cluster(name, extra_overrides)
 
     def delete_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
