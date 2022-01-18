@@ -596,7 +596,13 @@ class AssistedClient(object):
                 sno_disk = f'/dev/{sno_disk}'
             installconfig['BootstrapInPlace'] = {'InstallationDisk': sno_disk}
         if 'tpm' in overrides and overrides['tpm']:
-            installconfig['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2"}
+            if overrides.get('tpm_masters', False):
+                enable_on = 'masters'
+            elif overrides.get('tpm_workers', False):
+                enable_on = 'masters'
+            else:
+                enable_on = 'all'
+            installconfig['disk_encryption'] = {"enable_on": enable_on, "mode": "tpmv2"}
         if 'tang_servers' in overrides:
             tang_servers = overrides['tang_servers']
             if isinstance(tang_servers, list):
