@@ -35,6 +35,14 @@ Where AI_OFFLINETOKEN is an environment variable used to access public saas. Thi
 
 With onprem mode, you can instead use `-e AI_URL=$AI_URL`
 
+### Targetting staging environment
+
+the flag `--staging` can be set to target the internal staging environment
+
+Alternatively, set the env variable STAGING to true (or any non empty string, really)
+
+In container mode, that would be `-e STAGING=true`
+
 ## Assisted installer Plan
 
 To deploy assisted installer, you can use kcli with the provided plan in the kcli_plan directory

@@ -429,7 +429,7 @@ def cli():
     """
     # PARAMETERS_HELP = 'specify parameter or keyword for rendering (multiple can be specified)'
     parser = argparse.ArgumentParser(description='Assisted installer assistant')
-    parser.add_argument('--stage', action='store_true')
+    parser.add_argument('--staging', action='store_true', default=bool(os.environ.get('STAGING', "")))
     parser.add_argument('-U', '--url', default=os.environ.get('AI_URL'))
     parser.add_argument('--token', default=os.environ.get('AI_TOKEN'))
     parser.add_argument('--offlinetoken', default=os.environ.get('AI_OFFLINETOKEN'))
@@ -815,8 +815,8 @@ def cli():
         os._exit(0)
     if args.url is not None:
         info(f"Using {args.url} as base url")
-    elif not ('subcommand_download' in vars(args) and args.subcommand_download == 'metalassets'):
-        args.url = "https://api.openshift.com" if not args.stage else "https://api.stage.openshift.com"
+    else:
+        args.url = "https://api.openshift.com" if not args.staging else "https://api.stage.openshift.com"
     args.func(args)
 
 
