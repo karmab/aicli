@@ -603,10 +603,14 @@ class AssistedClient(object):
             else:
                 enable_on = 'all'
             installconfig['disk_encryption'] = {"enable_on": enable_on, "mode": "tpmv2"}
-        if 'tang_servers' in overrides:
+        if 'tang_servers' in overrides and isinstance(overrides['tang_servers'], list):
+            if overrides.get('tpm_masters', False):
+                enable_on = 'masters'
+            elif overrides.get('tpm_workers', False):
+                enable_on = 'masters'
+            else:
+                enable_on = 'all'
             tang_servers = overrides['tang_servers']
-            if isinstance(tang_servers, list):
-                tang_servers = ','.join(tang_servers)
             installconfig['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2", "tang_servers": tang_servers}
         if 'installconfig' in overrides:
             installconfig = overrides['installconfig']
