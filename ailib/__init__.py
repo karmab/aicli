@@ -66,6 +66,9 @@ class AssistedClient(object):
         self.api = ApiClient(configuration=config)
         self.client = api.InstallerApi(api_client=self.api)
 
+    def _allowed_parameters(self, instance):
+        return [a for a in instance.__init__.__code__.co_varnames if a != 'self']
+
     def set_default_values(self, overrides):
         if 'openshift_version' in overrides and isinstance(overrides['openshift_version'], float):
             overrides['openshift_version'] = str(overrides['openshift_version'])
@@ -84,36 +87,29 @@ class AssistedClient(object):
             else:
                 error(f"Missing public key file {pub_key}")
                 sys.exit(1)
-            if 'public_key' in overrides:
-                del overrides['public_key']
         if 'sno' in overrides:
             if overrides['sno']:
                 overrides['high_availability_mode'] = "None"
                 overrides['user_managed_networking'] = True
-            del overrides['sno']
         if 'high_availability_mode' in overrides and overrides['high_availability_mode'] is None:
             overrides['high_availability_mode'] = "None"
         if 'olm_operators' in overrides:
             overrides['olm_operators'] = self.set_olm_operators(overrides['olm_operators'])
         if 'tpm' in overrides and overrides['tpm']:
             overrides['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2"}
-            del overrides['tpm']
         if 'tang_servers' in overrides:
             tang_servers = overrides['tang_servers']
             if isinstance(tang_servers, list):
                 tang_servers = ','.join(tang_servers)
             overrides['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2", "tang_servers": tang_servers}
-            del overrides['tang_servers']
 
     def set_default_infraenv_values(self, overrides):
         if 'cluster' in overrides:
             cluster_id = self.get_cluster_id(overrides['cluster'])
             overrides['cluster_id'] = cluster_id
-            del overrides['cluster']
         if 'minimal' in overrides:
             image_type = "minimal-iso" if overrides['minimal'] else 'full-iso'
             overrides['image_type'] = image_type
-            del overrides['minimal']
         static_network_config = overrides.get('static_network_config', [])
         if static_network_config:
             if isinstance(static_network_config, dict):
@@ -136,8 +132,6 @@ class AssistedClient(object):
             else:
                 error(f"Missing public key file {pub_key}")
                 sys.exit(1)
-            if 'public_key' in overrides:
-                del overrides['public_key']
         if 'ignition_config_override' not in overrides:
             iso_overrides = overrides.copy()
             iso_overrides['ignition_version'] = '3.1.0'
@@ -270,12 +264,6 @@ class AssistedClient(object):
             sys.exit(1)
 
     def create_cluster(self, name, overrides={}):
-        allowed_parameters = ["name", "openshift_version", "base_dns_domain", "cluster_network_cidr",
-                              "cluster_network_host_prefix", "service_network_cidr", "ingress_vip", "pull_secret",
-                              "ssh_public_key", "vip_dhcp_allocation", "http_proxy", "https_proxy", "no_proxy",
-                              "high_availability_mode", "user_managed_networking", "additional_ntp_source",
-                              "olm_operators", "disk_encryption", "schedulable_masters", "hyperthreading",
-                              "ocp_release_image"]
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
         if existing_ids:
             error(f"Cluster {name} already there. Leaving")
@@ -287,11 +275,14 @@ class AssistedClient(object):
         new_cluster_params = default_cluster_params
         new_cluster_params['name'] = name
         extra_overrides = {}
+        allowed_parameters = self._allowed_parameters(models.ClusterCreateParams)
         for parameter in overrides:
             if parameter in allowed_parameters:
                 new_cluster_params[parameter] = overrides[parameter]
-            else:
+            elif parameter not in ['api_ip', 'ingress_ip']:
                 extra_overrides[parameter] = overrides[parameter]
+            else:
+                warning(f"Omitting parameter {parameter} at creation time")
         cluster_params = models.ClusterCreateParams(**new_cluster_params)
         self.client.v2_register_cluster(new_cluster_params=cluster_params)
         if extra_overrides:
@@ -313,12 +304,7 @@ class AssistedClient(object):
         return self.client.v2_get_preflight_requirements(cluster_id=cluster_id)
 
     def export_cluster(self, name):
-        allowed_parameters = ["name", "openshift_version", "base_dns_domain", "cluster_network_cidr",
-                              "cluster_network_host_prefix", "service_network_cidr", "ingress_vip",
-                              "ssh_public_key", "vip_dhcp_allocation", "http_proxy", "https_proxy", "no_proxy",
-                              "high_availability_mode", "user_managed_networking", "additional_ntp_source",
-                              "disk_encryption", "schedulable_masters", "hyperthreading",
-                              "ocp_release_image", "api_vip", "ingress_vip"]
+        allowed_parameters = self._allowed_parameters(models.ClusterCreateParams)
         cluster_id = self.get_cluster_id(name)
         alldata = self.client.v2_get_cluster(cluster_id=cluster_id).to_dict()
         data = {}
@@ -589,10 +575,8 @@ class AssistedClient(object):
         cluster_id = self.get_cluster_id(name)
         if 'api_ip' in overrides:
             overrides['api_vip'] = overrides['api_ip']
-            del overrides['api_ip']
         if 'ingress_ip' in overrides:
             overrides['ingress_vip'] = overrides['ingress_ip']
-            del overrides['ingress_ip']
         if 'pull_secret' in overrides:
             pull_secret = os.path.expanduser(overrides['pull_secret'])
             if os.path.exists(pull_secret):
@@ -603,17 +587,14 @@ class AssistedClient(object):
             role = overrides['role']
             hosts_roles = [{"id": host['id'], "role": role} for host in self.client.list_hosts(cluster_id=cluster_id)]
             overrides['hosts_roles'] = hosts_roles
-            del overrides['role']
         installconfig = {}
         if 'network_type' in overrides:
             installconfig['networking'] = {'networkType': overrides['network_type']}
-            del overrides['network_type']
         if 'sno_disk' in overrides:
             sno_disk = overrides['sno_disk']
             if '/dev' not in sno_disk:
                 sno_disk = f'/dev/{sno_disk}'
             installconfig['BootstrapInPlace'] = {'InstallationDisk': sno_disk}
-            del overrides['sno_disk']
         if 'tpm' in overrides and overrides['tpm']:
             installconfig['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2"}
         if 'tang_servers' in overrides:
@@ -623,20 +604,8 @@ class AssistedClient(object):
             installconfig['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2", "tang_servers": tang_servers}
         if 'installconfig' in overrides:
             installconfig = overrides['installconfig']
-            del overrides['installconfig']
         if installconfig:
             self.client.v2_update_cluster_install_config(cluster_id, json.dumps(installconfig))
-        if 'sno' in overrides:
-            del overrides['sno']
-        if 'tpm' in overrides:
-            del overrides['tpm']
-        if 'tang_servers' in overrides:
-            del overrides['tang_servers']
-        if 'static_network_config' in overrides:
-            del overrides['static_network_config']
-        for key in ['openshift_version', 'sshKey']:
-            if key in overrides:
-                del overrides[key]
         if 'olm_operators' in overrides:
             overrides['olm_operators'] = self.set_olm_operators(overrides['olm_operators'])
         if 'machine_networks' in overrides:
@@ -646,7 +615,12 @@ class AssistedClient(object):
         if 'cluster_networks' in overrides:
             overrides['cluster_networks'] = self.set_cluster_networks(cluster_id, overrides['cluster_networks'])
         if overrides:
-            cluster_update_params = models.V2ClusterUpdateParams(**overrides)
+            cluster_update_params = overrides.copy()
+            allowed_parameters = self._allowed_parameters(models.V2ClusterUpdateParams)
+            for parameter in overrides:
+                if parameter not in allowed_parameters:
+                    del cluster_update_params[parameter]
+            cluster_update_params = models.V2ClusterUpdateParams(**cluster_update_params)
             self.client.v2_update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
 
     def start_cluster(self, name):
@@ -757,9 +731,6 @@ class AssistedClient(object):
             sys.exit(1)
 
     def create_infra_env(self, name, overrides={}):
-        allowed_parameters = ["name", "openshift_version", "proxy", "cpu_architecture", "pull_secret",
-                              "ssh_authorized_key", "static_network_config", "additional_ntp_sources",
-                              "image_type", "ignition_config_override", "cluster_id"]
         existing_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == name]
         if existing_ids:
             error(f"Infraenv {name} already there. Leaving")
@@ -768,6 +739,7 @@ class AssistedClient(object):
         self.set_default_infraenv_values(overrides)
         new_infraenv_params = default_infraenv_params
         new_infraenv_params['name'] = name
+        allowed_parameters = self._allowed_parameters(models.InfraEnvCreateParams)
         for parameter in overrides:
             if parameter in allowed_parameters:
                 new_infraenv_params[parameter] = overrides[parameter]
@@ -790,12 +762,11 @@ class AssistedClient(object):
 
     def update_infra_env(self, name, overrides={}):
         infra_env_update_params = {}
-        allowed_parameters = ["proxy", "pull_secret", "ssh_authorized_key", "static_network_config",
-                              "additional_ntp_sources", "image_type", "ignition_config_override"]
         infra_env_id = self.get_infra_env_id(name)
         self.set_default_values(overrides)
         self.set_default_infraenv_values(overrides)
         infra_env_update_params = {}
+        allowed_parameters = self._allowed_parameters(models.InfraEnvUpdateParams)
         for parameter in overrides:
             if parameter in allowed_parameters:
                 infra_env_update_params[parameter] = overrides[parameter]
