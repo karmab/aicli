@@ -672,10 +672,11 @@ def cli():
     download_subparsers.add_parser('initrd', parents=[initrddownload_parser], description=initrddownload_desc,
                                    help=initrddownload_desc)
 
+    infraenv_help = "The infraenv associated to the cluster. Cluster name can also be used"
     isodownload_desc = 'Download Iso'
     isodownload_parser = argparse.ArgumentParser(add_help=False)
     isodownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
-    isodownload_parser.add_argument('infraenv', metavar='INFRAENV')
+    isodownload_parser.add_argument('infraenv', metavar='INFRAENV', help=infraenv_help)
     isodownload_parser.set_defaults(func=download_iso)
     download_subparsers.add_parser('iso', parents=[isodownload_parser],
                                    description=isodownload_desc,
