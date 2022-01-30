@@ -6,13 +6,14 @@ from ipaddress import ip_network
 import json
 import os
 import re
+from shutil import copyfileobj
 import socket
 import sys
 from time import sleep
-import yaml
+from uuid import uuid1
 import urllib
 from urllib.request import urlretrieve
-from shutil import copyfileobj
+import yaml
 
 
 # default_cluster_params = {"openshift_version": "4.6", "base_dns_domain": "karmalabs.com",
@@ -317,6 +318,7 @@ class AssistedClient(object):
 
     def create_day2_cluster(self, name, overrides={}):
         cluster_name = name.replace('-day2', '')
+        cluster_id = None
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == cluster_name]
         api_ip = None
         if not existing_ids:
@@ -360,6 +362,8 @@ class AssistedClient(object):
             else:
                 warning(f"{api_name} doesn't resolve")
                 warning(f"run aicli update cluster {name} -P api_vip_dnsname=$api_ip")
+        if cluster_id is None:
+            cluster_id = str(uuid1())
         new_import_cluster_params = {"name": name, "openshift_version": str(openshift_version),
                                      "api_vip_dnsname": api_name, 'openshift_cluster_id': cluster_id}
         new_import_cluster_params = models.ImportClusterParams(**new_import_cluster_params)
