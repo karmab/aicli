@@ -73,6 +73,8 @@ class AssistedClient(object):
     def set_default_values(self, overrides):
         if 'openshift_version' in overrides and isinstance(overrides['openshift_version'], float):
             overrides['openshift_version'] = str(overrides['openshift_version'])
+        if 'domain' in overrides:
+            overrides['base_dns_domain'] = overrides['domain']
         if 'pull_secret' not in overrides:
             warning("Using openshift_pull.json as pull_secret file")
             overrides['pull_secret'] = "openshift_pull.json"
