@@ -280,6 +280,9 @@ class AssistedClient(object):
         extra_overrides = {}
         allowed_parameters = self._allowed_parameters(models.ClusterCreateParams)
         for parameter in overrides:
+            if parameter == 'network_type' and overrides[parameter] not in ['OpenShiftSDN', 'OVNKubernetes']:
+                extra_overrides[parameter] = overrides['network_type']
+                continue
             if parameter in allowed_parameters:
                 new_cluster_params[parameter] = overrides[parameter]
             elif parameter not in ['api_ip', 'ingress_ip']:
@@ -596,6 +599,7 @@ class AssistedClient(object):
         installconfig = {}
         if 'network_type' in overrides:
             installconfig['networking'] = {'networkType': overrides['network_type']}
+            del overrides['network_type']
         if 'sno_disk' in overrides:
             sno_disk = overrides['sno_disk']
             if '/dev' not in sno_disk:
