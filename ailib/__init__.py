@@ -70,26 +70,27 @@ class AssistedClient(object):
     def _allowed_parameters(self, instance):
         return [a for a in instance.__init__.__code__.co_varnames if a != 'self']
 
-    def set_default_values(self, overrides):
+    def set_default_values(self, overrides, existing=False):
         if 'openshift_version' in overrides and isinstance(overrides['openshift_version'], float):
             overrides['openshift_version'] = str(overrides['openshift_version'])
         if 'domain' in overrides:
             overrides['base_dns_domain'] = overrides['domain']
-        if 'pull_secret' not in overrides:
-            warning("Using openshift_pull.json as pull_secret file")
-            overrides['pull_secret'] = "openshift_pull.json"
-        pull_secret = os.path.expanduser(overrides['pull_secret'])
-        if not os.path.exists(pull_secret):
-            error(f"Missing pull secret file {pull_secret}")
-            sys.exit(1)
-        overrides['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
-        if 'ssh_public_key' not in overrides:
-            pub_key = overrides.get('public_key', f"{os.environ['HOME']}/.ssh/id_rsa.pub")
-            if os.path.exists(pub_key):
-                overrides['ssh_public_key'] = open(pub_key).read().strip()
-            else:
-                error(f"Missing public key file {pub_key}")
+        if not existing:
+            if 'pull_secret' not in overrides:
+                warning("Using openshift_pull.json as pull_secret file")
+                overrides['pull_secret'] = "openshift_pull.json"
+            pull_secret = os.path.expanduser(overrides['pull_secret'])
+            if not os.path.exists(pull_secret):
+                error(f"Missing pull secret file {pull_secret}")
                 sys.exit(1)
+            overrides['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
+            if 'ssh_public_key' not in overrides:
+                pub_key = overrides.get('public_key', f"{os.environ['HOME']}/.ssh/id_rsa.pub")
+                if os.path.exists(pub_key):
+                    overrides['ssh_public_key'] = open(pub_key).read().strip()
+                else:
+                    error(f"Missing public key file {pub_key}")
+                    sys.exit(1)
         if 'sno' in overrides:
             if overrides['sno']:
                 overrides['high_availability_mode'] = "None"
@@ -783,7 +784,7 @@ class AssistedClient(object):
     def update_infra_env(self, name, overrides={}):
         infra_env_update_params = {}
         infra_env_id = self.get_infra_env_id(name)
-        self.set_default_values(overrides)
+        self.set_default_values(overrides, existing=True)
         self.set_default_infraenv_values(overrides)
         infra_env_update_params = {}
         allowed_parameters = self._allowed_parameters(models.InfraEnvUpdateParams)
