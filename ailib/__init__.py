@@ -143,6 +143,13 @@ class AssistedClient(object):
                                                                                       overrides=iso_overrides)
             if ignition_config_override is not None:
                 overrides['ignition_config_override'] = ignition_config_override
+        if 'proxy' in overrides:
+            proxy = overrides['proxy']
+            if not proxy.startswith('http'):
+                proxy = f'http://{proxy}'
+            overrides['proxy'] = {'http_proxy': proxy, 'https_proxy': proxy}
+            if 'noproxy' in overrides:
+                overrides['proxy']['no_proxy'] = overrides['noproxy']
 
     def set_disconnected_ignition_config_override(self, infra_env_id=None, overrides={}):
         ignition_config_override = None
@@ -623,6 +630,13 @@ class AssistedClient(object):
                 enable_on = 'all'
             tang_servers = overrides['tang_servers']
             installconfig['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2", "tang_servers": tang_servers}
+        if 'proxy' in overrides:
+            proxy = overrides['proxy']
+            if not proxy.startswith('http'):
+                proxy = f'http://{proxy}'
+            installconfig['proxy'] = {'http_proxy': proxy, 'https_proxy': proxy}
+            if 'noproxy' in overrides:
+                installconfig['proxy']['no_proxy'] = overrides['noproxy']
         if 'installconfig' in overrides:
             installconfig = overrides['installconfig']
         if installconfig:
