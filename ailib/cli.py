@@ -201,6 +201,8 @@ def list_hosts(args):
         infra_env_name = infra_env_ids[infra_env_id]
         _id = host['id']
         role = host['role']
+        if 'bootstrap' in host and host['bootstrap']:
+            role += "(bootstrap)"
         status = host['status']
         inventory = json.loads(host['inventory']) if 'inventory' in host else {}
         ip = 'N/A'
