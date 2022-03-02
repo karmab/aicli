@@ -639,13 +639,20 @@ class AssistedClient(object):
         if 'proxy' in overrides:
             proxy = overrides['proxy']
             if isinstance(proxy, str):
-                if not proxy.startswith('http'):
-                    proxy = f'http://{proxy}'
-                installconfig['proxy'] = {'http_proxy': proxy, 'https_proxy': proxy}
-                if 'noproxy' in overrides:
-                    installconfig['proxy']['no_proxy'] = overrides['noproxy']
+                httpProxy, httpsProxy = proxy, proxy
+                noproxy = overrides.get('noproxy')
+            elif isinstance(proxy, dict):
+                httpProxy = proxy.get('http_proxy') or proxy.get('httpProxy')
+                httpProxy = proxy.get('https_proxy') or proxy.get('httpsProxy')
+                noproxy = proxy.get('no_proxy') or proxy.get('noProxy')
             else:
-                installconfig['proxy'] = proxy
+                error(f"Invalid entry for proxy: {proxy}")
+                sys.exit(1)
+            if not httpProxy.startswith('http'):
+                httpProxy = f'http://{httpProxy}'
+            if not httpsProxy.startswith('http'):
+                httpsProxy = f'http://{httpsProxy}'
+            installconfig['proxy'] = {'httpProxy': httpProxy, 'httpsProxy': httpsProxy, 'noProxy': noproxy}
         if 'installconfig' in overrides:
             installconfig = overrides['installconfig']
         if installconfig:
