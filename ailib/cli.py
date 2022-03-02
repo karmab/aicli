@@ -437,6 +437,26 @@ def list_events(args):
     print(eventstable)
 
 
+def list_infraenv_keywords(args):
+    info("List infraenv keywords")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    keywords = ai.get_infraenv_keywords()
+    keywordstable = PrettyTable(["Keyword"])
+    for keyword in sorted(keywords):
+        keywordstable.add_row([keyword])
+    print(keywordstable)
+
+
+def list_cluster_keywords(args):
+    info("List cluster keywords")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    keywords = ai.get_cluster_keywords()
+    keywordstable = PrettyTable(["Keyword"])
+    for keyword in sorted(keywords):
+        keywordstable.add_row([keyword])
+    print(keywordstable)
+
+
 def cli():
     """
 
@@ -541,6 +561,13 @@ def cli():
     list_subparsers.add_parser('cluster', parents=[clusterlist_parser], description=clusterlist_desc,
                                help=clusterlist_desc, aliases=['clusters'])
 
+    cluster_keywords_list_desc = 'List Cluster keywords'
+    cluster_keywords_list_parser = argparse.ArgumentParser(add_help=False)
+    cluster_keywords_list_parser.set_defaults(func=list_cluster_keywords)
+    list_subparsers.add_parser('cluster-keyword', parents=[cluster_keywords_list_parser],
+                               description=cluster_keywords_list_desc,
+                               help=cluster_keywords_list_desc, aliases=['cluster-keywords'])
+
     manifestscreate_desc = 'Upload manifests to cluster'
     manifestscreate_epilog = None
     manifestscreate_parser = create_subparsers.add_parser('manifest', description=manifestscreate_desc,
@@ -581,7 +608,7 @@ def cli():
     eventslist_parser.add_argument('cluster', metavar='CLUSTER')
     eventslist_parser.set_defaults(func=list_events)
     list_subparsers.add_parser('event', parents=[eventslist_parser], description=eventslist_desc,
-                               help=clusterlist_desc, aliases=['events'])
+                               help=eventslist_desc, aliases=['events'])
 
     ignitiondiscoverydownload_desc = 'Download Discovery Ignition file'
     ignitiondiscoverydownload_parser = argparse.ArgumentParser(add_help=False)
@@ -647,6 +674,13 @@ def cli():
     infraenvlist_parser.set_defaults(func=list_infra_env)
     list_subparsers.add_parser('infraenv', parents=[infraenvlist_parser], description=infraenvlist_desc,
                                help=infraenvlist_desc, aliases=['infraenvs'])
+
+    infraenv_keywords_list_desc = 'List Infraenv keywords'
+    infraenv_keywords_list_parser = argparse.ArgumentParser(add_help=False)
+    infraenv_keywords_list_parser.set_defaults(func=list_infraenv_keywords)
+    list_subparsers.add_parser('infraenv-keyword', parents=[infraenv_keywords_list_parser],
+                               description=infraenv_keywords_list_desc,
+                               help=infraenv_keywords_list_desc, aliases=['infraenv-keywords'])
 
     infraenvunbind_desc = 'Unbind Infra Env'
     infraenvunbind_parser = argparse.ArgumentParser(add_help=False)
@@ -761,7 +795,7 @@ def cli():
     hostslist_parser = argparse.ArgumentParser(add_help=False)
     hostslist_parser.set_defaults(func=list_hosts)
     list_subparsers.add_parser('host', parents=[hostslist_parser], description=hostslist_desc,
-                               help=clusterlist_desc, aliases=['hosts'])
+                               help=hostslist_desc, aliases=['hosts'])
 
     hostunbind_desc = 'Unbind Host'
     hostunbind_parser = argparse.ArgumentParser(add_help=False)

@@ -70,6 +70,12 @@ class AssistedClient(object):
     def _allowed_parameters(self, instance):
         return [a for a in instance.__init__.__code__.co_varnames if a != 'self']
 
+    def get_cluster_keywords(self):
+        return self._allowed_parameters(models.ClusterCreateParams)
+
+    def get_infraenv_keywords(self):
+        return self._allowed_parameters(models.InfraEnvCreateParams)
+
     def set_default_values(self, overrides, existing=False):
         if 'openshift_version' in overrides and isinstance(overrides['openshift_version'], float):
             overrides['openshift_version'] = str(overrides['openshift_version'])
