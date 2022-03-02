@@ -630,13 +630,16 @@ class AssistedClient(object):
                 enable_on = 'all'
             tang_servers = overrides['tang_servers']
             installconfig['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2", "tang_servers": tang_servers}
-        if 'proxy' in overrides and isinstance(overrides['proxy'], str):
+        if 'proxy' in overrides:
             proxy = overrides['proxy']
-            if not proxy.startswith('http'):
-                proxy = f'http://{proxy}'
-            installconfig['proxy'] = {'http_proxy': proxy, 'https_proxy': proxy}
-            if 'noproxy' in overrides:
-                installconfig['proxy']['no_proxy'] = overrides['noproxy']
+            if isinstance(proxy, str):
+                if not proxy.startswith('http'):
+                    proxy = f'http://{proxy}'
+                installconfig['proxy'] = {'http_proxy': proxy, 'https_proxy': proxy}
+                if 'noproxy' in overrides:
+                    installconfig['proxy']['no_proxy'] = overrides['noproxy']
+            else:
+                installconfig['proxy'] = proxy
         if 'installconfig' in overrides:
             installconfig = overrides['installconfig']
         if installconfig:
