@@ -424,6 +424,19 @@ def info_service(args):
     ai.info_service()
 
 
+def list_events(args):
+    info(f"List events of cluster {args.cluster}")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    events = ai.list_events(args.cluster)
+    eventstable = PrettyTable(["Date", "Message"])
+    for event in events:
+        date = event['event_time']
+        message = event['message']
+        entry = [date, message]
+        eventstable.add_row(entry)
+    print(eventstable)
+
+
 def cli():
     """
 
@@ -562,6 +575,13 @@ def cli():
     clusterupdate_parser.set_defaults(func=update_cluster)
     update_subparsers.add_parser('cluster', parents=[clusterupdate_parser], description=clusterupdate_desc,
                                  help=clusterupdate_desc)
+
+    eventslist_desc = 'List Events'
+    eventslist_parser = argparse.ArgumentParser(add_help=False)
+    eventslist_parser.add_argument('cluster', metavar='CLUSTER')
+    eventslist_parser.set_defaults(func=list_events)
+    list_subparsers.add_parser('event', parents=[eventslist_parser], description=eventslist_desc,
+                               help=clusterlist_desc, aliases=['events'])
 
     ignitiondiscoverydownload_desc = 'Download Discovery Ignition file'
     ignitiondiscoverydownload_parser = argparse.ArgumentParser(add_help=False)
