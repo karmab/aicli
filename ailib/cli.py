@@ -49,14 +49,12 @@ def create_cluster(args):
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     infraenv = overrides.get('infraenv', True)
-    if infraenv:
-        infraenv_overrides = overrides.copy()
-        infraenv_overrides['cluster'] = args.cluster
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.create_cluster(args.cluster, overrides)
+    ai.create_cluster(args.cluster, overrides.copy())
     if infraenv:
         infraenv = f"{args.cluster}_infra-env"
-        ai.create_infra_env(infraenv, infraenv_overrides)
+        overrides['cluster'] = args.cluster
+        ai.create_infra_env(infraenv, overrides)
 
 
 def delete_cluster(args):

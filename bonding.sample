@@ -1,0 +1,94 @@
+static_network_config:
+- interfaces:
+  - name: bond0
+    type: bond
+    state: up
+    ipv4:
+      address:
+      - ip: 192.168.123.16
+        prefix-length: 24
+      dhcp: false
+      enabled: true
+    link-aggregation:
+      mode: active-backup
+      options:
+        miimon: '140'
+      slaves:
+      - ens3
+      - ens4
+  routes:
+    config:
+    - destination: 0.0.0.0/0
+      next-hop-address: 192.168.123.1
+      next-hop-interface: bond0
+  dns-resolver:
+    config:
+      server:
+        - 192.168.123.1
+  mac_interface_map:
+  - mac_address: aa:aa:aa:aa:cc:01
+    logical_nic_name: ens3
+  - mac_address: aa:aa:aa:aa:cc:02
+    logical_nic_name: ens4
+- interfaces:
+  - name: bond0
+    type: bond
+    state: up
+    ipv4:
+      address:
+      - ip: 192.168.123.17
+        prefix-length: 24
+      dhcp: false
+      enabled: true
+    link-aggregation:
+      mode: active-backup
+      options:
+        miimon: '140'
+      slaves:
+      - ens3
+      - ens4
+  routes:
+    config:
+    - destination: 0.0.0.0/0
+      next-hop-address: 192.168.123.1
+      next-hop-interface: bond0
+  dns-resolver:
+    config:
+      server:
+        - 192.168.123.1
+  mac_interface_map:
+  - mac_address: aa:aa:aa:aa:cc:03
+    logical_nic_name: ens3
+  - mac_address: aa:aa:aa:aa:cc:04
+    logical_nic_name: ens4
+- interfaces:
+  - name: bond0
+    type: bond
+    state: up
+    ipv4:
+      address:
+      - ip: 192.168.123.18
+        prefix-length: 24
+      dhcp: false
+      enabled: true
+    link-aggregation:
+      mode: active-backup
+      options:
+        miimon: '140'
+      slaves:
+      - ens3
+      - ens4
+  routes:
+    config:
+    - destination: 0.0.0.0/0
+      next-hop-address: 192.168.123.1
+      next-hop-interface: bond0
+  dns-resolver:
+    config:
+      server:
+        - 192.168.123.1
+  mac_interface_map:
+   - mac_address: aa:aa:aa:aa:cc:05
+     logical_nic_name: ens3
+   - mac_address: aa:aa:aa:aa:cc:06
+     logical_nic_name: ens4

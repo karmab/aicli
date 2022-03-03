@@ -126,11 +126,16 @@ class AssistedClient(object):
                 static_network_config = [static_network_config]
             final_network_config = []
             for entry in static_network_config:
-                mac_interface_map = []
+                mac_interface_map = entry.get('mac_interface_map', [])
                 for interface in entry['interfaces']:
-                    if 'bond' not in interface['name']:
-                        logical_nic_name, mac_address = interface['name'], interface['mac-address']
-                        mac_interface_map.append({"mac_address": mac_address, "logical_nic_name": logical_nic_name})
+                    bond = True if interface.get('type', 'ethernet') == 'bond' else False
+                    if not mac_interface_map:
+                        if not bond:
+                            logical_nic_name, mac_address = interface['name'], interface['mac-address']
+                            mac_interface_map.append({"mac_address": mac_address, "logical_nic_name": logical_nic_name})
+                        else:
+                            error("Providing mac_interface_map is mandatory when setting bond")
+                            sys.exit(1)
                 new_entry = {'network_yaml': yaml.dump(entry), 'mac_interface_map': mac_interface_map}
                 final_network_config.append(models.HostStaticNetworkConfig(**new_entry))
             static_network_config = final_network_config
