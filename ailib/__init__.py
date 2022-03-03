@@ -643,7 +643,7 @@ class AssistedClient(object):
                 noproxy = overrides.get('noproxy')
             elif isinstance(proxy, dict):
                 httpProxy = proxy.get('http_proxy') or proxy.get('httpProxy')
-                httpProxy = proxy.get('https_proxy') or proxy.get('httpsProxy')
+                httpsProxy = proxy.get('https_proxy') or proxy.get('httpsProxy')
                 noproxy = proxy.get('no_proxy') or proxy.get('noProxy')
             else:
                 error(f"Invalid entry for proxy: {proxy}")
