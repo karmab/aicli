@@ -389,6 +389,12 @@ def wait_hosts(args):
     ai.wait_hosts(args.infraenv, args.number, filter_installed=filter_installed)
 
 
+def wait_cluster(args):
+    info(f"Wait for cluster {args.cluster}")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.wait_cluster(args.cluster)
+
+
 def list_manifests(args):
     info(f"Retrieving manifests for Cluster {args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
@@ -840,6 +846,13 @@ def cli():
     serviceinfo_parser = info_subparsers.add_parser('service', description=serviceinfo_desc, help=serviceinfo_desc,
                                                     epilog=serviceinfo_epilog, formatter_class=rawhelp)
     serviceinfo_parser.set_defaults(func=info_service)
+
+    clusterwait_desc = 'Wait for cluster'
+    clusterwait_parser = argparse.ArgumentParser(add_help=False)
+    clusterwait_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterwait_parser.set_defaults(func=wait_cluster)
+    wait_subparsers.add_parser('cluster', parents=[clusterwait_parser], description=clusterwait_desc,
+                               help=clusterwait_desc)
 
     hostswait_desc = 'Wait for hosts'
     hostswait_parser = argparse.ArgumentParser(add_help=False)

@@ -599,6 +599,17 @@ class AssistedClient(object):
                 info("Waiting 5s for hosts to reach expected number")
                 sleep(5)
 
+    def wait_cluster(self, name):
+        cluster_id = self.get_cluster_id(name)
+        while True:
+            cluster_info = self.client.v2_get_cluster(cluster_id=cluster_id).to_dict()
+            install_completed_at = str(cluster_info['install_completed_at'])
+            if install_completed_at != '0001-01-01 00:00:00+00:00':
+                return
+            else:
+                info(f"Waiting 5s for cluster {name} to be installed")
+                sleep(5)
+
     def update_cluster(self, name, overrides):
         cluster_id = self.get_cluster_id(name)
         if 'api_ip' in overrides:
