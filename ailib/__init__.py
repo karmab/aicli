@@ -302,6 +302,9 @@ class AssistedClient(object):
             if parameter == 'network_type' and overrides[parameter] not in ['OpenShiftSDN', 'OVNKubernetes']:
                 extra_overrides[parameter] = overrides['network_type']
                 continue
+            if parameter == 'service_networks':
+                extra_overrides[parameter] = overrides['service_networks']
+                continue
             if parameter in allowed_parameters:
                 new_cluster_params[parameter] = overrides[parameter]
             elif parameter not in ['api_ip', 'ingress_ip']:
