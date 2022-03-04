@@ -1,0 +1,11 @@
+cluster_networks:
+- cidr: 10.128.0.0/14
+  hostPrefix: 23
+- cidr: fd01::/48
+  hostPrefix: 64
+machine_networks:
+- cidr: 192.168.126.0/24
+- cidr: 1001:db8::/120
+service_networks:
+- 172.30.0.0/16
+- fd02::/112

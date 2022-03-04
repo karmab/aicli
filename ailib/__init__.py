@@ -218,8 +218,7 @@ class AssistedClient(object):
                 cidr = cluster_network
             elif isinstance(cluster_network, dict) and 'cidr' in cluster_network:
                 cidr = cluster_network['cidr']
-                if 'host_prefix' in cluster_network:
-                    host_prefix = cluster_network['host_prefix']
+                host_prefix = cluster_network.get('host_prefix') or cluster_network.get('hostPrefix')
             else:
                 error(f"Invalid entry for cluster_network {cluster_network}")
                 sys.exit(1)
@@ -300,10 +299,10 @@ class AssistedClient(object):
         allowed_parameters = self._allowed_parameters(models.ClusterCreateParams)
         for parameter in overrides:
             if parameter == 'network_type' and overrides[parameter] not in ['OpenShiftSDN', 'OVNKubernetes']:
-                extra_overrides[parameter] = overrides['network_type']
+                extra_overrides[parameter] = overrides[parameter]
                 continue
-            if parameter == 'service_networks':
-                extra_overrides[parameter] = overrides['service_networks']
+            if parameter in ['cluster_networks', 'service_networks']:
+                extra_overrides[parameter] = overrides[parameter]
                 continue
             if parameter in allowed_parameters:
                 new_cluster_params[parameter] = overrides[parameter]
