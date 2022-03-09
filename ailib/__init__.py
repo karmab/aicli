@@ -888,7 +888,6 @@ class AssistedClient(object):
 
     def list_events(self, name):
         cluster_id = self.get_cluster_id(name)
-        infra_env_id = self.get_infra_env_id(name)
         events_api = api.EventsApi(api_client=self.api)
-        events = events_api.v2_list_events(cluster_id=cluster_id, infra_env_id=infra_env_id)
+        events = events_api.v2_list_events(cluster_id=cluster_id)
         return events
