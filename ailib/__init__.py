@@ -26,16 +26,16 @@ default_infraenv_params = {"openshift_version": "4.9", "image_type": "full-iso"}
 class AssistedClient(object):
     def __init__(self, url, token=None, offlinetoken=None):
         self.url = url
-        config = Configuration()
-        config.host = self.url + "/api/assisted-install"
-        config.verify_ssl = False
+        self.config = Configuration()
+        self.config.host = self.url + "/api/assisted-install"
+        self.config.verify_ssl = False
         proxies = urllib.request.getproxies()
         if proxies:
             proxy = proxies.get('https') or proxies.get('http')
             if 'http' not in proxy:
                 proxy = "http://" + proxy
                 warning(f"Detected proxy env var without scheme, updating proxy to {proxy}")
-            config.proxy = proxy
+            self.config.proxy = proxy
         aihome = f"{os.environ['HOME']}/.aicli"
         if not os.path.exists(aihome):
             os.mkdir(aihome)
@@ -52,19 +52,27 @@ class AssistedClient(object):
             if not os.path.exists(f'{aihome}/offlinetoken.txt'):
                 with open(f'{aihome}/offlinetoken.txt', 'w') as f:
                     f.write(offlinetoken)
+            self.offlinetoken = offlinetoken
+            self.token = token
             if os.path.exists(f'{aihome}/token.txt'):
-                token = open(f'{aihome}/token.txt').read().strip()
+                self.token = open(f'{aihome}/token.txt').read().strip()
             try:
-                token = get_token(token=token, offlinetoken=offlinetoken)
+                self.token = get_token(token=self.token, offlinetoken=self.offlinetoken)
             except Exception as e:
                 error(f"Hit issue when trying to set token. Got {e}")
                 if os.path.exists(f'{aihome}/offlinetoken.txt'):
                     error("Removing offlinetoken file")
                     os.remove(f'{aihome}/offlinetoken.txt')
                 sys.exit(1)
-            config.api_key['Authorization'] = token
-            config.api_key_prefix['Authorization'] = 'Bearer'
-        self.api = ApiClient(configuration=config)
+            self.config.api_key['Authorization'] = self.token
+            self.config.api_key_prefix['Authorization'] = 'Bearer'
+        self.api = ApiClient(configuration=self.config)
+        self.client = api.InstallerApi(api_client=self.api)
+
+    def refresh_token(self, token, offlinetoken):
+        self.token = get_token(token=self.token, offlinetoken=self.offlinetoken)
+        self.config.api_key['Authorization'] = self.token
+        self.api = ApiClient(configuration=self.config)
         self.client = api.InstallerApi(api_client=self.api)
 
     def _allowed_parameters(self, instance):
@@ -603,6 +611,7 @@ class AssistedClient(object):
             else:
                 info("Waiting 5s for hosts to reach expected number")
                 sleep(5)
+                self.refresh_token(self.token, self.offlinetoken)
 
     def wait_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
@@ -614,6 +623,7 @@ class AssistedClient(object):
             else:
                 info(f"Waiting 5s for cluster {name} to be installed")
                 sleep(5)
+                self.refresh_token(self.token, self.offlinetoken)
 
     def update_cluster(self, name, overrides):
         cluster_id = self.get_cluster_id(name)

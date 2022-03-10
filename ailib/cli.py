@@ -444,6 +444,7 @@ def list_events(args):
                     print(event)
                 oldevents = newevents
                 sleep(10)
+                ai.refresh_token(ai.token, ai.offlinetoken)
             except KeyboardInterrupt:
                 info("Leaving as per your request")
                 sys.exit(0)
