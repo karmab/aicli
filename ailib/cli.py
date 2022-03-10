@@ -437,12 +437,16 @@ def list_events(args):
     if args.follow:
         oldevents = []
         while True:
-            newevents = ai.list_events(args.cluster)
-            events = [event for event in newevents if event not in oldevents]
-            for event in sorted(events, key=lambda x: x['event_time']):
-                print(event)
-            oldevents = newevents
-            sleep(10)
+            try:
+                newevents = ai.list_events(args.cluster)
+                events = [event for event in newevents if event not in oldevents]
+                for event in sorted(events, key=lambda x: x['event_time']):
+                    print(event)
+                oldevents = newevents
+                sleep(10)
+            except KeyboardInterrupt:
+                info("Leaving as per your request")
+                sys.exit(0)
     else:
         events = ai.list_events(args.cluster)
         eventstable = PrettyTable(["Date", "Message"])
