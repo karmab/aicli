@@ -141,12 +141,15 @@ class AssistedClient(object):
             static_network_config = final_network_config
             overrides['static_network_config'] = static_network_config
         if 'ssh_authorized_key' not in overrides:
-            pub_key = overrides.get('public_key', f"{os.environ['HOME']}/.ssh/id_rsa.pub")
-            if os.path.exists(pub_key):
-                overrides['ssh_authorized_key'] = open(pub_key).read().strip()
+            if 'ssh_public_key' in overrides:
+                overrides['ssh_authorized_key'] = overrides['ssh_public_key']
             else:
-                error(f"Missing public key file {pub_key}")
-                sys.exit(1)
+                pub_key = overrides.get('public_key', f"{os.environ['HOME']}/.ssh/id_rsa.pub")
+                if os.path.exists(pub_key):
+                    overrides['ssh_authorized_key'] = open(pub_key).read().strip()
+                else:
+                    error(f"Missing public key file {pub_key}")
+                    sys.exit(1)
         if 'ignition_config_override' not in overrides:
             iso_overrides = overrides.copy()
             iso_overrides['ignition_version'] = '3.1.0'
