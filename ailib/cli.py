@@ -5,6 +5,7 @@ import json
 from prettytable import PrettyTable
 import os
 import sys
+from time import sleep
 from ailib import AssistedClient
 
 PARAMHELP = "specify parameter or keyword for rendering (multiple can be specified)"
@@ -433,14 +434,24 @@ def info_service(args):
 def list_events(args):
     info(f"List events of cluster {args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    events = ai.list_events(args.cluster)
-    eventstable = PrettyTable(["Date", "Message"])
-    for event in events:
-        date = event['event_time']
-        message = event['message']
-        entry = [date, message]
-        eventstable.add_row(entry)
-    print(eventstable)
+    if args.follow:
+        oldevents = []
+        while True:
+            newevents = ai.list_events(args.cluster)
+            events = [event for event in newevents if event not in oldevents]
+            for event in sorted(events, key=lambda x: x['event_time']):
+                print(event)
+            oldevents = newevents
+            sleep(10)
+    else:
+        events = ai.list_events(args.cluster)
+        eventstable = PrettyTable(["Date", "Message"])
+        for event in events:
+            date = event['event_time']
+            message = event['message']
+            entry = [date, message]
+            eventstable.add_row(entry)
+        print(eventstable)
 
 
 def list_infraenv_keywords(args):
@@ -628,6 +639,7 @@ def cli():
 
     eventslist_desc = 'List Events'
     eventslist_parser = argparse.ArgumentParser(add_help=False)
+    eventslist_parser.add_argument('-f', '--follow', action='store_true')
     eventslist_parser.add_argument('cluster', metavar='CLUSTER')
     eventslist_parser.set_defaults(func=list_events)
     list_subparsers.add_parser('event', parents=[eventslist_parser], description=eventslist_desc,
