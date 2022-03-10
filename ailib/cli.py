@@ -463,6 +463,16 @@ def list_cluster_keywords(args):
     print(keywordstable)
 
 
+def list_extra_keywords(args):
+    info("List extra keywords")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    keywords = ai.get_extra_keywords()
+    keywordstable = PrettyTable(["Keyword"])
+    for keyword in sorted(keywords):
+        keywordstable.add_row([keyword])
+    print(keywordstable)
+
+
 def cli():
     """
 
@@ -573,6 +583,13 @@ def cli():
     list_subparsers.add_parser('cluster-keyword', parents=[cluster_keywords_list_parser],
                                description=cluster_keywords_list_desc,
                                help=cluster_keywords_list_desc, aliases=['cluster-keywords'])
+
+    extra_keywords_list_desc = 'List Extra keywords'
+    extra_keywords_list_parser = argparse.ArgumentParser(add_help=False)
+    extra_keywords_list_parser.set_defaults(func=list_extra_keywords)
+    list_subparsers.add_parser('extra-keyword', parents=[extra_keywords_list_parser],
+                               description=extra_keywords_list_desc,
+                               help=extra_keywords_list_desc, aliases=['extra-keywords'])
 
     manifestscreate_desc = 'Upload manifests to cluster'
     manifestscreate_epilog = None

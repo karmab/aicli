@@ -894,3 +894,8 @@ class AssistedClient(object):
         events_api = api.EventsApi(api_client=self.api)
         events = events_api.v2_list_events(cluster_id=cluster_id)
         return events
+
+    def get_extra_keywords(self):
+        return ['sno', 'pull_secret', 'domain', 'tpm', 'minimal', 'static_network_config', 'proxy', 'disconnected_url',
+                'disconnected_ca', 'network_type', 'sno_disk', 'tpm_masters', 'tpm_workers', 'tang_servers', 'api_ip',
+                'ingress_ip', 'role']
