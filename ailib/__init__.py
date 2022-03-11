@@ -603,27 +603,35 @@ class AssistedClient(object):
     def wait_hosts(self, name, number=3, filter_installed=False):
         infra_env_id = self.get_infra_env_id(name)
         while True:
-            current_hosts = [host for host in self.client.v2_list_hosts(infra_env_id=infra_env_id)]
-            if filter_installed:
-                current_hosts = [host for host in current_hosts if host['status'] != 'installed']
-            if len(current_hosts) >= number:
-                return
-            else:
-                info("Waiting 5s for hosts to reach expected number")
-                sleep(5)
-                self.refresh_token(self.token, self.offlinetoken)
+            try:
+                current_hosts = [host for host in self.client.v2_list_hosts(infra_env_id=infra_env_id)]
+                if filter_installed:
+                    current_hosts = [host for host in current_hosts if host['status'] != 'installed']
+                if len(current_hosts) >= number:
+                    return
+                else:
+                    info("Waiting 5s for hosts to reach expected number")
+                    sleep(5)
+                    self.refresh_token(self.token, self.offlinetoken)
+            except KeyboardInterrupt:
+                info("Leaving as per your request")
+                sys.exit(0)
 
     def wait_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         while True:
-            cluster_info = self.client.v2_get_cluster(cluster_id=cluster_id).to_dict()
-            install_completed_at = str(cluster_info['install_completed_at'])
-            if install_completed_at != '0001-01-01 00:00:00+00:00':
-                return
-            else:
-                info(f"Waiting 5s for cluster {name} to be installed")
-                sleep(5)
-                self.refresh_token(self.token, self.offlinetoken)
+            try:
+                cluster_info = self.client.v2_get_cluster(cluster_id=cluster_id).to_dict()
+                install_completed_at = str(cluster_info['install_completed_at'])
+                if install_completed_at != '0001-01-01 00:00:00+00:00':
+                    return
+                else:
+                    info(f"Waiting 5s for cluster {name} to be installed")
+                    sleep(5)
+                    self.refresh_token(self.token, self.offlinetoken)
+            except KeyboardInterrupt:
+                info("Leaving as per your request")
+                sys.exit(0)
 
     def update_cluster(self, name, overrides):
         cluster_id = self.get_cluster_id(name)
