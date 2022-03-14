@@ -450,13 +450,17 @@ def list_events(args):
                 sys.exit(0)
     else:
         events = ai.list_events(args.cluster)
-        eventstable = PrettyTable(["Date", "Message"])
-        for event in events:
-            date = event['event_time']
-            message = event['message']
-            entry = [date, message]
-            eventstable.add_row(entry)
-        print(eventstable)
+        if args.raw:
+            for event in events:
+                print(event)
+        else:
+            eventstable = PrettyTable(["Date", "Message"])
+            for event in events:
+                date = event['event_time']
+                message = event['message']
+                entry = [date, message]
+                eventstable.add_row(entry)
+            print(eventstable)
 
 
 def list_infraenv_keywords(args):
@@ -645,6 +649,7 @@ def cli():
     eventslist_desc = 'List Events'
     eventslist_parser = argparse.ArgumentParser(add_help=False)
     eventslist_parser.add_argument('-f', '--follow', action='store_true')
+    eventslist_parser.add_argument('-r', '--raw', action='store_true')
     eventslist_parser.add_argument('cluster', metavar='CLUSTER')
     eventslist_parser.set_defaults(func=list_events)
     list_subparsers.add_parser('event', parents=[eventslist_parser], description=eventslist_desc,
