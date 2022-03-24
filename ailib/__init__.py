@@ -586,7 +586,8 @@ class AssistedClient(object):
                         host_ignition_params = models.HostIgnitionParams(config=ignition_data)
                         self.client.v2_update_host_ignition(infra_env_id, host_id, host_ignition_params)
                 if 'extra_args' in overrides:
-                    extra_args = overrides['extra_args'].split(' ')
+                    extra_args = overrides['extra_args']
+                    extra_args = sum([entry.split('=') for entry in extra_args.split(" ")], [])
                     installer_args_params = models.InstallerArgsParams(args=extra_args)
                     self.client.v2_update_host_installer_args(infra_env_id, host_id, installer_args_params)
                     extra_args_updated = True
