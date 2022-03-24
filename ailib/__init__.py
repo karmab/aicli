@@ -557,6 +557,7 @@ class AssistedClient(object):
             for index, host_id in enumerate(host_ids):
                 role = None
                 bind_updated = False
+                extra_args_updated = False
                 host_update_params = {}
                 if 'cluster' in overrides:
                     cluster = overrides['cluster']
@@ -584,10 +585,11 @@ class AssistedClient(object):
                         ignition_data = open(ignition_path).read()
                         host_ignition_params = models.HostIgnitionParams(config=ignition_data)
                         self.client.v2_update_host_ignition(infra_env_id, host_id, host_ignition_params)
-                if 'extra_args' in overrides and cluster_id is not None:
-                    extra_args = overrides['extra_args']
+                if 'extra_args' in overrides:
+                    extra_args = overrides['extra_args'].split(' ')
                     installer_args_params = models.InstallerArgsParams(args=extra_args)
-                    self.client.v2_update_host_installer_args(cluster_id, host_id, installer_args_params)
+                    self.client.v2_update_host_installer_args(infra_env_id, host_id, installer_args_params)
+                    extra_args_updated = True
                 if 'mcp' in overrides:
                     valid_status = ["discovering", "known", "disconnected", "insufficient", "pending-for-input"]
                     currenthost = self.client.v2_get_host(infra_env_id=infra_env_id, host_id=host_id)
@@ -602,7 +604,7 @@ class AssistedClient(object):
                     host_update_params = models.HostUpdateParams(**host_update_params)
                     self.client.v2_update_host(infra_env_id=infra_env_id, host_id=host_id,
                                                host_update_params=host_update_params)
-                elif not bind_updated:
+                elif not bind_updated and not extra_args_updated:
                     warning("Nothing updated for this host")
 
     def wait_hosts(self, name, number=3, filter_installed=False):
