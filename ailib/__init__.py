@@ -84,6 +84,11 @@ class AssistedClient(object):
     def get_infraenv_keywords(self):
         return self._allowed_parameters(models.InfraEnvCreateParams)
 
+    def get_host_keywords(self):
+        allowed = self._allowed_parameters(models.HostUpdateParams)
+        allowed.extend(self._allowed_parameters(models.InstallerArgsParams))
+        return allowed
+
     def set_default_values(self, overrides, existing=False):
         if 'openshift_version' in overrides and isinstance(overrides['openshift_version'], float):
             overrides['openshift_version'] = str(overrides['openshift_version'])
