@@ -599,6 +599,11 @@ class AssistedClient(object):
                     else:
                         mcp = overrides['mcp']
                         host_update_params['machine_config_pool_name'] = mcp
+                if 'disk' in overrides or 'installation_disk_path' in overrides:
+                    disk = overrides.get('installation_disk_path') or overrides.get('disk')
+                    disk = os.path.basename(disk)
+                    disk = f"/dev/{disk}"
+                    host_update_params['disks_selected_config'] = [{"id": disk, "role": "install"}]
                 if host_update_params:
                     info(f"Updating host with id {host_id}")
                     host_update_params = models.HostUpdateParams(**host_update_params)
