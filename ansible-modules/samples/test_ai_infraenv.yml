@@ -1,0 +1,13 @@
+- hosts: localhost
+  tasks:
+#  - import_role:
+#        name: karmab.kcli-modules
+  - name: Create an AI infraenv
+    ai_infraenv:
+      state: present
+      name: biloute
+      parameters:
+       minimal: true
+       pull_secret: ~/openshift_pull.json
+    register: result
+  - debug: var=result 

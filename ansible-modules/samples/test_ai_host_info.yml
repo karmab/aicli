@@ -1,0 +1,7 @@
+- hosts: localhost
+  tasks:
+  - name: Get info about AI host
+    ai_host_info:
+      name: localhost
+    register: result
+  - debug: var=result['installation_disk_path'] 

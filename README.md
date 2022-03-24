@@ -205,3 +205,6 @@ installconfig:
      source: registry.ci.openshift.org/ocp-release
 ```
 
+## Ansible Modules
+
+TODO

@@ -1,0 +1,7 @@
+- hosts: localhost
+  tasks:
+  - name: Get info about AI cluster
+    ai_cluster_info:
+      name: myclu
+    register: result
+  - debug: var=result['id'] 

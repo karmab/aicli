@@ -1,0 +1,7 @@
+- hosts: localhost
+  tasks:
+  - name: Get info about AI infraenv
+    ai_infraenv_info:
+      name: myclu
+    register: result
+  - debug: var=result['download_url'] 

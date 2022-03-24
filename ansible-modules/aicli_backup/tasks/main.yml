@@ -1,0 +1,6 @@
+# tasks/main.yml
+---
+
+- name: Install aicli
+  ansible.builtin.shell: |
+    pip3 install aicli
