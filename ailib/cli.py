@@ -384,14 +384,14 @@ def update_host(args):
 
 
 def wait_hosts(args):
-    info("Wait for hosts")
+    info(f"Wait for {args.number} hosts to appear")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     filter_installed = args.filter
     ai.wait_hosts(args.infraenv, args.number, filter_installed=filter_installed)
 
 
 def wait_cluster(args):
-    info(f"Wait for cluster {args.cluster}")
+    info(f"Wait for cluster {args.cluster} to be installed")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
     ai.wait_cluster(args.cluster)
 
