@@ -326,6 +326,9 @@ class AssistedClient(object):
                 extra_overrides[parameter] = overrides[parameter]
             else:
                 warning(f"Omitting parameter {parameter} at creation time")
+        if 'network_type' not in new_cluster_params:
+            warning("Forcing network_type to OVNKubernetes")
+            new_cluster_params['network_type'] = 'OVNKubernetes'
         cluster_params = models.ClusterCreateParams(**new_cluster_params)
         self.client.v2_register_cluster(new_cluster_params=cluster_params)
         if extra_overrides:
