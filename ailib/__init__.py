@@ -728,6 +728,10 @@ class AssistedClient(object):
                     del cluster_update_params[parameter]
             cluster_update_params = models.V2ClusterUpdateParams(**cluster_update_params)
             self.client.v2_update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
+        if 'manifests' in overrides:
+            self.upload_manifests(name, directory=overrides['manifests'], openshift=False)
+        if 'openshift_manifests' in overrides:
+            self.upload_manifests(name, directory=overrides['openshift_manifests'], openshift=True)
 
     def start_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
@@ -932,4 +936,4 @@ class AssistedClient(object):
     def get_extra_keywords(self):
         return ['sno', 'pull_secret', 'domain', 'tpm', 'minimal', 'static_network_config', 'proxy', 'disconnected_url',
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_masters', 'tpm_workers', 'tang_servers', 'api_ip',
-                'ingress_ip', 'role']
+                'ingress_ip', 'role', 'manifests', 'openshift_manifests']
