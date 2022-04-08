@@ -414,7 +414,7 @@ class AssistedClient(object):
         new_import_cluster_params = models.ImportClusterParams(**new_import_cluster_params)
         self.client.v2_import_cluster(new_import_cluster_params=new_import_cluster_params)
         cluster_update_params = {'pull_secret': pull_secret, 'ssh_public_key': ssh_public_key}
-        cluster_update_params = models.ClusterUpdateParams(**cluster_update_params)
+        cluster_update_params = models.V2ClusterUpdateParams(**cluster_update_params)
         new_cluster_id = self.get_cluster_id(name)
         self.client.v2_update_cluster(cluster_id=new_cluster_id, cluster_update_params=cluster_update_params)
 
