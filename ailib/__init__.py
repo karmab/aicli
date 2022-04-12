@@ -491,6 +491,13 @@ class AssistedClient(object):
         with open(f"{path}/{role}.ign.{name}", "wb") as f:
             copyfileobj(response, f)
 
+    def download_ipxe_script(self, name, path):
+        infra_env_id = self.get_infra_env_id(name)
+        response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="ipxe-script",
+                                                           _preload_content=False)
+        with open(f"{path}/ipxe-script.{name}", "wb") as f:
+            copyfileobj(response, f)
+
     def list_clusters(self):
         return self.client.v2_list_clusters()
 

@@ -361,6 +361,12 @@ def download_discovery_ignition(args):
     ai.download_discovery_ignition(args.infraenv, args.path)
 
 
+def download_ipxe_script(args):
+    info(f"Downloading Ipxe script for infraenv {args.infraenv} in {args.path}")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
+    ai.download_ipxe_script(args.infraenv, args.path)
+
+
 def bind_host(args):
     info(f"binding Host {args.hostname} to Cluster {args.cluster}")
     overrides = {'cluster': args.cluster}
@@ -676,7 +682,7 @@ def cli():
     ignitiondiscoverydownload_parser = argparse.ArgumentParser(add_help=False)
     ignitiondiscoverydownload_parser.add_argument('-p', '--path', metavar='PATH', default='.',
                                                   help='Where to download asset')
-    ignitiondiscoverydownload_parser.add_argument('cluster', metavar='CLUSTER')
+    ignitiondiscoverydownload_parser.add_argument('infraenv', metavar='INFRAENV')
     ignitiondiscoverydownload_parser.set_defaults(func=download_discovery_ignition)
     download_subparsers.add_parser('discovery-ignition', parents=[ignitiondiscoverydownload_parser],
                                    description=ignitiondiscoverydownload_desc,
@@ -692,6 +698,15 @@ def cli():
     download_subparsers.add_parser('ignition', parents=[ignitiondownload_parser],
                                    description=ignitiondownload_desc,
                                    help=ignitiondownload_desc)
+
+    ipxescriptdownload_desc = 'Download Discovery Ipxe script'
+    ipxescriptdownload_parser = argparse.ArgumentParser(add_help=False)
+    ipxescriptdownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
+    ipxescriptdownload_parser.add_argument('infraenv', metavar='INFRAENV')
+    ipxescriptdownload_parser.set_defaults(func=download_ipxe_script)
+    download_subparsers.add_parser('ipxe-script', parents=[ipxescriptdownload_parser],
+                                   description=ipxescriptdownload_desc,
+                                   help=ipxescriptdownload_desc)
 
     infraenvbind_desc = 'Bind Infraenv'
     infraenvbind_parser = argparse.ArgumentParser(add_help=False)
