@@ -14,7 +14,6 @@ import sys
 from time import sleep
 from uuid import uuid1
 import urllib
-from pathlib import Path
 from urllib.request import urlretrieve
 import yaml
 
@@ -24,6 +23,7 @@ import yaml
 #                          "service_network_cidr": "string", "vip_dhcp_allocation": False}
 default_cluster_params = {"openshift_version": "4.9", "base_dns_domain": "karmalabs.com", "vip_dhcp_allocation": False}
 default_infraenv_params = {"openshift_version": "4.9", "image_type": "full-iso"}
+SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub']
 
 
 class AssistedClient(object):
@@ -94,8 +94,14 @@ class AssistedClient(object):
 
     @staticmethod
     def get_default_ssh_pub():
-        for key in Path('%s/.ssh/' % os.environ['HOME']).glob("*.pub"):
-            return str(key)
+        sshdir = '%s/.ssh/' % os.environ['HOME']
+        pubpath = f"{sshdir}/id_rsa.pub"
+        for path in SSH_PUB_LOCATIONS:
+            current_path = f"{sshdir}/{path}"
+            if os.path.exists(current_path):
+                pubpath = current_path
+                break
+        return pubpath
 
     def set_default_values(self, overrides, existing=False):
         if 'openshift_version' in overrides and isinstance(overrides['openshift_version'], float):
