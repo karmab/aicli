@@ -514,7 +514,8 @@ class AssistedClient(object):
         if local:
             info("Making assets available locally")
             if serve:
-                ip = os.popen("ip route get 1 | awk '{print $NF;exit}'").read().strip()
+                route = os.popen("ip route get 1").read().split(' ')
+                ip = route[route.index('src') + 1].strip()
             else:
                 ip = "$IP"
             kernel, initrd = None, None
