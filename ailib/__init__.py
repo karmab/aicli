@@ -517,25 +517,22 @@ class AssistedClient(object):
                 ip = os.popen("ip route get 1 | awk '{print $NF;exit}'").read().strip()
             else:
                 ip = "$IP"
-            kernel, initrd, rootfs = None, None, None
+            kernel, initrd = None, None
             with open(f"{path}/ipxe-script-local.{name}", "w") as dest:
                 newkernel = f"http://{ip}/kernel.{name}"
                 newinitrd = f"http://{ip}/initrd.{name}"
-                newrootfs = f"http://{ip}/rootfs.{name}"
                 for line in open(f"{path}/ipxe-script.{name}", "r").readlines():
                     newline = line
                     if line.startswith('kernel'):
                         for entry in line.split(' '):
                             if entry.startswith('https'):
                                 kernel = entry
-                            if entry.startswith('coreos.live.rootfs_url'):
-                                rootfs = entry.replace('coreos.live.rootfs_url=', '')
-                        newline = line.replace(kernel, newkernel).replace(rootfs, newrootfs)
+                        newline = line.replace(kernel, newkernel)
                     if line.startswith('initrd'):
                         initrd = line.split(' ')[1]
                         newline = line.replace(initrd, newinitrd)
                     dest.write(newline)
-            if kernel is None or initrd is None or rootfs is None:
+            if kernel is None or initrd is None:
                 error("Couldn't properly parse the ipxe-script")
             else:
                 if not os.path.exists(f"{path}/kernel.{name}"):
@@ -544,9 +541,6 @@ class AssistedClient(object):
                 if not os.path.exists(f"{path}/initrd.{name}"):
                     info("Downloading initrd")
                     urlretrieve(initrd, f"{path}/initrd.{name}")
-                if not os.path.exists(f"{path}/rootfs.{name}"):
-                    info("Downloading rootfs")
-                    urlretrieve(rootfs, f"{path}/rootfs.{name}")
             if serve:
                 os.chdir(path)
                 PORT = 8000
