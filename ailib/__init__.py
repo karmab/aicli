@@ -491,12 +491,41 @@ class AssistedClient(object):
         with open(f"{path}/{role}.ign.{name}", "wb") as f:
             copyfileobj(response, f)
 
-    def download_ipxe_script(self, name, path):
+    def download_ipxe_script(self, name, path, local=False):
         infra_env_id = self.get_infra_env_id(name)
         response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="ipxe-script",
                                                            _preload_content=False)
         with open(f"{path}/ipxe-script.{name}", "wb") as f:
             copyfileobj(response, f)
+        if local:
+            info("Making assets available locally")
+            kernel, initrd, rootfs = None, None, None
+            with open(f"{path}/ipxe-script-local.{name}", "w") as dest:
+                newkernel = f"http://$IP/kernel.{name}"
+                newinitrd = f"http://$IP/initrd.{name}"
+                newrootfs = f"http://$IP/rootfs.{name}"
+                for line in open(f"{path}/ipxe-script.{name}", "r").readlines():
+                    newline = line
+                    if line.startswith('kernel'):
+                        for entry in line.split(' '):
+                            if entry.startswith('https'):
+                                kernel = entry
+                            if entry.startswith('coreos.live.rootfs_url'):
+                                rootfs = entry.replace('coreos.live.rootfs_url=', '')
+                        newline = line.replace(kernel, newkernel).replace(rootfs, newrootfs)
+                    if line.startswith('initrd'):
+                        initrd = line.split(' ')[1]
+                        newline = line.replace(initrd, newinitrd)
+                    dest.write(newline)
+            if kernel is None or initrd is None or rootfs is None:
+                error("Couldn't properly parse the ipxe-script")
+            else:
+                info("Downloading kernel")
+                urlretrieve(kernel, f"{path}/kernel.{name}")
+                info("Downloading initrd")
+                urlretrieve(initrd, f"{path}/initrd.{name}")
+                info("Downloading rootfs")
+                urlretrieve(rootfs, f"{path}/rootfs.{name}")
 
     def list_clusters(self):
         return self.client.v2_list_clusters()
