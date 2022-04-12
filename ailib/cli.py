@@ -364,7 +364,8 @@ def download_discovery_ignition(args):
 def download_ipxe_script(args):
     info(f"Downloading Ipxe script for infraenv {args.infraenv} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken)
-    ai.download_ipxe_script(args.infraenv, args.path, local=args.local)
+    local = True if args.serve else args.local
+    ai.download_ipxe_script(args.infraenv, args.path, local=local, serve=args.serve)
 
 
 def bind_host(args):
@@ -703,6 +704,7 @@ def cli():
     ipxescriptdownload_parser = argparse.ArgumentParser(add_help=False)
     ipxescriptdownload_parser.add_argument('-l', '--local', action='store_true', help='Convert artifacts for local use')
     ipxescriptdownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
+    ipxescriptdownload_parser.add_argument('-s', '--serve', action='store_true', help='Serve downloaded assets')
     ipxescriptdownload_parser.add_argument('infraenv', metavar='INFRAENV')
     ipxescriptdownload_parser.set_defaults(func=download_ipxe_script)
     download_subparsers.add_parser('ipxe-script', parents=[ipxescriptdownload_parser],

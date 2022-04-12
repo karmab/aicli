@@ -2,12 +2,14 @@ from assisted_service_client import ApiClient, Configuration, api, models
 from ailib.common import warning, error, info, get_token
 import base64
 from datetime import datetime
+import http.server
 from ipaddress import ip_network
 import json
 import os
 import re
 from shutil import copyfileobj
 import socket
+import socketserver
 import sys
 from time import sleep
 from uuid import uuid1
@@ -491,7 +493,7 @@ class AssistedClient(object):
         with open(f"{path}/{role}.ign.{name}", "wb") as f:
             copyfileobj(response, f)
 
-    def download_ipxe_script(self, name, path, local=False):
+    def download_ipxe_script(self, name, path, local=False, serve=False):
         infra_env_id = self.get_infra_env_id(name)
         response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="ipxe-script",
                                                            _preload_content=False)
@@ -499,11 +501,15 @@ class AssistedClient(object):
             copyfileobj(response, f)
         if local:
             info("Making assets available locally")
+            if serve:
+                ip = os.popen("ip route get 1 | awk '{print $NF;exit}'").read().strip()
+            else:
+                ip = "$IP"
             kernel, initrd, rootfs = None, None, None
             with open(f"{path}/ipxe-script-local.{name}", "w") as dest:
-                newkernel = f"http://$IP/kernel.{name}"
-                newinitrd = f"http://$IP/initrd.{name}"
-                newrootfs = f"http://$IP/rootfs.{name}"
+                newkernel = f"http://{ip}/kernel.{name}"
+                newinitrd = f"http://{ip}/initrd.{name}"
+                newrootfs = f"http://{ip}/rootfs.{name}"
                 for line in open(f"{path}/ipxe-script.{name}", "r").readlines():
                     newline = line
                     if line.startswith('kernel'):
@@ -520,12 +526,22 @@ class AssistedClient(object):
             if kernel is None or initrd is None or rootfs is None:
                 error("Couldn't properly parse the ipxe-script")
             else:
-                info("Downloading kernel")
-                urlretrieve(kernel, f"{path}/kernel.{name}")
-                info("Downloading initrd")
-                urlretrieve(initrd, f"{path}/initrd.{name}")
-                info("Downloading rootfs")
-                urlretrieve(rootfs, f"{path}/rootfs.{name}")
+                if not os.path.exists(f"{path}/kernel.{name}"):
+                    info("Downloading kernel")
+                    urlretrieve(kernel, f"{path}/kernel.{name}")
+                if not os.path.exists(f"{path}/initrd.{name}"):
+                    info("Downloading initrd")
+                    urlretrieve(initrd, f"{path}/initrd.{name}")
+                if not os.path.exists(f"{path}/rootfs.{name}"):
+                    info("Downloading rootfs")
+                    urlretrieve(rootfs, f"{path}/rootfs.{name}")
+            if serve:
+                os.chdir(path)
+                PORT = 8000
+                info(f"Serving those assets from http://{ip}:{PORT}")
+                handler = http.server.SimpleHTTPRequestHandler
+                with socketserver.TCPServer(("", PORT), handler) as httpd:
+                    httpd.serve_forever()
 
     def list_clusters(self):
         return self.client.v2_list_clusters()
