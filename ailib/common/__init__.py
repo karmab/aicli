@@ -4,31 +4,38 @@ from urllib.request import urlopen
 from urllib.parse import urlencode
 import json
 import os
+import sys
 import yaml
 from time import time
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-
+tty = open(os.ttyname(0), 'wt')
 # colors = {'blue': '36', 'red': '31', 'green': '32', 'yellow': '33', 'pink': '35', 'white': '37'}
-def error(text):
+
+
+def error(text, forcetty=False):
     color = "31"
-    print(f'\033[0;{color}m{text}\033[0;0m')
+    _file = tty if forcetty else sys.stderr
+    print(f'\033[0;{color}m{text}\033[0;0m', file=_file)
 
 
-def warning(text):
+def warning(text, forcetty=False):
     color = "33"
-    print(f'\033[0;{color}m{text}\033[0;0m')
+    _file = tty if forcetty else sys.stdout
+    print(f'\033[0;{color}m{text}\033[0;0m', file=_file)
 
 
-def info(text):
+def info(text, forcetty=False):
     color = "36"
-    print(f'\033[0;{color}m{text}\033[0;0m')
+    _file = tty if forcetty else sys.stdout
+    print(f'\033[0;{color}m{text}\033[0;0m', file=_file)
 
 
-def success(text):
+def success(text, forcetty=False):
     color = "32"
-    print(f'\033[0;{color}m{text}\033[0;0m')
+    _file = tty if forcetty else sys.stdout
+    print(f'\033[0;{color}m{text}\033[0;0m', file=_file)
 
 
 def get_overrides(paramfile=None, param=[]):
