@@ -323,21 +323,20 @@ class AssistedClient(object):
         self.set_default_values(overrides)
         new_cluster_params = default_cluster_params
         new_cluster_params['name'] = name
+        update_parameters = ['cluster_networks', 'service_networks', 'machine_networks',
+                             'api_ip', 'ingress_ip', 'api_vip', 'ingress_vip']
         extra_overrides = {}
         allowed_parameters = self._allowed_parameters(models.ClusterCreateParams)
         for parameter in overrides:
             if parameter == 'network_type' and overrides[parameter] not in ['OpenShiftSDN', 'OVNKubernetes']:
                 extra_overrides[parameter] = overrides[parameter]
                 continue
-            if parameter in ['cluster_networks', 'service_networks']:
+            if parameter in update_parameters:
                 extra_overrides[parameter] = overrides[parameter]
-                continue
-            if parameter in allowed_parameters:
+            elif parameter in allowed_parameters:
                 new_cluster_params[parameter] = overrides[parameter]
-            elif parameter not in ['api_ip', 'ingress_ip']:
-                extra_overrides[parameter] = overrides[parameter]
             else:
-                warning(f"Omitting parameter {parameter} at creation time")
+                extra_overrides[parameter] = overrides[parameter]
         if 'network_type' not in new_cluster_params:
             warning("Forcing network_type to OVNKubernetes")
             new_cluster_params['network_type'] = 'OVNKubernetes'
