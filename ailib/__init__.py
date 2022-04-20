@@ -934,7 +934,10 @@ class AssistedClient(object):
         infra_env_update_params = {}
         allowed_parameters = self._allowed_parameters(models.InfraEnvUpdateParams)
         for parameter in overrides:
-            if parameter in allowed_parameters:
+            if parameter == 'pull_secret' and os.path.exists(os.path.expanduser(overrides['pull_secret'])):
+                pull_secret = os.path.expanduser(overrides['pull_secret'])
+                infra_env_update_params[parameter] = re.sub(r"\s", "", open(pull_secret).read())
+            elif parameter in allowed_parameters:
                 infra_env_update_params[parameter] = overrides[parameter]
         if infra_env_update_params:
             infra_env_update_params = models.InfraEnvUpdateParams(**infra_env_update_params)
