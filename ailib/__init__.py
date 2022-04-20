@@ -24,7 +24,7 @@ SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub
 
 
 class AssistedClient(object):
-    def __init__(self, url, token=None, offlinetoken=None):
+    def __init__(self, url, token=None, offlinetoken=None, debug=False):
         self.url = url
         self.config = Configuration()
         self.config.host = self.url + "/api/assisted-install"
@@ -68,6 +68,7 @@ class AssistedClient(object):
             self.config.api_key_prefix['Authorization'] = 'Bearer'
         self.api = ApiClient(configuration=self.config)
         self.client = api.InstallerApi(api_client=self.api)
+        self.debug = debug
 
     def refresh_token(self, token, offlinetoken):
         self.token = get_token(token=self.token, offlinetoken=self.offlinetoken)
@@ -340,6 +341,8 @@ class AssistedClient(object):
         if 'network_type' not in new_cluster_params:
             warning("Forcing network_type to OVNKubernetes")
             new_cluster_params['network_type'] = 'OVNKubernetes'
+        if self.debug:
+            print(new_cluster_params)
         cluster_params = models.ClusterCreateParams(**new_cluster_params)
         self.client.v2_register_cluster(new_cluster_params=cluster_params)
         if extra_overrides:

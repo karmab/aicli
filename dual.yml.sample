@@ -7,5 +7,5 @@ machine_networks:
 - cidr: 192.168.126.0/24
 - cidr: 1001:db8::/120
 service_networks:
-- 172.30.0.0/16
-- fd02::/112
+ - 172.30.0.0/16
+ - fd02::/112
