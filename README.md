@@ -159,6 +159,11 @@ openshift_version: 4.8
 sno: true
 pull_secret: my_pull_secret.json
 disconnected_url: testk-disconnecter.ipv6only:5000
+hosts:
+ bonka-0:
+   role: master
+ bonka-1:
+   role: worker
 installconfig:
    additionalTrustBundle: |
        -----BEGIN CERTIFICATE-----

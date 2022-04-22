@@ -385,11 +385,23 @@ def unbind_host(args):
 
 
 def update_host(args):
-    info(f"Updating Host {args.hostname}")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
-    ai.update_host(args.hostname, overrides)
+    host_param_overrides = {}
+    hostnames = args.hostname
+    if 'hosts' in overrides:
+        host_param_overrides = overrides['hosts']
+        if not hostnames:
+            hostnames = list(host_param_overrides.keys())
+    if not hostnames:
+        warning("No hosts provided to update")
+        return 1
+    for hostname in hostnames:
+        info(f"Updating Host {hostname}")
+        host_overrides = host_param_overrides[hostname] if hostname in host_param_overrides else {}
+        host_overrides.update(overrides)
+        ai.update_host(hostname, host_overrides)
 
 
 def wait_hosts(args):
@@ -890,9 +902,10 @@ def cli():
     hostupdate_parser = argparse.ArgumentParser(add_help=False)
     hostupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     hostupdate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
-    hostupdate_parser.add_argument('hostname', metavar='HOSTNAME')
+    hostupdate_parser.add_argument('hostname', metavar='HOSTNAME', nargs='*')
     hostupdate_parser.set_defaults(func=update_host)
-    update_subparsers.add_parser('host', parents=[hostupdate_parser], description=hostupdate_desc, help=hostupdate_desc)
+    update_subparsers.add_parser('host', parents=[hostupdate_parser], description=hostupdate_desc, help=hostupdate_desc,
+                                 aliases=['hosts'])
 
     manifestslist_desc = 'List Manifests of a cluster'
     manifestslist_parser = argparse.ArgumentParser(add_help=False)
