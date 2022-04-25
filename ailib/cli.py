@@ -319,52 +319,50 @@ def info_iso(args):
 
 
 def download_iso(args):
-    info(f"Downloading Iso for infraenv {args.infraenv} in {args.path}", forcetty=True)
+    info(f"Downloading Iso for infraenv {args.infraenv} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     ai.download_iso(args.infraenv, args.path)
 
 
 def download_kubeadminpassword(args):
-    info(f"Downloading KubeAdminPassword for Cluster {args.cluster} in {args.path}/kubeadmin-password.{args.cluster}",
-         forcetty=True)
+    info(f"Downloading KubeAdminPassword for Cluster {args.cluster} in {args.path}/kubeadmin-password.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     ai.download_kubeadminpassword(args.cluster, args.path)
 
 
 def download_kubeconfig(args):
-    info(f"Downloading Kubeconfig for Cluster {args.cluster} in {args.path}/kubeconfig.{args.cluster}", forcetty=True)
+    info(f"Downloading Kubeconfig for Cluster {args.cluster} in {args.path}/kubeconfig.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     ai.download_kubeconfig(args.cluster, args.path)
 
 
 def download_initrd(args):
-    info(f"Downloading Initrd Config for infraenv {args.infraenv} in {args.path}/initrd.{args.infraenv}", forcetty=True)
+    info(f"Downloading Initrd Config for infraenv {args.infraenv} in {args.path}/initrd.{args.infraenv}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     ai.download_initrd(args.infraenv, args.path)
 
 
 def download_installconfig(args):
-    info(f"Downloading Install Config for Cluster {args.cluster} in {args.path}/install-config.yaml.{args.cluster}",
-         forcetty=True)
+    info(f"Downloading Install Config for Cluster {args.cluster} in {args.path}/install-config.yaml.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     ai.download_installconfig(args.cluster, args.path)
 
 
 def download_ignition(args):
     role = args.role
-    info(f"Downloading {role} ignition for Cluster {args.cluster} in {args.path}", forcetty=True)
+    info(f"Downloading {role} ignition for Cluster {args.cluster} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     ai.download_ignition(args.cluster, args.path, role=role)
 
 
 def download_discovery_ignition(args):
-    info(f"Downloading Discovery ignition for infraenv {args.infraenv} in {args.path}", forcetty=True)
+    info(f"Downloading Discovery ignition for infraenv {args.infraenv} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     ai.download_discovery_ignition(args.infraenv, args.path)
 
 
 def download_ipxe_script(args):
-    info(f"Downloading Ipxe script for infraenv {args.infraenv} in {args.path}", forcetty=True)
+    info(f"Downloading Ipxe script for infraenv {args.infraenv} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     local = True if args.serve else args.local
     ai.download_ipxe_script(args.infraenv, args.path, local=local, serve=args.serve)
