@@ -871,6 +871,8 @@ class AssistedClient(object):
 
     def info_service(self):
         versionapi = api.VersionsApi(api_client=self.api)
+        component_versions = versionapi.v2_list_component_versions().to_dict()
+        print(f"release: {component_versions['release_tag']}")
         supported_versions = versionapi.v2_list_supported_openshift_versions()
         print("supported openshift versions:")
         for version in supported_versions:
