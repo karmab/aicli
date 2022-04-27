@@ -378,7 +378,6 @@ class AssistedClient(object):
         cluster_name = name.replace('-day2', '')
         cluster_id = None
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == cluster_name]
-        api_ip = None
         if not existing_ids:
             warning(f"Base Cluster {cluster_name} not found. Populating with default values")
             if 'version' in overrides:
@@ -397,7 +396,12 @@ class AssistedClient(object):
                 domain = default_cluster_params["base_dns_domain"]
                 warning(f"No base_dns_domain provided.Using {domain}")
             overrides['base_dns_domain'] = domain
-            api_name = "api." + cluster_name + "." + domain
+            api_vip_dnsname = f"api.{cluster_name}.{domain}"
+            try:
+                socket.gethostbyname(api_vip_dnsname)
+            except:
+                warning(f"{api_vip_dnsname} doesn't resolve")
+                warning(f"run aicli update cluster {name} -P api_vip_dnsname=$api_ip")
             self.set_default_values(overrides)
             pull_secret, ssh_public_key = overrides['pull_secret'], overrides['ssh_public_key']
         else:
@@ -405,25 +409,17 @@ class AssistedClient(object):
             cluster = self.client.v2_get_cluster(cluster_id=cluster_id)
             openshift_version = cluster.openshift_version
             ssh_public_key = cluster.image_info.ssh_public_key
-            api_name = "api." + cluster_name + "." + cluster.base_dns_domain
-            api_ip = cluster.api_vip
+            # api_name = f"api.{cluster_name}.{cluster.base_dns_domain}"
+            api_vip_dnsname = cluster.api_vip
+            warning(f"Forcing api_vip_dnsname to {api_vip_dnsname}")
             response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
                                                              _preload_content=False)
             data = yaml.safe_load(response.read().decode("utf-8"))
             pull_secret = data.get('pullSecret')
-        try:
-            socket.gethostbyname(api_name)
-        except:
-            if api_ip is not None:
-                warning(f"Forcing api_vip_dnsname to {api_ip}")
-                api_name = api_ip
-            else:
-                warning(f"{api_name} doesn't resolve")
-                warning(f"run aicli update cluster {name} -P api_vip_dnsname=$api_ip")
         if cluster_id is None:
             cluster_id = str(uuid1())
         new_import_cluster_params = {"name": name, "openshift_version": str(openshift_version),
-                                     "api_vip_dnsname": api_name, 'openshift_cluster_id': cluster_id}
+                                     "api_vip_dnsname": api_vip_dnsname, 'openshift_cluster_id': cluster_id}
         new_import_cluster_params = models.ImportClusterParams(**new_import_cluster_params)
         self.client.v2_import_cluster(new_import_cluster_params=new_import_cluster_params)
         cluster_update_params = {'pull_secret': pull_secret, 'ssh_public_key': ssh_public_key}
