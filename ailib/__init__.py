@@ -375,6 +375,7 @@ class AssistedClient(object):
         print(yaml.dump(data, default_flow_style=False, indent=2))
 
     def create_day2_cluster(self, name, overrides={}):
+        api_vip_dnsname = overrides.get('api_vip_dnsname')
         cluster_name = name.replace('-day2', '')
         cluster_id = None
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == cluster_name]
@@ -396,7 +397,8 @@ class AssistedClient(object):
                 domain = default_cluster_params["base_dns_domain"]
                 warning(f"No base_dns_domain provided.Using {domain}")
             overrides['base_dns_domain'] = domain
-            api_vip_dnsname = f"api.{cluster_name}.{domain}"
+            if api_vip_dnsname is None:
+                api_vip_dnsname = f"api.{cluster_name}.{domain}"
             try:
                 socket.gethostbyname(api_vip_dnsname)
             except:
@@ -410,8 +412,9 @@ class AssistedClient(object):
             openshift_version = cluster.openshift_version
             ssh_public_key = cluster.image_info.ssh_public_key
             # api_name = f"api.{cluster_name}.{cluster.base_dns_domain}"
-            api_vip_dnsname = cluster.api_vip
-            warning(f"Forcing api_vip_dnsname to {api_vip_dnsname}")
+            if api_vip_dnsname is None:
+                api_vip_dnsname = cluster.api_vip
+                warning(f"Forcing api_vip_dnsname to {api_vip_dnsname}")
             response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
                                                              _preload_content=False)
             data = yaml.safe_load(response.read().decode("utf-8"))
