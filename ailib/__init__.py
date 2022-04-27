@@ -766,6 +766,7 @@ class AssistedClient(object):
             installconfig = overrides['installconfig']
         if installconfig:
             self.client.v2_update_cluster_install_config(cluster_id, json.dumps(installconfig))
+            del overrides['installconfig']
         if 'olm_operators' in overrides:
             overrides['olm_operators'] = self.set_olm_operators(overrides['olm_operators'])
         if 'machine_networks' in overrides:
@@ -780,8 +781,11 @@ class AssistedClient(object):
             for parameter in overrides:
                 if parameter not in allowed_parameters:
                     del cluster_update_params[parameter]
-            cluster_update_params = models.V2ClusterUpdateParams(**cluster_update_params)
-            self.client.v2_update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
+            if not cluster_update_params:
+                warning(f"Nothing updated in cluster {name}")
+            else:
+                cluster_update_params = models.V2ClusterUpdateParams(**cluster_update_params)
+                self.client.v2_update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
         if 'manifests' in overrides:
             self.upload_manifests(name, directory=overrides['manifests'], openshift=False)
         if 'openshift_manifests' in overrides:
