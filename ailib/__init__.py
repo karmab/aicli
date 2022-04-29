@@ -833,6 +833,33 @@ class AssistedClient(object):
             create_manifest_params = models.CreateManifestParams(**manifest_info)
             manifests_api.v2_create_cluster_manifest(cluster_id, create_manifest_params)
 
+    def delete_manifests(self, name, directory, manifests=[]):
+        cluster_id = self.get_cluster_id(name)
+        manifests_api = api.ManifestsApi(api_client=self.api)
+        all_manifests = [m['file_name'] for m in manifests_api.v2_list_cluster_manifests(cluster_id)]
+        if not manifests and directory is None:
+            manifests = all_manifests
+        if manifests:
+            for manifest in manifests:
+                if manifest in all_manifests:
+                    info(f"Deleting file {manifest}")
+                    manifests_api.v2_delete_cluster_manifest(cluster_id, manifest)
+            sys.exit(0)
+        elif not os.path.exists(directory):
+            error(f"Directory {directory} not found")
+            sys.exit(1)
+        elif not os.path.isdir(directory):
+            error(f"{directory} is not a directory")
+            sys.exit(1)
+        _fics = os.listdir(directory)
+        if not _fics:
+            error(f"No files found in directory {directory}")
+            sys.exit(0)
+        for _fic in _fics:
+            if _fic in all_manifests:
+                info(f"Deleting file {_fic}")
+                manifests_api.v2_delete_cluster_manifest(cluster_id, _fic)
+
     def list_manifests(self, name):
         results = []
         cluster_id = self.get_cluster_id(name)

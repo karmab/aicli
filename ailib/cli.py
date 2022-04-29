@@ -144,6 +144,14 @@ def create_manifests(args):
     ai.upload_manifests(args.cluster, directory=directory, openshift=openshift)
 
 
+def delete_manifests(args):
+    info(f"Delete manifests from Cluster {args.cluster}")
+    directory = args.dir
+    manifests = args.manifests
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
+    ai.delete_manifests(args.cluster, directory=directory, manifests=manifests)
+
+
 def delete_host(args):
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
@@ -657,6 +665,16 @@ def cli():
     manifestscreate_parser.add_argument('-o', '--openshift', action='store_true', help='Store in openshift folder')
     manifestscreate_parser.add_argument('cluster', metavar='CLUSTER')
     manifestscreate_parser.set_defaults(func=create_manifests)
+
+    manifestsdelete_desc = 'Delete manifests to cluster'
+    manifestsdelete_epilog = None
+    manifestsdelete_parser = delete_subparsers.add_parser('manifest', description=manifestsdelete_desc,
+                                                          help=manifestsdelete_desc, epilog=manifestsdelete_epilog,
+                                                          formatter_class=rawhelp, aliases=['manifests'])
+    manifestsdelete_parser.add_argument('--dir', '--directory', help='directory with stored manifests')
+    manifestsdelete_parser.add_argument('cluster', metavar='CLUSTER')
+    manifestsdelete_parser.add_argument('manifests', metavar='MANIFESTS', nargs='*')
+    manifestsdelete_parser.set_defaults(func=delete_manifests)
 
     clusterstart_desc = 'Start Cluster'
     clusterstart_epilog = None
