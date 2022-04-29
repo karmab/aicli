@@ -29,6 +29,7 @@ class AssistedClient(object):
         self.config = Configuration()
         self.config.host = self.url + "/api/assisted-install"
         self.config.verify_ssl = False
+        self.config.debug = debug
         proxies = urllib.request.getproxies()
         if proxies:
             proxy = proxies.get('https') or proxies.get('http')
