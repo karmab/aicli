@@ -1,13 +1,20 @@
-This is a sample python client on top of the generated assisted-installer python library to ease working with assisted installer
+| :warning: **Note that the tool described in this repository is not supported in any way by Red Hat** |
+| --- |
+
+This is a sample python client on top of the generated assisted-installer python library to ease working with assisted installer API
 
 Available features:
 
-- create/delete cluster (autoinjecting pull secret file and ssh public key)
-- create/download discovery iso
+- create/delete cluster (autoinjecting pull secret file and ssh public key, static networking)
+- create/delete manifests
+- download discovery iso
+- wait for hosts
 - list cluster/hosts
 - update hostnames and host roles
 - update cluster attributes such as api vip and ingress vip 
 - launch cluster install
+- wait for cluster
+- create day2 cluster for adding hosts
 
 # Deploying
 
@@ -125,14 +132,7 @@ aicli update host localhost -P role=master
 ## Handling iso
 
 ```
-aicli create iso myclu
-aicli download iso myclu
-```
-
-#3 Update data
-
-```
-aicli create iso myclu
+aicli info iso myclu
 aicli download iso myclu
 ```
 
