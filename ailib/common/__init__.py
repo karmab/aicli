@@ -96,7 +96,6 @@ def get_token(token, offlinetoken=None):
     result = urlopen(url, data=data).read()
     page = result.decode("utf8")
     token = json.loads(page)['access_token']
-    info(f"Storing new token in {aihome}/token.txt")
     with open(f"{aihome}/token.txt", 'w') as f:
         f.write(token)
     return token

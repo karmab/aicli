@@ -476,26 +476,38 @@ class AssistedClient(object):
             for line in response:
                 f.write(line)
 
-    def download_installconfig(self, name, path):
+    def download_installconfig(self, name, path, stdout=False):
         cluster_id = self.get_cluster_id(name)
         response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
                                                          _preload_content=False)
-        with open(f"{path}/install-config.yaml.{name}", "wb") as f:
+        installconfig_path = f"{path}/install-config.yaml.{name}"
+        with open(installconfig_path, "wb") as f:
             copyfileobj(response, f)
+        if stdout:
+            print(open(installconfig_path).read())
+            os.remove(installconfig_path)
 
-    def download_kubeadminpassword(self, name, path):
+    def download_kubeadminpassword(self, name, path, stdout=False):
         cluster_id = self.get_cluster_id(name)
         response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id, file_name="kubeadmin-password",
                                                                _preload_content=False)
-        with open(f"{path}/kubeadmin-password.{name}", "wb") as f:
+        kubeadminpassword_path = f"{path}/kubeadmin-password.{name}"
+        with open(kubeadminpassword_path, "wb") as f:
             copyfileobj(response, f)
+        if stdout:
+            print(open(kubeadminpassword_path).read())
+            os.remove(kubeadminpassword_path)
 
-    def download_kubeconfig(self, name, path):
+    def download_kubeconfig(self, name, path, stdout=False):
         cluster_id = self.get_cluster_id(name)
         response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id, file_name="kubeconfig-noingress",
                                                                _preload_content=False)
-        with open(f"{path}/kubeconfig.{name}", "wb") as f:
+        kubeconfig_path = f"{path}/kubeconfig.{name}"
+        with open(kubeconfig_path, "wb") as f:
             copyfileobj(response, f)
+        if stdout:
+            print(open(kubeconfig_path).read())
+            os.remove(kubeconfig_path)
 
     def download_discovery_ignition(self, name, path):
         infra_env_id = self.get_infra_env_id(name)

@@ -333,15 +333,20 @@ def download_iso(args):
 
 
 def download_kubeadminpassword(args):
-    info(f"Downloading KubeAdminPassword for Cluster {args.cluster} in {args.path}/kubeadmin-password.{args.cluster}")
+    stdout = args.stdout
+    if not stdout:
+        dest = f"{args.path}/kubeadmin-password.{args.cluster}"
+        info(f"Downloading KubeAdminPassword for Cluster {args.cluster} in {dest}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
-    ai.download_kubeadminpassword(args.cluster, args.path)
+    ai.download_kubeadminpassword(args.cluster, args.path, stdout=stdout)
 
 
 def download_kubeconfig(args):
-    info(f"Downloading Kubeconfig for Cluster {args.cluster} in {args.path}/kubeconfig.{args.cluster}")
+    stdout = args.stdout
+    if not stdout:
+        info(f"Downloading Kubeconfig for Cluster {args.cluster} in {args.path}/kubeconfig.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
-    ai.download_kubeconfig(args.cluster, args.path)
+    ai.download_kubeconfig(args.cluster, args.path, stdout=stdout)
 
 
 def download_initrd(args):
@@ -351,9 +356,11 @@ def download_initrd(args):
 
 
 def download_installconfig(args):
-    info(f"Downloading Install Config for Cluster {args.cluster} in {args.path}/install-config.yaml.{args.cluster}")
+    stdout = args.stdout
+    if not stdout:
+        info(f"Downloading Install Config for Cluster {args.cluster} in {args.path}/install-config.yaml.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
-    ai.download_installconfig(args.cluster, args.path)
+    ai.download_installconfig(args.cluster, args.path, stdout=stdout)
 
 
 def download_ignition(args):
@@ -851,6 +858,7 @@ def cli():
     installconfigdownload_desc = 'Download Installconfig'
     installconfigdownload_parser = argparse.ArgumentParser(add_help=False)
     installconfigdownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
+    installconfigdownload_parser.add_argument('-s', '--stdout', action='store_true', help='Print to stdout')
     installconfigdownload_parser.add_argument('cluster', metavar='CLUSTER')
     installconfigdownload_parser.set_defaults(func=download_installconfig)
     download_subparsers.add_parser('installconfig', parents=[installconfigdownload_parser],
@@ -860,6 +868,7 @@ def cli():
     kubepassworddownload_desc = 'Download Kubeadmin-password'
     kubepassworddownload_parser = argparse.ArgumentParser(add_help=False)
     kubepassworddownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
+    kubepassworddownload_parser.add_argument('-s', '--stdout', action='store_true', help='Print to stdout')
     kubepassworddownload_parser.add_argument('cluster', metavar='CLUSTER')
     kubepassworddownload_parser.set_defaults(func=download_kubeadminpassword)
     download_subparsers.add_parser('kubeadmin-password', parents=[kubepassworddownload_parser],
@@ -869,6 +878,7 @@ def cli():
     kubeconfigdownload_desc = 'Download Kubeconfig'
     kubeconfigdownload_parser = argparse.ArgumentParser(add_help=False)
     kubeconfigdownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
+    kubeconfigdownload_parser.add_argument('-s', '--stdout', action='store_true', help='Print to stdout')
     kubeconfigdownload_parser.add_argument('cluster', metavar='CLUSTER')
     kubeconfigdownload_parser.set_defaults(func=download_kubeconfig)
     download_subparsers.add_parser('kubeconfig', parents=[kubeconfigdownload_parser],
