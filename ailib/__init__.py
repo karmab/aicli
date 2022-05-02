@@ -38,32 +38,39 @@ class AssistedClient(object):
                 warning(f"Detected proxy env var without scheme, updating proxy to {proxy}")
             self.config.proxy = proxy
         aihome = f"{os.environ['HOME']}/.aicli"
+        offlinetokenpath = f'{aihome}/offlinetoken.txt'
+        tokenpath = f'{aihome}/token.txt'
         if not os.path.exists(aihome):
             os.mkdir(aihome)
         if url in ['https://api.openshift.com', 'https://api.stage.openshift.com']:
             if offlinetoken is None:
-                if os.path.exists(f'{aihome}/offlinetoken.txt'):
-                    offlinetoken = open(f'{aihome}/offlinetoken.txt').read().strip()
+                if os.path.exists(offlinetokenpath):
+                    offlinetoken = open(offlinetokenpath).read().strip()
                 else:
                     error(f"offlinetoken needs to be set to gather token for {url}")
                     error("get it at https://cloud.redhat.com/openshift/token")
                     if os.path.exists('/i_am_a_container'):
                         error("use -e AI_OFFLINETOKEN=$AI_OFFLINETOKEN to expose it in container mode")
                     sys.exit(1)
-            if not os.path.exists(f'{aihome}/offlinetoken.txt'):
-                with open(f'{aihome}/offlinetoken.txt', 'w') as f:
+            elif os.path.exists(offlinetokenpath) and open(offlinetokenpath).read().strip() != offlinetoken:
+                error("Removing old offlinetoken file")
+                os.remove(offlinetokenpath)
+                if os.path.exists(tokenpath):
+                    os.remove(tokenpath)
+            if not os.path.exists(offlinetokenpath):
+                with open(offlinetokenpath, 'w') as f:
                     f.write(offlinetoken)
             self.offlinetoken = offlinetoken
             self.token = token
-            if os.path.exists(f'{aihome}/token.txt'):
-                self.token = open(f'{aihome}/token.txt').read().strip()
+            if os.path.exists(tokenpath):
+                self.token = open(tokenpath).read().strip()
             try:
                 self.token = get_token(token=self.token, offlinetoken=self.offlinetoken)
             except Exception as e:
                 error(f"Hit issue when trying to set token. Got {e}")
-                if os.path.exists(f'{aihome}/offlinetoken.txt'):
+                if os.path.exists(offlinetokenpath):
                     error("Removing offlinetoken file")
-                    os.remove(f'{aihome}/offlinetoken.txt')
+                    os.remove(offlinetokenpath)
                 sys.exit(1)
             self.config.api_key['Authorization'] = self.token
             self.config.api_key_prefix['Authorization'] = 'Bearer'
