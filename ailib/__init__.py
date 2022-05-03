@@ -331,11 +331,13 @@ class AssistedClient(object):
         self.set_default_values(overrides)
         new_cluster_params = default_cluster_params
         new_cluster_params['name'] = name
-        update_parameters = ['cluster_networks', 'service_networks', 'machine_networks',
-                             'api_ip', 'ingress_ip', 'api_vip', 'ingress_vip']
+        update_parameters = ['cluster_networks', 'service_networks', 'machine_networks', 'ingress_ip', 'ingress_vip']
         extra_overrides = {}
         allowed_parameters = self._allowed_parameters(models.ClusterCreateParams)
         for parameter in overrides:
+            if parameter in ['api_vip', 'api_ip'] and not overrides.get('dual', False):
+                warning(f"Ignoring {parameter} at creation time")
+                continue
             if parameter == 'network_type' and overrides[parameter] not in ['OpenShiftSDN', 'OVNKubernetes']:
                 extra_overrides[parameter] = overrides[parameter]
                 continue
