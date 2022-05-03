@@ -919,6 +919,7 @@ class AssistedClient(object):
         self.update_infra_env(name, overrides=iso_overrides)
 
     def info_service(self):
+        print(f"url: {self.url}")
         versionapi = api.VersionsApi(api_client=self.api)
         component_versions = versionapi.v2_list_component_versions().to_dict()
         print(f"release: {component_versions['release_tag']}")
