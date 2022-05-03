@@ -998,9 +998,7 @@ def cli():
                     get_subparser_print_help(subparser, subsubcommand)
                 os._exit(0)
         os._exit(0)
-    if args.url is not None:
-        info(f"Using {args.url} as base url")
-    else:
+    if args.url is None:
         args.url = "https://api.openshift.com" if not args.staging else "https://api.stage.openshift.com"
     args.func(args)
 
