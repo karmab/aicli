@@ -786,9 +786,9 @@ class AssistedClient(object):
             installconfig['proxy'] = {'httpProxy': httpProxy, 'httpsProxy': httpsProxy, 'noProxy': noproxy}
         if 'installconfig' in overrides:
             installconfig = overrides['installconfig']
+            del overrides['installconfig']
         if installconfig:
             self.client.v2_update_cluster_install_config(cluster_id, json.dumps(installconfig))
-            del overrides['installconfig']
         if 'olm_operators' in overrides:
             overrides['olm_operators'] = self.set_olm_operators(overrides['olm_operators'])
         if 'machine_networks' in overrides:
