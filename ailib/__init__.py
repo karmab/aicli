@@ -702,23 +702,26 @@ class AssistedClient(object):
                 if len(current_hosts) >= number:
                     return
                 else:
-                    info("Waiting 5s for hosts to reach expected number")
+                    info(f"Waiting 5s for hosts to reach expected number {number}")
                     sleep(5)
                     self.refresh_token(self.token, self.offlinetoken)
             except KeyboardInterrupt:
                 info("Leaving as per your request")
                 sys.exit(0)
 
-    def wait_cluster(self, name):
+    def wait_cluster(self, name, status='installed'):
         cluster_id = self.get_cluster_id(name)
         while True:
             try:
                 cluster_info = self.client.v2_get_cluster(cluster_id=cluster_id).to_dict()
-                install_completed_at = str(cluster_info['install_completed_at'])
-                if install_completed_at != '0001-01-01 00:00:00+00:00':
+                if status == 'ready':
+                    reached = cluster_info['status'] == 'ready'
+                else:
+                    reached = str(cluster_info['install_completed_at']) != '0001-01-01 00:00:00+00:00'
+                if reached:
                     return
                 else:
-                    info(f"Waiting 5s for cluster {name} to be installed")
+                    info(f"Waiting 5s for cluster {name} to reach state {status}")
                     sleep(5)
                     self.refresh_token(self.token, self.offlinetoken)
             except KeyboardInterrupt:

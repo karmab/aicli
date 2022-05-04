@@ -418,16 +418,14 @@ def update_host(args):
 
 
 def wait_hosts(args):
-    info(f"Wait for {args.number} hosts to appear")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     filter_installed = args.filter
     ai.wait_hosts(args.infraenv, args.number, filter_installed=filter_installed)
 
 
 def wait_cluster(args):
-    info(f"Wait for cluster {args.cluster} to be installed")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
-    ai.wait_cluster(args.cluster)
+    ai.wait_cluster(args.cluster, args.status)
 
 
 def list_manifests(args):
@@ -965,6 +963,8 @@ def cli():
 
     clusterwait_desc = 'Wait for cluster'
     clusterwait_parser = argparse.ArgumentParser(add_help=False)
+    clusterwait_parser.add_argument('-s', '--status', help='Which status to wait for', choices=('installed', 'ready'),
+                                    default='installed')
     clusterwait_parser.add_argument('cluster', metavar='CLUSTER')
     clusterwait_parser.set_defaults(func=wait_cluster)
     wait_subparsers.add_parser('cluster', parents=[clusterwait_parser], description=clusterwait_desc,
