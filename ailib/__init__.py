@@ -42,7 +42,8 @@ class AssistedClient(object):
         tokenpath = f'{aihome}/token.txt'
         if not os.path.exists(aihome):
             os.mkdir(aihome)
-        if url in ['https://api.openshift.com', 'https://api.stage.openshift.com']:
+        self.saas = True if url in ['https://api.openshift.com', 'https://api.stage.openshift.com'] else False
+        if self.saas:
             if offlinetoken is None:
                 if os.path.exists(offlinetokenpath):
                     offlinetoken = open(offlinetokenpath).read().strip()
@@ -79,6 +80,8 @@ class AssistedClient(object):
         self.debug = debug
 
     def refresh_token(self, token, offlinetoken):
+        if not self.saas:
+            return
         self.token = get_token(token=self.token, offlinetoken=self.offlinetoken)
         self.config.api_key['Authorization'] = self.token
         self.api = ApiClient(configuration=self.config)
@@ -454,14 +457,14 @@ class AssistedClient(object):
     def info_iso(self, name, overrides, minimal=False):
         infra_env = self.info_infra_env(name).to_dict()
         iso_url = infra_env['download_url']
-        if 'openshift.com' in self.url and self._expired_iso(iso_url):
+        if self.saas and self._expired_iso(iso_url):
             iso_url = self.client.get_infra_env_download_url(infra_env['id']).url
         info(iso_url)
 
     def download_iso(self, name, path):
         infra_env = self.info_infra_env(name).to_dict()
         iso_url = infra_env['download_url']
-        if 'openshift.com' in self.url and self._expired_iso(iso_url):
+        if self.saas and self._expired_iso(iso_url):
             warning("Generating new iso url")
             iso_url = self.client.get_infra_env_download_url(infra_env['id']).url
         urlretrieve(iso_url, f"{path}/{name}.iso")
