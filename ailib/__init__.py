@@ -1088,3 +1088,5 @@ class AssistedClient(object):
         self.wait_cluster(cluster, 'ready')
         self.start_cluster(cluster)
         self.wait_cluster(cluster)
+        info(f"Downloading Kubeconfig for Cluster {cluster} in current directory")
+        self.download_kubeconfig(cluster, '.')
