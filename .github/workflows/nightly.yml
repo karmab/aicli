@@ -10,6 +10,7 @@ on:
 env:
  HOME: /root
  PYTHONUNBUFFERED: true
+ AI_OFFLINETOKEN: ${{ secrets.AI_OFFLINETOKEN }}
 # CLUSTER: ai-ci
 # NODES: 3
 # PULLSECRET: /root/openshift_pull.json
@@ -29,25 +30,27 @@ jobs:
            pip3 -U install assisted-service-client
            python3 setup.py install
        - name: Clean up
+         continue-on-error: true
          run: |
-           kcli delete plan --yes $CLUSTER
-           rm -rf /var/lib/libvirt/images/$CLUSTER.iso
+           kcli delete plan --yes $CLUSTER || true
+           [ -f /var/lib/libvirt/images/$CLUSTER.iso ] && rm -rf /var/lib/libvirt/images/$CLUSTER.iso
+           aicli delete $CLUSTER || true
 
     deploy-ai-cluster:
       needs: requirements
       runs-on: libvirt
       steps:
-        - name: Deploy ai cluster
-          run: aicli create cluster --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER
+      - name: Deploy ai cluster
+        run: aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER
 
     deploy-kcli-plan:
       needs: requirements
       runs-on: libvirt
       steps:
-        - name: Deploy kcli plan
-          run: |
-            until [ -f /var/lib/libvirt/images/$CLUSTER.iso ] ; do
-             echo Waiting for $CLUSTER.iso to show up
-             sleep 5
-            done
-            kcli create vm -P iso=$CLUSTER.iso -P disks=[200] -P memory=20480 -P numcpus=16 --count=$NODE $CLUSTER
+      - name: Deploy kcli plan
+        run: |
+          until [ -f /var/lib/libvirt/images/$CLUSTER.iso ] ; do
+           echo Waiting for $CLUSTER.iso to show up
+           sleep 5
+          done
+          kcli create vm -P iso=$CLUSTER.iso -P disks=[200] -P memory=20480 -P numcpus=16 --count=$NODE $CLUSTER
