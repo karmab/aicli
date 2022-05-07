@@ -57,22 +57,6 @@ jobs:
       runs-on: libvirt
       steps:
       - name: Deploy ai cluster
-        run: aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER
-
-    deploy-kcli-plan:
-      needs: requirements
-      runs-on: libvirt
-      steps:
-      - name: Deploy kcli plan
         run: |
-          timeout=0
-          until [ -f /var/lib/libvirt/images/$CLUSTER.iso ] ; do
-            if [ "$timeout" -gt "180" ] ; then
-              echo Timeout waiting for $CLUSTER.iso to show up
-              exit 1
-            fi
-            echo Waiting for $CLUSTER.iso to show up
-            sleep 5
-            timeout=$(($timeout + 5))
-          done
-          kcli create vm -P iso=$CLUSTER.iso -P disks=[200] -P memory=20480 -P numcpus=16 --count=$NODES $CLUSTER
+          DOWNLOAD_ISO_CMD="kcli create vm -P iso=$CLUSTER.iso -P disks=[200] -P memory=20480 -P numcpus=16 --count=$NODES $CLUSTER"
+          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET -P download_iso_cmd="$DOWNLOAD_ISO_CMD" $CLUSTER

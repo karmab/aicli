@@ -10,6 +10,7 @@ import re
 from shutil import copyfileobj
 import socket
 import socketserver
+from subprocess import call
 import sys
 from time import sleep
 from uuid import uuid1
@@ -1068,10 +1069,13 @@ class AssistedClient(object):
         del overrides['cluster']
         download_iso_path = overrides.get('download_iso_path')
         if download_iso_path is not None:
-            self.download_iso(infraenv, download_iso_path)
+            self.download_iso(cluster, download_iso_path)
         else:
             iso_url = self.info_iso(infraenv, overrides, minimal=minimal)
             warning(f"Retrieve iso from {iso_url} and plug it to your nodes:")
+        download_iso_cmd = overrides.get('download_iso_cmd')
+        if download_iso_cmd is not None:
+            call(download_iso_cmd, shell=True)
         if 'hosts_number' in overrides:
             hosts_number = overrides.get('hosts_number')
         elif 'hosts' in overrides and isinstance(overrides['hosts'], list):
