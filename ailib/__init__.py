@@ -459,7 +459,7 @@ class AssistedClient(object):
         iso_url = infra_env['download_url']
         if self.saas and self._expired_iso(iso_url):
             iso_url = self.client.get_infra_env_download_url(infra_env['id']).url
-        info(iso_url)
+        return iso_url
 
     def download_iso(self, name, path):
         infra_env = self.info_infra_env(name).to_dict()
@@ -1070,8 +1070,8 @@ class AssistedClient(object):
         if download_iso_path is not None:
             self.download_iso(infraenv, download_iso_path)
         else:
-            warning("Retrieve iso from the following url and plug it to your nodes:")
-            self.info_iso(infraenv, overrides, minimal=minimal)
+            iso_url = self.info_iso(infraenv, overrides, minimal=minimal)
+            warning(f"Retrieve iso from {iso_url} and plug it to your nodes:")
         if 'hosts_number' in overrides:
             hosts_number = overrides.get('hosts_number')
         elif 'hosts' in overrides and isinstance(overrides['hosts'], list):

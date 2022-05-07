@@ -320,7 +320,8 @@ def create_iso(args):
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     ai.update_infra_env(args.infraenv, overrides)
-    ai.info_iso(args.infraenv, overrides, minimal=minimal)
+    iso_url = ai.info_iso(args.infraenv, overrides, minimal=minimal)
+    info(iso_url)
 
 
 def info_iso(args):
@@ -330,7 +331,8 @@ def info_iso(args):
     minimal = args.minimal
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
-    ai.info_iso(args.infraenv, overrides, minimal=minimal)
+    iso_url = ai.info_iso(args.infraenv, overrides, minimal=minimal)
+    info(iso_url)
 
 
 def download_iso(args):
