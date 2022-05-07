@@ -1,0 +1,18 @@
+parameters:
+ cluster: chen
+ network: chen
+
+{% set total_number = namespace(value=1) %}
+{% for num in range(0,3) %}
+{{ cluster }}-{{ num }}:
+ iso: {{ cluster }}.iso
+ memory: 20480
+ numcpus: 16
+ disks: [200]
+ nets:
+ - name: {{ network }}
+   mac: aa:aa:aa:aa:cc:{{ "%02.d" | format(total_number.value) }}
+ - name: {{ network }}
+   mac: aa:aa:aa:aa:cc:{{ "%02.d" | format(total_number.value + 1) }}
+{% set total_number.value = total_number.value + 2 %}
+{% endfor %}
