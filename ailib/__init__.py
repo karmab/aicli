@@ -24,7 +24,7 @@ SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub
 
 
 class AssistedClient(object):
-    def __init__(self, url, token=None, offlinetoken=None, debug=False):
+    def __init__(self, url='https://api.openshift.com', token=None, offlinetoken=None, debug=False):
         self.url = url
         self.config = Configuration()
         self.config.host = self.url + "/api/assisted-install"
@@ -1057,3 +1057,33 @@ class AssistedClient(object):
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_masters', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition',
                 'hosts']
+
+    def create_deployment(self, cluster, overrides):
+        self.create_cluster(cluster, overrides.copy())
+        cluster_id = self.get_cluster_id(cluster)
+        infraenv = f"{cluster}_infra-env"
+        minimal = overrides.get('minimal', False)
+        overrides['cluster'] = cluster
+        self.create_infra_env(infraenv, overrides)
+        del overrides['cluster']
+        download_iso_path = overrides.get('download_iso_path')
+        if download_iso_path is not None:
+            self.download_iso(infraenv, download_iso_path)
+        else:
+            warning("Retrieve iso from the following url and plug it to your nodes:")
+            self.info_iso(infraenv, overrides, minimal=minimal)
+        if 'hosts_number' in overrides:
+            hosts_number = overrides.get('hosts_number')
+        elif 'hosts' in overrides and isinstance(overrides['hosts'], list):
+            hosts_number = len(overrides.get('hosts'))
+        else:
+            hosts_number = 3
+        info(f"Setting hosts_number to {hosts_number}")
+        self.wait_hosts(infraenv, hosts_number, filter_installed=True)
+        bad_hostnames = [h['id'] for h in self.list_hosts() if h['cluster_id'] == cluster_id and
+                         h['requested_hostname'] == 'localhost']
+        for host in bad_hostnames:
+            self.update_host(host, {'name': cluster})
+        self.wait_cluster(cluster, 'ready')
+        self.start_cluster(cluster)
+        self.wait_cluster(cluster)

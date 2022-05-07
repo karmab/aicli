@@ -49,10 +49,9 @@ def create_cluster(args):
     info(f"Creating cluster {args.cluster}")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
-    infraenv = overrides.get('infraenv', True)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     ai.create_cluster(args.cluster, overrides.copy())
-    if infraenv:
+    if overrides.get('infraenv', True):
         infraenv = f"{args.cluster}_infra-env"
         overrides['cluster'] = args.cluster
         ai.create_infra_env(infraenv, overrides)
@@ -134,6 +133,14 @@ def stop_cluster(args):
     info(f"Stopping cluster {args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     ai.stop_cluster(args.cluster)
+
+
+def create_deployment(args):
+    info(f"Creating deployment {args.cluster}")
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
+    ai.create_deployment(args.cluster, overrides)
 
 
 def create_manifests(args):
@@ -660,6 +667,24 @@ def cli():
     list_subparsers.add_parser('host-keyword', parents=[host_keywords_list_parser],
                                description=host_keywords_list_desc,
                                help=host_keywords_list_desc, aliases=['host-keywords'])
+
+    deploymentcreate_desc = 'Create Deployment e2e'
+    deploymentcreate_epilog = None
+    deploymentcreate_parser = create_subparsers.add_parser('deployment', description=deploymentcreate_desc,
+                                                           help=deploymentcreate_desc,
+                                                           epilog=deploymentcreate_epilog, formatter_class=rawhelp)
+    deploymentcreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    deploymentcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    deploymentcreate_parser.add_argument('cluster', metavar='CLUSTER')
+    deploymentcreate_parser.set_defaults(func=create_deployment)
+
+    deploymentdelete_desc = 'Delete Deployment e2e'
+    deploymentdelete_epilog = None
+    deploymentdelete_parser = delete_subparsers.add_parser('deployment', description=deploymentdelete_desc,
+                                                           help=deploymentdelete_desc,
+                                                           epilog=deploymentdelete_epilog, formatter_class=rawhelp)
+    deploymentdelete_parser.add_argument('clusters', metavar='CLUSTERS', nargs='*')
+    deploymentdelete_parser.set_defaults(func=delete_cluster)
 
     manifestscreate_desc = 'Upload manifests to cluster'
     manifestscreate_epilog = None
