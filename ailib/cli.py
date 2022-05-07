@@ -620,7 +620,8 @@ def cli():
     clusterdelete_epilog = None
     clusterdelete_parser = delete_subparsers.add_parser('cluster', description=clusterdelete_desc,
                                                         help=clusterdelete_desc,
-                                                        epilog=clusterdelete_epilog, formatter_class=rawhelp)
+                                                        epilog=clusterdelete_epilog, formatter_class=rawhelp,
+                                                        aliases=['deployment'])
     clusterdelete_parser.add_argument('clusters', metavar='CLUSTERS', nargs='*')
     clusterdelete_parser.set_defaults(func=delete_cluster)
 
@@ -679,14 +680,6 @@ def cli():
     deploymentcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
     deploymentcreate_parser.add_argument('cluster', metavar='CLUSTER')
     deploymentcreate_parser.set_defaults(func=create_deployment)
-
-    deploymentdelete_desc = 'Delete Deployment e2e'
-    deploymentdelete_epilog = None
-    deploymentdelete_parser = delete_subparsers.add_parser('deployment', description=deploymentdelete_desc,
-                                                           help=deploymentdelete_desc,
-                                                           epilog=deploymentdelete_epilog, formatter_class=rawhelp)
-    deploymentdelete_parser.add_argument('clusters', metavar='CLUSTERS', nargs='*')
-    deploymentdelete_parser.set_defaults(func=delete_cluster)
 
     manifestscreate_desc = 'Upload manifests to cluster'
     manifestscreate_epilog = None

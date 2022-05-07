@@ -49,8 +49,14 @@ jobs:
       steps:
       - name: Deploy kcli plan
         run: |
+          timeout=0
           until [ -f /var/lib/libvirt/images/$CLUSTER.iso ] ; do
-           echo Waiting for $CLUSTER.iso to show up
-           sleep 5
+            if [ "$timeout" -gt "360" ] ; then
+              echo Timeout waiting for $CLUSTER.iso to show up
+              exit 1
+            fi
+            echo Waiting for $CLUSTER.iso to show up
+            sleep 5
+            timeout=$(($timeout + 5))
           done
-          kcli create vm -P iso=$CLUSTER.iso -P disks=[200] -P memory=20480 -P numcpus=16 --count=$NODE $CLUSTER
+          kcli create vm -P iso=$CLUSTER.iso -P disks=[200] -P memory=20480 -P numcpus=16 --count=$NODES $CLUSTER

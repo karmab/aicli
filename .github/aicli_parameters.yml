@@ -1,3 +1,4 @@
 base_dns_domain: karmalabs.com
 api_vip: 192.168.122.253
 ingress_vip: 192.168.122.252
+download_iso_path: /var/lib/libvirt/images

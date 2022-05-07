@@ -75,4 +75,4 @@ jobs:
             sleep 5
             timeout=$(($timeout + 5))
           done
-          kcli create vm -P iso=$CLUSTER.iso -P disks=[200] -P memory=20480 -P numcpus=16 --count=$NODE $CLUSTER
+          kcli create vm -P iso=$CLUSTER.iso -P disks=[200] -P memory=20480 -P numcpus=16 --count=$NODES $CLUSTER
