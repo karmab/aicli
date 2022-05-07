@@ -1084,6 +1084,7 @@ class AssistedClient(object):
                          h['requested_hostname'] == 'localhost']
         for host in bad_hostnames:
             self.update_host(host, {'name': cluster})
+        self.update_cluster(cluster, overrides)
         self.wait_cluster(cluster, 'ready')
         self.start_cluster(cluster)
         self.wait_cluster(cluster)
