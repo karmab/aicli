@@ -41,4 +41,6 @@ jobs:
       runs-on: libvirt
       steps:
       - name: Deploy ai cluster
-        run: aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER
+        run: |
+          DOWNLOAD_ISO_CMD="kcli create vm -P iso=$CLUSTER.iso -P disks=[200] -P memory=20480 -P numcpus=16 --count=$NODES $CLUSTER"
+          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET -P download_iso_cmd="$DOWNLOAD_ISO_CMD" $CLUSTER

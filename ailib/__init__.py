@@ -1086,8 +1086,8 @@ class AssistedClient(object):
         self.wait_hosts(infraenv, hosts_number, filter_installed=True)
         bad_hostnames = [h['id'] for h in self.list_hosts() if h['cluster_id'] == cluster_id and
                          h['requested_hostname'] == 'localhost']
-        for host in bad_hostnames:
-            self.update_host(host, {'name': cluster})
+        for index, host in enumerate(bad_hostnames):
+            self.update_host(host, {'name': f"{cluster}-${index}"})
         self.update_cluster(cluster, overrides)
         self.wait_cluster(cluster, 'ready')
         self.start_cluster(cluster)

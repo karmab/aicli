@@ -2,4 +2,3 @@ base_dns_domain: karmalabs.com
 api_vip: 192.168.122.253
 ingress_vip: 192.168.122.252
 download_iso_path: /var/lib/libvirt/images
-download_iso_cmd: "kcli create vm -P iso=ai-ci.iso -P disks=[200] -P memory=20480 -P numcpus=16 --count=3 ai-ci"
