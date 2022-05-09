@@ -230,6 +230,14 @@ def list_hosts(args):
     print(hoststable)
 
 
+def start_hosts(args):
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
+    hostnames = args.hostnames
+    ai.start_hosts(overrides, hostnames=hostnames)
+
+
 def create_infra_env(args):
     info(f"Creating infraenv {args.infraenv}")
     paramfile = choose_parameter_file(args.paramfile)
@@ -935,6 +943,17 @@ def cli():
     hostslist_parser.set_defaults(func=list_hosts)
     list_subparsers.add_parser('host', parents=[hostslist_parser], description=hostslist_desc,
                                help=hostslist_desc, aliases=['hosts'])
+
+    hostsstart_desc = 'Start Hosts'
+    hostsstart_epilog = None
+    hostsstart_parser = start_subparsers.add_parser('host', description=hostsstart_desc,
+                                                    help=hostsstart_desc,
+                                                    epilog=hostsstart_epilog, formatter_class=rawhelp,
+                                                    aliases=['hosts'])
+    hostsstart_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    hostsstart_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    hostsstart_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
+    hostsstart_parser.set_defaults(func=start_hosts)
 
     hostunbind_desc = 'Unbind Host'
     hostunbind_parser = argparse.ArgumentParser(add_help=False)

@@ -1,5 +1,6 @@
 from assisted_service_client import ApiClient, Configuration, api, models
 from ailib.common import warning, error, info, get_token
+from ailib.redfish import Redfish
 import base64
 from datetime import datetime
 import http.server
@@ -1076,6 +1077,8 @@ class AssistedClient(object):
         download_iso_cmd = overrides.get('download_iso_cmd')
         if download_iso_cmd is not None:
             call(download_iso_cmd, shell=True)
+        if 'hosts' in overrides:
+            self.start_hosts(overrides)
         if 'hosts_number' in overrides:
             hosts_number = overrides.get('hosts_number')
         elif 'hosts' in overrides and isinstance(overrides['hosts'], list):
@@ -1087,10 +1090,39 @@ class AssistedClient(object):
         bad_hostnames = [h['id'] for h in self.list_hosts() if h['cluster_id'] == cluster_id and
                          h['requested_hostname'] == 'localhost']
         for index, host in enumerate(bad_hostnames):
-            self.update_host(host, {'name': f"{cluster}-${index}"})
+            role = 'master' if index < 3 else 'worker'
+            self.update_host(host, {'name': f"{cluster}-{role}-{index}"})
         self.update_cluster(cluster, overrides)
         self.wait_cluster(cluster, 'ready')
         self.start_cluster(cluster)
         self.wait_cluster(cluster)
         info(f"Downloading Kubeconfig for Cluster {cluster} in current directory")
         self.download_kubeconfig(cluster, '.')
+
+    def start_hosts(self, overrides, hostnames=[]):
+        if 'hosts' not in overrides:
+            warning("No hosts to start found in your parameter file")
+            return
+        iso_url = overrides['iso_url']
+        if iso_url is None:
+            warning("Missing iso_url in your parameters")
+            return
+        elif not iso_url.endswith('.iso'):
+            cluster = overrides.get('cluster')
+            if cluster is None:
+                warning("Missing cluster name in your parameters to append it to iso_url")
+                return 1
+            iso_url += f"{cluster}.iso"
+        hosts = overrides['hosts']
+        for host in hosts:
+            if hostnames and host.get('name', '') not in hostnames:
+                continue
+            bmc_url = host.get('bmc_url')
+            bmc_user = host.get('bmc_user') or overrides.get('bmc_user')
+            bmc_password = host.get('bmc_password') or overrides.get('bmc_password')
+            bmc_model = host.get('bmc_model') or overrides.get('bmc_model', 'dell')
+            if bmc_url is not None and bmc_user is not None and bmc_password is not None:
+                msg = host['name'] if 'name' in host else f"with url {bmc_url}"
+                info(f"Starting Host {msg}")
+                red = Redfish(bmc_url, bmc_user, bmc_password, model=bmc_model)
+                red.set_iso(iso_url)

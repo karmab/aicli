@@ -49,14 +49,21 @@ jobs:
          continue-on-error: true
          run: |
            kcli delete plan --yes $CLUSTER || true
-           [ -f /var/lib/libvirt/images/$CLUSTER.iso ] && rm -rf /var/lib/libvirt/images/$CLUSTER.iso
+           [ -f /var/www/html/$CLUSTER.iso ] && rm -rf /var/www/html/$CLUSTER.iso
            aicli delete cluster $CLUSTER || true
 
-    deploy-ai-cluster:
+    deploy-kcli-plan:
       needs: requirements
+      runs-on: libvirt
+      steps:
+      - name: Deploy kcli plan
+        run: |
+          kcli create plan -f .github -P nodes=$NODES $CLUSTER
+
+    deploy-ai-cluster:
+      needs: deploy-kcli-plan
       runs-on: libvirt
       steps:
       - name: Deploy ai cluster
         run: |
-          DOWNLOAD_ISO_CMD="kcli create vm -P iso=$CLUSTER.iso -P disks=[200] -P memory=20480 -P numcpus=16 --count=$NODES $CLUSTER"
-          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET -P download_iso_cmd="$DOWNLOAD_ISO_CMD" $CLUSTER
+          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER
