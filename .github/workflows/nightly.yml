@@ -1,20 +1,17 @@
-name: nightly
-
-#on:
-#   schedule:
-#    - cron: '10 4 * * *'
+name: nightly-ci
 
 on:
-  workflow_dispatch:
+   schedule:
+    - cron: '10 4 * * *'
 
 env:
  HOME: /root
  PYTHONUNBUFFERED: true
+ CLUSTER: ci-ai
+ NODES: 3
+ PULLSECRET: /root/openshift_pull.json
+ PARAMFILE: .github/aicli_parameters.yml
  AI_OFFLINETOKEN: ${{ secrets.AI_OFFLINETOKEN }}
-# CLUSTER: ai-ci
-# NODES: 3
-# PULLSECRET: /root/openshift_pull.json
-# PARAMFILE: .github/aicli_parameters.yml
 
 jobs:
     requirements:
@@ -27,20 +24,27 @@ jobs:
            curl https://raw.githubusercontent.com/karmab/kcli/master/install.sh | bash
        - name: Install aicli
          run: |
-           pip3 -U install assisted-service-client
+           pip3 install -U assisted-service-client
            python3 setup.py install
        - name: Clean up
          continue-on-error: true
          run: |
            kcli delete plan --yes $CLUSTER || true
-           [ -f /var/lib/libvirt/images/$CLUSTER.iso ] && rm -rf /var/lib/libvirt/images/$CLUSTER.iso
-           aicli delete $CLUSTER || true
+           [ -f /var/www/html/$CLUSTER.iso ] && rm -rf /var/www/html/$CLUSTER.iso
+           aicli delete cluster $CLUSTER || true
+
+    deploy-kcli-plan:
+      needs: requirements
+      runs-on: libvirt
+      steps:
+      - name: Deploy kcli plan
+        run: |
+          kcli create plan -f .github -P nodes=$NODES $CLUSTER
 
     deploy-ai-cluster:
-      needs: requirements
+      needs: deploy-kcli-plan
       runs-on: libvirt
       steps:
       - name: Deploy ai cluster
         run: |
-          DOWNLOAD_ISO_CMD="kcli create vm -P iso=$CLUSTER.iso -P disks=[200] -P memory=20480 -P numcpus=16 --count=$NODES $CLUSTER"
-          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET -P download_iso_cmd="$DOWNLOAD_ISO_CMD" $CLUSTER
+          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER
