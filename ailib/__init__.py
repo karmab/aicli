@@ -1125,4 +1125,7 @@ class AssistedClient(object):
                 msg = host['name'] if 'name' in host else f"with url {bmc_url}"
                 info(f"Starting Host {msg}")
                 red = Redfish(bmc_url, bmc_user, bmc_password, model=bmc_model)
-                red.set_iso(iso_url)
+                try:
+                    red.set_iso(iso_url)
+                except Exception as e:
+                    warning(f"Hit {e} when plugging iso to host {msg}")
