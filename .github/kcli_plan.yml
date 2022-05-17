@@ -7,7 +7,7 @@ parameters:
  disk_size: 200
 
 {% for num in range(0,nodes) %}
-{{ cluster }}-nodes-{{ num }}:
+{{ cluster }}-node-{{ num }}:
  memory: {{ memory }}
  numcpus: {{ numcpus }}
  uuid: 11111111-1111-1111-1111-11111111118{{ num + 1 }}
