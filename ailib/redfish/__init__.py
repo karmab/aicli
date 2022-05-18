@@ -9,7 +9,12 @@ import sys
 class Redfish(object):
     def __init__(self, url, user='root', password='calvin', insecure=True, model='dell'):
         self.model = model.lower()
-        self.cdpath = '2' if self.model in ['hp', 'hpe', 'supermicro'] else 'Cd'
+        if self.model in ['hp', 'hpe', 'supermicro']:
+            self.cdpath = '2'
+        elif self.model == 'dell':
+            self.cdpath = 'CD'
+        else:
+            self.cdpath = 'Cd'
         if not url.startswith('http'):
             if self.model in ['hp', 'hpe', 'supermicro']:
                 self.url = f"https://{url}/redfish/v1/Systems/1"
@@ -106,7 +111,10 @@ class Redfish(object):
         return response
 
     def set_iso(self, iso_url):
-        self.eject_iso()
+        try:
+            self.eject_iso()
+        except:
+            pass
         self.insert_iso(iso_url)
         self.set_iso_once()
         self.restart()
