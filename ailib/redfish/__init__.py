@@ -2,13 +2,20 @@ from urllib.parse import urlparse
 from urllib.request import urlopen, Request
 import base64
 import json
+import os
 import ssl
 import sys
+from uuid import UUID
 
 
 class Redfish(object):
     def __init__(self, url, user='root', password='calvin', insecure=True, model='dell'):
         self.model = model.lower()
+        try:
+            UUID(os.path.basename(url))
+            self.model = 'virtual'
+        except:
+            pass
         if self.model in ['hp', 'hpe', 'supermicro']:
             self.cdpath = '2'
         elif self.model == 'dell':
