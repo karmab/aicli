@@ -48,3 +48,13 @@ jobs:
       - name: Deploy ai cluster
         run: |
           aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER
+
+    clean-up:
+      needs: deploy-ai-cluster
+      runs-on: libvirt
+      steps:
+      - name: Clean everything after success
+        run: |
+          kcli delete plan --yes $CLUSTER
+          [ -f /var/www/html/$CLUSTER.iso ] && rm -rf /var/www/html/$CLUSTER.iso
+          aicli delete cluster $CLUSTER
