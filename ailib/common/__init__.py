@@ -66,7 +66,7 @@ def get_overrides(paramfile=None, param=[]):
                     value = False
                 elif value == '[]':
                     value = []
-                elif value.startswith('{') and value.endswith('}'):
+                elif value.startswith('{') and value.endswith('}') and not value.startswith('{\"ignition'):
                     value = literal_eval(value)
                 elif value.startswith('[') and value.endswith(']'):
                     if '{' in value:
