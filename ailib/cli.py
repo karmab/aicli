@@ -102,17 +102,7 @@ def info_cluster(args):
 
 
 def list_cluster(args):
-    ams_subscription_id, org_id = None, None
-    if args.filter is not None:
-        for entry in args.filter.split(','):
-            if entry.count('=') == 1:
-                key, value = entry.split('=')
-                if key == 'ams_subscription_id':
-                    ams_subscription_id = value
-                elif key == 'org_id':
-                    org_id = value
-            else:
-                warning(f"Ignoring wrong filter {entry}")
+    ams_subscription_id, org_id = args.subscription, args.org
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     clusters = ai.list_clusters()
     clusterstable = PrettyTable(["Cluster", "Id", "Status", "Dns Domain"])
@@ -669,8 +659,9 @@ def cli():
 
     clusterlist_desc = 'List Clusters'
     clusterlist_parser = argparse.ArgumentParser(add_help=False)
-    clusterlist_parser.add_argument('-f', '--filter', help='Filter by specified ams_subscription_id or org_id',
-                                    metavar='FILTER')
+    clusterlist_parser.add_argument('-s', '--subscription', help='Filter by specified ams_subscription_id',
+                                    metavar='SUBSCRIPTION')
+    clusterlist_parser.add_argument('-o', '--org', help='Filter by specified org_id', metavar='ORG')
     clusterlist_parser.set_defaults(func=list_cluster)
     list_subparsers.add_parser('cluster', parents=[clusterlist_parser], description=clusterlist_desc,
                                help=clusterlist_desc, aliases=['clusters'])
