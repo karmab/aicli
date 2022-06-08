@@ -1,3 +1,6 @@
+| :warning: The tool described in this repository is not supported in any way by Red Hat!!! |
+|-------------------------------------------------------------------------------------------|
+
 # aicli repository
 
 [![Build Status](https://travis-ci.org/karmab/kcli.svg?branch=master)](https://travis-ci.org/karmab/kcli)

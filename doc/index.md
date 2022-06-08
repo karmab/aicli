@@ -1,5 +1,5 @@
-| :warning: **Note that the tool described in this repository is not supported in any way by Red Hat** |
-|------------------------------------------------------------------------------------------------------|
+| WARNING: The tool described in this repository is not supported in any way by Red Hat!!! |
+|------------------------------------------------------------------------------------------|
 
 # About
 
@@ -20,6 +20,10 @@ Available features:
 
 # Deploying
 
+## Offline token
+
+When using SAAS mode, an offline token is needed in order to interact with the api. This token can be retrieved at [https://cloud.redhat.com/openshift/token](https://cloud.redhat.com/openshift/token)
+
 ## using pip
 
 Install the package with
@@ -34,23 +38,15 @@ To upgrade it later on, use the following
 pip3 install -U aicli assisted-service-client
 ```
 
-### Container mode
+## Container mode
 
 ```
 alias aicli='docker run --net host -it --rm -e AI_OFFLINETOKEN=$AI_OFFLINETOKEN -v $HOME/.aicli:/root/.aicli -v $PWD:/workdir quay.io/karmab/aicli'
 ```
 
-Where AI_OFFLINETOKEN is an environment variable used to access public saas. This token can be retrieved at [https://cloud.redhat.com/openshift/token](https://cloud.redhat.com/openshift/token)
+Where AI_OFFLINETOKEN is an environment variable pointing to your saas offline token
 
 With onprem mode, you can instead use `-e AI_URL=$AI_URL`
-
-### Targetting staging environment
-
-the flag `--staging` can be set to target the internal staging environment
-
-Alternatively, set the env variable STAGING to true
-
-In container mode, that would be `-e STAGING=true`
 
 # How to use
 
@@ -64,143 +60,307 @@ The url needs to be provided in this format `http://$AI_IP:8080`
 
 The target url can also be specified through environment variable AI_URL
 
-## Parameters
+the flag `--staging` can be set to target the internal staging environment
+
+Alternatively, set the env variable STAGING to true
+
+In container mode, that would be `-e STAGING=true`
+
+## Basic usage
+
+the main objects you can interact with are cluster and hosts. For all of them, you can use create/delete/info/list/update subcommand
+
+For most of the objects, you can provide either an id or a name.
+
+### Parameters
 
 For most of the commands, you can pass parameters either on the command line by repeating `-P key=value` or by putting them in a parameter file, in yaml format.
 
-If present, the file  `aicli_parameters.yml` is also parsed.
+If present, the file `aicli_parameters.yml` is also parsed.
 
-## Using the cli
+## Typical workflow
 
-### Help
+Interacting with the api should be straightforward but let's walk through the typical steps you can use to deploy a cluster to completion
 
+Note: consider using `aicli create deployment` to deploy with a single step
+
+### Create cluster
+
+The basic way to create a cluster is to run:
 ```
-aicli -h
-```
-
-### Listing objects
-
-```
-aicli list cluster
-```
-
-```
-aicli list host
+aicli create cluster mycluster
 ```
 
-## Creating/Deleting a cluster
+When creating a cluster, two types of parameters can be provided, *cluster keywords* and *extra keywords*.
+
+The cluster keywords are parameters exposed by AI api, while the extra keywords are goodies that provide shortcuts to set things such as sno, network_type,...
+
+Those keywords can be listed with `aicli list cluster-keywords` and `aicli list extra-keywords`
+
+For instance, we can use the following command to create a cluster with a specific version and forcing the domain 
 
 ```
-aicli create cluster myclu
+aicli create cluster -P openshift_version=4.9 -P base_dns_domain=karmatron.local -P pull_secret=openshift_pull.json mycluster
 ```
 
-```
-aicli delete cluster myclu
-```
+This command will also use your default ssh public key so you don't need to specify any (using ssh_public_key variable for instance)
 
-## Get info
+To create a sno cluster
 
 ```
-aicli info cluster mycluster
+aicli create cluster -P sno=true mycluster
 ```
 
-```
-aicli info host myhost
-```
+Within the extra parameters, the most common ones to use are listed below:
 
-## Update objects
+|Parameter                           |Meaning                                                      |
+|------------------------------------|------------------------------------------------------------ |
+|api_ip                              |Api ip                                                       |
+|ingress_ip                          |Ingress ip                                                   |
+|domain                              |Ingress ip                                                   |
+|minimal                             |Whether to use minimal iso                                   |
+|static_network_config               |the nmstate data to inject                                   |
+|manifests                           |a directory from where pick manifests to inject              |
+|network_type                        |Which sdn to use                                             |
+|sno                                 |Whether to deploy a SNO                                      |
+|sno_disk                            |Which disk to use for SNO install                            |
+|hosts                               |An array of hosts to automatically update data from          | 
+|pull_secret                         |The path to your pull_secret (openshift_pull.json by default |
 
-```
-aicli update cluster myclu -P api_vip=192.168.122.253
-```
+Note: there are DNS requirements associated to the name of the cluster and the domain for an install to be available without /etc/hosts hacks
 
-```
-aicli update host host_id -P name=coolname.testk.karmalabs.com
-```
+When a cluster gets created, an underlying infraenv named *$cluster_infraenv* also gets created under the hood.
 
-The following command can be used to update the names of all the nodes named localhost to master-X instead in each cluster
+In general, you shouldn't have to care about this object, but notice it is actually where the iso information lives. The purpose of this object is to be able to boot nodes with a discovery iso without deciding initially on which cluster they belong (this is called late binding).
 
-```
-aicli update host localhost -P role=master
-```
+The nomenclature we use for the infraenv is consistent with what happens in AI UI, which means you can create a cluster and follow in the UI or use aicli to interact with a cluster created through the UI.
 
-## Handling iso
+You can set the parameter *infraenv* to false to prevent an infraenv to get created for the cluster. You will then have to use the bind subcommand to associate hosts discovered through a given infraenv to some specific cluster.
 
-```
-aicli info iso myclu
-aicli download iso myclu
-```
+### Custom networking
 
-## Launch an install
+In order to use custom/static networking for your hosts, you need to provide nmstate information in the parameter file using the field *static_network_config* 
 
-```
-aicli start cluster myclu
-```
+You can also customize things such as cluster_networks, machine_networks and service_networks, for instance when trying to do a dual stack installation
 
-## Add extra workers
+You can find different samples [here](https://github.com/karmab/aicli/tree/main/samples) covering how to do:
 
-For this purpose, we assume we already have an installer cluster (named myclu). When creating a new cluster with the same name and the '-day2' extension, the api code will create a dedicated cluster for adding host purposes.
+- static networking
+- bonding
+- dual stack
 
-```
-aicli create cluster myclu-day2
-# gather the discovery iso and launch hosts as usual then
-aicli start cluster myclu-day2
-```
+### Adding extra manifests
 
-## Sample aicli_parameters.yml
+You can inject extra manifests (for instance if you are using a non standard CNI), for instance from the mydir directory, using the following commands
 
 ```
-openshift_version: 4.10
-sno: true
-pull_secret: my_pull_secret.json
-disconnected_url: testk-disconnecter.ipv6only:5000
+aicli create manifests --dir mydir mycluster
+```
+
+A flag allows you to have them stored in the openshift folder.
+
+You can then use `aicli list manifests mycluster` to confirm they were properly uploaded, or use `aicli delete manifests` for deletion
+
+### Gather iso
+
+Once the cluster (and the corresponding infraenv) are created, we can get the discovery iso url using the following command
+
+```
+aicli info iso mycluster
+```
+
+or download it locally with
+
+```
+aicli download iso mycluster
+```
+
+Note that when AI api was in v1, a specific call `create iso` was needed to trigger the creation of the iso, but it's no longer needed (the command is maintained for retrocompatibility but does the same as info iso`
+
+When using this call, the expiration time of the token associated to the iso is checked and if necessary, it gets refreshed (and as such so does the url)
+
+### Wait for hosts
+
+After booting some nodes with the iso, we normally wait for them to show up in the UI or in `aicli list hosts` output.
+
+Alternatively, we can use the following command to wait for 3 hosts to appear in mycluster
+
+```
+aicli wait hosts mycluster -n 3
+```
+
+### Optionally Update hosts
+
+Once we have enough nodes, we need them show as `known` in list hosts output in order to start the cluster deployment.
+
+It might be necessary to update some specific information of the nodes, such as the requested hostname (localhost name is forbidden) or to assign a specific role to the nodes
+
+#### Updating hostnames
+
+To change a specific host name, we can use the following
+
+```
+aicli update host $host -P requested_hostname=new_name
+```
+
+or simply
+
+```
+aicli update host $host -P name=new_name
+```
+
+If there are several matching hosts belonging to a same cluster, then the name is instead used as a prefix and the host names are sequentially assigned to name-0, name-1, .... That makes it easy to change all the localhost fqdns of your cluster with a single call
+
+#### Updating roles
+
+To change the role of a given host to worker, you can run
+
+```
+aicli update $host -P role=worker
+```
+
+#### Updating extra args
+
+To specify extra args for a given , you can run
+
+```
+aicli update $host -P extra_args="xxxx"
+```
+
+For instance, you can run the following to append kargs
+
+```
+aicli update host $host -P extra_args="--append-karg=rd.multipath=default --append-karg=root=/dev/disk/by-label/dm-mpath-root"
+```
+
+#### Updating from a parameter file
+
+You can specify in your parameter file a hosts array so that the information for updating hosts is gathered from there.
+
+For instance, if you have the following information in your parameter file
+
+```
 hosts:
- bonka-0:
-   role: master
- bonka-1:
-   role: worker
-installconfig:
-   additionalTrustBundle: |
-       -----BEGIN CERTIFICATE-----
-       MIIGCzCCA/OgAwIBAgIUYwFxO7EeEDFL52wY1hoNingo3pgwDQYJKoZIhvcNAQEL
-       BQAwgYAxCzAJBgNVBAYTAlVTMQ8wDQYDVQQIDAZNYWRyaWQxFTATBgNVBAcMDFNh
-       biBCZXJuYXJkbzESMBAGA1UECgwJS2FybWFsYWJzMQ8wDQYDVQQLDAZHdWl0YXIx
-       JDAiBgNVBAMMG3Rlc3RrLWRpc2Nvbm5lY3Rlci5pcHY2b25seTAeFw0yMTA0MDgx
-       MDUzNDRaFw0yMjA0MDgxMDUzNDRaMIGAMQswCQYDVQQGEwJVUzEPMA0GA1UECAwG
-       TWFkcmlkMRUwEwYDVQQHDAxTYW4gQmVybmFyZG8xEjAQBgNVBAoMCUthcm1hbGFi
-       czEPMA0GA1UECwwGR3VpdGFyMSQwIgYDVQQDDBt0ZXN0ay1kaXNjb25uZWN0ZXIu
-       aXB2Nm9ubHkwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDVHZNDqBkG
-       e0BAs7SxVQSGzbd8bvNwNPn8pP2IRnjL2Vohz4qi7bqOpxWDI5YIY9MWyRGYAzAZ
-       A/ik8ncDl324/6o8BxbdrB8TPL4+vIpYsNKbKR4i6W138CRa+opL3QjTA6P8YqyG
-       GR/Tcb1jfDSKE6Z2alDFhFWgyexSkmsojwiFZqo5VySeR/miV783aJbgju9xwxw+
-       O4lQt8OxIt8fSW+DYV0Wkt/nrUZUlAiIQMXIq8M+zLgp+SGVuFwLTIawoU97aU0V
-       42AE29fCZFMmb0zSEZG1N8Q+dcur8Vk5O/g+ZGjwBavecYp01D0sdRSUXE2WxaI0
-       iM8dHlTtXRWOIGrTHEG1AtTqnKFELMTE0d9WeHXW/5cFBL2F8M37iH8uw1MANVFC
-       0UjAwJsHaoZgGYJ+gHsurlARSKx5G+SCopnvmEM8rleCjqT0yXwBs7YVhfDQOB6U
-       ap+af+Dq1YpXLmbIm4tVYIOe+kohsx0x0mMGq3b48yUIG6QkMAJ++yjdJVVBX2EQ
-       6NmEWDkTJIQSXG9o5XgrznICZR3zmLgbMuemoncpDRXymWZ4O7Dv2F11vLOAWg/c
-       vfhuCMZF5s3ZSVExgCv84L98OzLmdPSljNoyUTOcM95MkXAcenJ0sucmO2D3RXq9
-       UM80PpiRYcDwVH8qtvlQ0j+nd6PbzZ7y9QIDAQABo3sweTAdBgNVHQ4EFgQUDLhV
-       vXxGQXm4xJ4ZW/pk+83ZgqYwHwYDVR0jBBgwFoAUDLhVvXxGQXm4xJ4ZW/pk+83Z
-       gqYwDwYDVR0TAQH/BAUwAwEB/zAmBgNVHREEHzAdght0ZXN0ay1kaXNjb25uZWN0
-       ZXIuaXB2Nm9ubHkwDQYJKoZIhvcNAQELBQADggIBAMw6LJFimWzXRdByw2bWZoul
-       jRToZoOZdf9YddRQdxg08mllVKTBoDZ0gb8+TF3/PMGnF5Oi6+Gxm1dsNDFv+Qdt
-       7zm3zWEqKP+u3g+35alNkQgMfgDV21OVQjYwVS5BijAWuQM6exRZYs1I++19YvLW
-       NCaLuUqVxMdQUnl00+4cgOT2P5lBt1vkL4SFiR2Hy92NrhAfsbnacJN+MY77luei
-       rxfUC9qLzU+7Wl5SgnxEkalDRMYWp9u8KuhWS5yeli158gdgLBeqfJr8EWksTG2m
-       vK6w9zKcFwhYTcq7NgZJPECOg7DnjbvwDP7VdqrO2UMvHrf31ziXW1O5bzWnkqxF
-       0q8mdjiJJi1tQK/Vxb9lS64P4bbFBlVo9sEES4JnfY3pKs0s/hdzrdSJJHbSt/lG
-       aqHNpx+kHsWgC8/athDOqo66S97u39vumdWheUWPsx8sitZ9MvA6tOGbnIPvm/hB
-       +Gfpn1pUCk2rYuMY40qiAgpJsi56wfA6j2s1aX7sDp4pIgaslfoxyxXvbcpAhhQo
-       hizMMC0XdZhlUj9df4PQdPPrckha/9rrYf1GjIO4tqPPxdqPACNhR9UwDd8qJarp
-       Ig5BBu37RdjCR7JGSF/2QisMmyKoTnyD9P+lFKTgGfsbbxrp7XdeLYY7xaFRzkuZ
-       gAedh+jkW6mjkMIu5RUU
-       -----END CERTIFICATE-----
-   imageContentSources:
-   - mirrors:
-     - testk-disconnecter.ipv6only:5000/ocp4
-     source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
-   - mirrors:
-     - testk-disconnecter.ipv6only:5000/ocp4
-     source: registry.ci.openshift.org/ocp-release
+- name: xxx.fantastic.com
+  role: master
+- name: yyy.fantastic.com
+  role: role
+  extra_args: "ip=dhcp6"
 ```
+
+Running `aicli update hosts --parameterfile my_params.yml` will change the roles of the hosts with the corresponding name, if found, and add the specified extra_args for the second host.
+
+### Updating cluster
+
+At this step, you might need to update cluster data so that the cluster is ready to install.
+
+For instance, you might want to specify api vip and ingress vip now that hosts cidrs have been discovered.
+
+For this, you can run
+
+```
+aicli update cluster -P api_ip=$api_ip -P ingress_ip=$ingress_ip mycluster
+```
+
+### Launch cluster deployment
+
+Once your hosts all show as known, the cluster status should appear as ready in `aicli info cluster mycluster`
+
+At this point, you can trigger the deployment using the following command
+
+```
+aicli start mycluster
+```
+
+### Monitor deployment
+
+#### Wait for cluster
+
+When the cluster is installing, you can wait for it to complete using the following command
+
+```
+aicli wait mycluster
+```
+
+#### Monitor events
+
+You can also see all events associated to your cluster using
+
+```
+aicli get events cluster
+```
+
+### Gather assets
+
+Once installation has started, you can gather relevant assets for your cluster such as 
+
+- kubeconfig
+- kubeadmin-password
+- installconfig
+
+For instance, to gather the kubeconfig, you can use the following to get it downloaded to your current directory as `kubeconfig.mycluster`
+
+```
+aicli download kubeconfig mycluster
+```
+
+### Add extra workers
+
+For this purpose, we assume we already have the cluster installed. When creating a new cluster with the same name and the '-day2' extension, the api code will create a dedicated cluster for adding host purposes.
+
+```
+aicli create cluster mycluster-day2
+```
+
+Afterwards, we can use the same workflow of 
+
+- gathering the iso associated to this cluster with `aicli info iso mycluster-day2`
+- booting nodes with this iso
+- wait for them to show in `aicli list hosts` output as *known*
+- launch `aicli start cluster mycluster-day2` 
+
+
+Note that when creating the day2 cluster, a DNS check on api_vip_dnsname is done. If it doesn't succeed and the base cluster is HA, then api vip is used instead of fqdn to garantee functionality
+
+You can also update manually this data using the following command
+
+```
+aicli update cluster mycluster-day2 -P api_vip_dnsname=$api_ip
+```
+
+## Deployment workflow
+
+Instead of deploying the cluster step by step, you can put all the relevant information in your parameter file and then have all the steps run for you
+
+You can use a command such as the following one
+
+```
+aicli create deployment --parameterfile my_params.yml myclu
+```
+
+The parameter file could be similar to the following one
+
+```
+base_dns_domain: karmalabs.com
+api_vip: 192.168.122.253
+ingress_vip: 192.168.122.252
+download_iso_path: /var/www/html
+download_iso_cmd: "chown apache.apache /var/www/html/ci-ai.iso"
+iso_url: http://192.168.122.1/ci-ai.iso
+bmc_user: admin
+bmc_password: password
+hosts:
+- name: ci-ai-master-0
+  bmc_url: http://192.168.122.1:8000/redfish/v1/Systems/11111111-1111-1111-1111-111111111181
+- name: ci-ai-master-1
+  bmc_url: http://192.168.122.1:8000/redfish/v1/Systems/11111111-1111-1111-1111-111111111182
+- name: ci-ai-master-2
+  bmc_url: http://192.168.122.1:8000/redfish/v1/Systems/11111111-1111-1111-1111-111111111183
+```
+
+Note that in this case, we are providing bmc information for our hosts so that they get booted with the discovery iso automatically.
+
+We also have the iso downloaded automatically to a path corresponding to a web server
+
+If you omit this kind of information, you can still have the deployment done semi automatically by just waiting for the iso url to be displayed and plug it manually to your target nodes.
+
