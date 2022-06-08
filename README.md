@@ -8,7 +8,7 @@
 
 ## Demo!
 
-TODO
+![](aicli.gif)
 
 # Description
 
