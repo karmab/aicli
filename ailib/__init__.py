@@ -1162,7 +1162,8 @@ class AssistedClient(object):
         for fic in agentfics:
             with open(f"{agentdir}/{fic}") as ori:
                 data = ori.read()
-                with open(f"{path}/{fic}", 'w') as dest:
+                target_fic = fic.replace('-sno', '')
+                with open(f"{path}/{target_fic}", 'w') as dest:
                     dest.write(data % overrides)
         with open(f"{path}/nmstateconfig.yaml", 'w') as dest:
             for index, entry in enumerate(static_network_config):
