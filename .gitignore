@@ -11,3 +11,4 @@ openshift_pull.json*
 *.iso
 assisted-service-client-*.tar.gz
 kubeconfig.*
+cluster-manifests

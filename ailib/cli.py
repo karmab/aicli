@@ -557,6 +557,14 @@ def list_extra_keywords(args):
     print(keywordstable)
 
 
+def create_cluster_manifests(args):
+    info(f"Creating cluster manifests for {args.cluster} in {args.path}")
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
+    ai.create_cluster_manifests(args.cluster, overrides, path=args.path)
+
+
 def cli():
     """
 
@@ -628,6 +636,20 @@ def cli():
     clustercreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
     clustercreate_parser.add_argument('cluster', metavar='CLUSTER')
     clustercreate_parser.set_defaults(func=create_cluster)
+
+    clustermanifestscreate_desc = 'Create ZTP Cluster manifests'
+    clustermanifestscreate_epilog = None
+    clustermanifestscreate_parser = create_subparsers.add_parser('cluster-manifests',
+                                                                 description=clustermanifestscreate_desc,
+                                                                 help=clustermanifestscreate_desc,
+                                                                 epilog=clustermanifestscreate_epilog,
+                                                                 formatter_class=rawhelp)
+    clustermanifestscreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    clustermanifestscreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    clustermanifestscreate_parser.add_argument('--path', metavar='PATH', default='cluster-manifests',
+                                               help='Where to store generated assets')
+    clustermanifestscreate_parser.add_argument('cluster', metavar='CLUSTER')
+    clustermanifestscreate_parser.set_defaults(func=create_cluster_manifests)
 
     clusterdelete_desc = 'Delete Cluster'
     clusterdelete_epilog = None
