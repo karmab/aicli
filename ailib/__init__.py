@@ -1129,3 +1129,48 @@ class AssistedClient(object):
                     red.set_iso(iso_url)
                 except Exception as e:
                     warning(f"Hit {e} when plugging iso to host {msg}")
+
+    def create_cluster_manifests(self, cluster, overrides={}, path='cluster-manifests'):
+        agentfics = ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']
+        self.set_default_values(overrides)
+        overrides['cluster'] = cluster
+        if 'domain' not in overrides:
+            overrides['domain'] = overrides.get('base_dns_domain') or 'karmalabs.com'
+        static_network_config = overrides.get('static_network_config', [])
+        if not static_network_config:
+            error("static_network_config is required")
+            sys.exit(1)
+        if not overrides.get('sno', False):
+            agentfics.append('agent-cluster-install.yaml')
+            if overrides.get('masters') is None:
+                overrides['masters'] = 3
+                warning("Forcing masters to 3")
+            if overrides.get('workers') is None:
+                overrides['workers'] = 0
+                warning("Forcing workers to 0")
+            if overrides.get('api_ip') is None:
+                error("api_ip is required")
+                sys.exit(1)
+            if overrides.get('ingress_ip') is None:
+                error("ingress_ip is required")
+                sys.exit(1)
+        else:
+            agentfics.append('agent-cluster-install-sno.yaml')
+        agentdir = os.path.dirname(AssistedClient.create_cluster.__code__.co_filename) + '/agent'
+        if not os.path.isdir(path):
+            os.mkdir(path)
+        for fic in agentfics:
+            with open(f"{agentdir}/{fic}") as ori:
+                data = ori.read()
+                with open(f"{path}/{fic}", 'w') as dest:
+                    dest.write(data % overrides)
+        with open(f"{path}/nmstateconfig.yaml", 'w') as dest:
+            for index, entry in enumerate(static_network_config):
+                node_name = f"node-{index}"
+                network_data = {'apiVersion': 'agent-install.openshift.io/v1beta1',
+                                'kind': 'NMStateConfig', 'metadata':
+                                {'name': node_name, 'namespace': 'openshift-machine-api',
+                                 'labels': {'cluster0-nmstate-label-name': 'cluster0-nmstate-label-name'}}}
+                network_data['spec'] = {'config': entry}
+                dest.write(yaml.safe_dump(network_data))
+                dest.write('---\n')

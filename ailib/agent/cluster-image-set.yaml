@@ -1,0 +1,6 @@
+apiVersion: hive.openshift.io/v1
+kind: ClusterImageSet
+metadata:
+  name: openshift-4.11
+spec:
+  releaseImage: registry.ci.openshift.org/ocp/release:4.11.0-0.nightly-2022-06-06-025509
