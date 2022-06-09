@@ -2,7 +2,7 @@ apiVersion: extensions.hive.openshift.io/v1beta1
 kind: AgentClusterInstall
 metadata:
   name: test-agent-cluster-install
-  namespace: %(cluster)s
+  namespace: cluster0
 spec:
   clusterDeploymentRef:
     name: %(cluster)s
