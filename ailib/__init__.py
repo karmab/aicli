@@ -77,6 +77,9 @@ class AssistedClient(object):
                 sys.exit(1)
             self.config.api_key['Authorization'] = self.token
             self.config.api_key_prefix['Authorization'] = 'Bearer'
+        else:
+            self.offlinetoken = None
+            self.token = None
         self.api = ApiClient(configuration=self.config)
         self.client = api.InstallerApi(api_client=self.api)
         self.debug = debug
