@@ -1171,7 +1171,7 @@ class AssistedClient(object):
                 network_data = {'apiVersion': 'agent-install.openshift.io/v1beta1',
                                 'kind': 'NMStateConfig', 'metadata':
                                 {'name': node_name, 'namespace': 'openshift-machine-api',
-                                 'labels': {'cluster0-nmstate-label-name': 'cluster0-nmstate-label-name'}}}
+                                 'labels': {'cluster0-nmstate-label-name': 'cluster0-nmstate-label-value'}}}
                 network_data['spec'] = {'config': entry}
                 dest.write(yaml.safe_dump(network_data))
                 dest.write('---\n')
