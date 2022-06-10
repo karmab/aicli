@@ -1,0 +1,119 @@
+ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDDlaOm3m4qhTk+4cPUTpuaF6Vx89cX5Gk+geytYolgWBWZI32nNu//uq62EqupDJTgSwW4zIhwmjtUoTKqaQLysIly2P+30bvCW/V8PnYIIztMrgrYphpBNzAkihF9HcB0j3lU1fQkk6JwTIuLARlVp5YK7URcTcC8S50CvUWPQHKEOygYF0z+d07ufy7rjtQ7eehYduUNkH6ybphGSV/Iy/LOA2itI24B2+xG2cNkeslgD56MmRpV0gJZIc6oo54VhrjTtIQWF9WvsdVJgzJjxA1GkvY5iZADxgJa7qZ+jlcS7yQ1tQBXhilzCvkn4P0om6nlUrUEFUsr2VXn952h root@u08.dev5.kni.lab.eng.bos.redhat.com"
+release_image: "registry.ci.openshift.org/ocp/release:4.11.0-0.nightly-2022-06-06-025509"
+masters: 3
+workers: 0
+api_ip: 192.168.128.253
+ingress_ip: 192.168.128.252
+static_network_config:
+- interfaces:
+    - name: ens3
+      type: ethernet
+      state: up
+      ethernet:
+        auto-negotiation: true
+        duplex: full
+        speed: 1000
+      ipv4:
+        address:
+        - ip: 192.168.128.11
+          prefix-length: 24
+        enabled: true
+      mtu: 1500
+      mac-address: de:ad:bb:ef:00:21
+  dns-resolver:
+    config:
+      server:
+      - 192.168.128.1
+  routes:
+    config:
+    - destination: 192.168.128.0/24
+      next-hop-address:  192.168.128.1
+      next-hop-interface: ens3
+    - destination: 0.0.0.0/0
+      next-hop-address: 192.168.128.1
+      next-hop-interface: ens3
+      table-id: 254
+- interfaces:
+    - name: ens3
+      type: ethernet
+      state: up
+      ethernet:
+        auto-negotiation: true
+        duplex: full
+        speed: 1000
+      ipv4:
+        address:
+        - ip: 192.168.128.12
+          prefix-length: 24
+        enabled: true
+      mtu: 1500
+      mac-address: de:ad:bb:ef:00:22
+  dns-resolver:
+    config:
+      server:
+      - 192.168.128.1
+  routes:
+    config:
+    - destination: 192.168.128.0/24
+      next-hop-address:  192.168.128.1
+      next-hop-interface: ens3
+    - destination: 0.0.0.0/0
+      next-hop-address: 192.168.128.1
+      next-hop-interface: ens3
+      table-id: 254
+- interfaces:
+    - name: ens3
+      type: ethernet
+      state: up
+      ethernet:
+        auto-negotiation: true
+        duplex: full
+        speed: 1000
+      ipv4:
+        address:
+        - ip: 192.168.128.13
+          prefix-length: 24
+        enabled: true
+      mtu: 1500
+      mac-address: de:ad:bb:ef:00:23
+  dns-resolver:
+    config:
+      server:
+      - 192.168.128.1
+  routes:
+    config:
+    - destination: 192.168.128.0/24
+      next-hop-address:  192.168.128.1
+      next-hop-interface: ens3
+    - destination: 0.0.0.0/0
+      next-hop-address: 192.168.128.1
+      next-hop-interface: ens3
+      table-id: 254
+- interfaces:
+    - name: ens3
+      type: ethernet
+      state: up
+      ethernet:
+        auto-negotiation: true
+        duplex: full
+        speed: 1000
+      ipv4:
+        address:
+        - ip: 192.168.128.14
+          prefix-length: 24
+        enabled: true
+      mtu: 1500
+      mac-address: de:ad:bb:ef:00:24
+  dns-resolver:
+    config:
+      server:
+      - 192.168.128.1
+  routes:
+    config:
+    - destination: 192.168.128.0/24
+      next-hop-address:  192.168.128.1
+      next-hop-interface: ens3
+    - destination: 0.0.0.0/0
+      next-hop-address: 192.168.128.1
+      next-hop-interface: ens3
+      table-id: 254

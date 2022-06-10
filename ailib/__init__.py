@@ -3,6 +3,7 @@ from ailib.common import warning, error, info, get_token
 from ailib.redfish import Redfish
 import base64
 from datetime import datetime
+from distutils.spawn import find_executable
 import http.server
 from ipaddress import ip_network
 import json
@@ -1134,6 +1135,19 @@ class AssistedClient(object):
                     warning(f"Hit {e} when plugging iso to host {msg}")
 
     def create_cluster_manifests(self, cluster, overrides={}, path='cluster-manifests'):
+        if overrides.get('release_image') is not None:
+            release_image = overrides['release_image']
+        elif 'OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE' in os.environ:
+            info("Getting release_image from OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE env variable")
+            release_image = os.environ['OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE']
+        elif find_executable('openshift-install') is not None:
+            info("Getting release_image from openshift-install binary")
+            release_image = os.popen('openshift-install version').readlines()[2].split(" ")[2].strip()
+        else:
+            error("release_image is required")
+            sys.exit(1)
+        overrides['release_image'] = release_image
+        info(f"Using {release_image}")
         agentfics = ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']
         self.set_default_values(overrides)
         overrides['cluster'] = cluster
