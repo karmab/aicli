@@ -3,4 +3,4 @@ kind: ClusterImageSet
 metadata:
   name: openshift
 spec:
-  releaseImage: {{ relase_image }}
+  releaseImage: %(release_image)s
