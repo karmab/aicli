@@ -3,13 +3,12 @@ from ailib.common import warning, error, info, get_token
 from ailib.redfish import Redfish
 import base64
 from datetime import datetime
-from distutils.spawn import find_executable
 import http.server
 from ipaddress import ip_network
 import json
 import os
 import re
-from shutil import copyfileobj
+from shutil import copyfileobj, which
 import socket
 import socketserver
 from subprocess import call
@@ -1142,7 +1141,7 @@ class AssistedClient(object):
         elif 'OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE' in os.environ:
             info("Getting release_image from OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE env variable")
             release_image = os.environ['OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE']
-        elif find_executable('openshift-install') is not None:
+        elif which('openshift-install') is not None:
             info("Getting release_image from openshift-install binary")
             release_image = os.popen('openshift-install version').readlines()[2].split(" ")[2].strip()
         else:
