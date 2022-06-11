@@ -22,8 +22,16 @@ Refer to the [documentation](https://aicli.readthedocs.io) for more information
 
 ## Quick Start
 
+To use with SAAS, gather an offline token at [https://cloud.redhat.com/openshift/token](https://cloud.redhat.com/openshift/token), then
+
 ```
 pip3 install aicli
+```
+
+or 
+
+```
+alias aicli='podman run --net host -it --rm -e AI_OFFLINETOKEN=$AI_OFFLINETOKEN -v $HOME/.aicli:/root/.aicli -v $PWD:/workdir quay.io/karmab/aicli'
 ```
 
 ##  What you can do
