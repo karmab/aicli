@@ -1135,6 +1135,8 @@ class AssistedClient(object):
                     warning(f"Hit {e} when plugging iso to host {msg}")
 
     def create_cluster_manifests(self, cluster, overrides={}, path='cluster-manifests'):
+        if overrides.get('masters', 3) == 1 and overrides.get('workers', 0) == 0:
+            overrides['sno'] = True
         if overrides.get('release_image') is not None:
             release_image = overrides['release_image']
         elif 'OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE' in os.environ:
