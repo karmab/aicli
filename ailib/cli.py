@@ -126,6 +126,7 @@ def update_cluster(args):
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     ai.update_cluster(args.cluster, overrides)
+    ai.update_infra_env(args.cluster, overrides)
 
 
 def start_cluster(args):

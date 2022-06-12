@@ -814,9 +814,7 @@ class AssistedClient(object):
             for parameter in overrides:
                 if parameter not in allowed_parameters:
                     del cluster_update_params[parameter]
-            if not cluster_update_params:
-                warning(f"Nothing updated in cluster {name}")
-            else:
+            if cluster_update_params:
                 cluster_update_params = models.V2ClusterUpdateParams(**cluster_update_params)
                 self.client.v2_update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
         if 'manifests' in overrides:
