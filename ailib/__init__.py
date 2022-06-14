@@ -1191,13 +1191,13 @@ class AssistedClient(object):
                 network_data['spec'] = {'config': entry}
                 mac_interface_map = entry.get('mac_interface_map', [])
                 for interface in entry['interfaces']:
-                    bond = True if interface.get('type', 'ethernet') == 'bond' else False
+                    ethernet = True if interface.get('type', 'ethernet') == 'ethernet' else False
                     if not mac_interface_map:
-                        if not bond:
+                        if ethernet:
                             logical_nic_name, mac_address = interface['name'], interface['mac-address']
                             mac_interface_map.append({"macAddress": mac_address, "name": logical_nic_name})
                         else:
-                            error("Providing mac_interface_map is mandatory when setting bond")
+                            error("Providing mac_interface_map is mandatory when some types are not ethernet")
                             sys.exit(1)
                     network_data['spec']['interfaces'] = mac_interface_map
                 dest.write(yaml.safe_dump(network_data))
