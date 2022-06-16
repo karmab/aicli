@@ -5,10 +5,25 @@ import json
 from prettytable import PrettyTable
 import os
 import sys
+import yaml
 from time import sleep
 from ailib import AssistedClient
 
 PARAMHELP = "specify parameter or keyword for rendering (multiple can be specified)"
+
+
+def _list_output(_list, output):
+    if output == 'yaml':
+        print(yaml.dump(_list))
+    elif output == 'json':
+        print(json.dumps(_list))
+    elif output == 'name':
+        if isinstance(_list, list):
+            for entry in sorted(_list, key=lambda x: x['name']):
+                print(entry['name'])
+        else:
+            for key in sorted(list(_list.keys())):
+                print(key)
 
 
 def get_subparser_print_help(parser, subcommand):
@@ -105,6 +120,9 @@ def list_cluster(args):
     ams_subscription_id, org_id = args.subscription, args.org
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     clusters = ai.list_clusters()
+    if args.output is not None:
+        _list_output(clusters, args.output)
+        return
     clusterstable = PrettyTable(["Cluster", "Id", "Status", "Dns Domain"])
     for cluster in sorted(clusters, key=lambda x: x['name'] or 'zzz'):
         if ams_subscription_id is not None and cluster['ams_subscription_id'] != ams_subscription_id:
@@ -206,6 +224,9 @@ def list_hosts(args):
     cluster_ids = {}
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     hosts = ai.list_hosts()
+    if args.output is not None:
+        _list_output(hosts, args.output)
+        return
     hoststable = PrettyTable(["Host", "Id", "Cluster", "Infraenv", "Status", "Role", "Ip"])
     for host in sorted(hosts, key=lambda x: x['requested_hostname'] or 'zzz'):
         name = host['requested_hostname']
@@ -284,6 +305,9 @@ def info_infra_env(args):
 def list_infra_env(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     infra_envs = ai.list_infra_envs()
+    if args.output is not None:
+        _list_output(infra_envs, args.output)
+        return
     cluster_ids = {}
     infra_envs_table = PrettyTable(["Infraenv", "Id", "Cluster", "Openshift Version", "Iso Type"])
     for infra_env in sorted(infra_envs, key=lambda x: x['name'] or 'zzz'):
@@ -573,6 +597,7 @@ def cli():
     # PARAMETERS_HELP = 'specify parameter or keyword for rendering (multiple can be specified)'
     parser = argparse.ArgumentParser(description='Assisted installer assistant')
     parser.add_argument('-d', '--debug', action='store_true')
+    parser.add_argument('-o', '--output', choices=['json', 'name', 'yaml'], help='Format of the output')
     parser.add_argument('--staging', action='store_true', default=bool(os.environ.get('STAGING', "")))
     parser.add_argument('-U', '--url', default=os.environ.get('AI_URL'))
     parser.add_argument('--token', default=os.environ.get('AI_TOKEN'))
