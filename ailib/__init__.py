@@ -968,6 +968,9 @@ class AssistedClient(object):
         self.set_default_infraenv_values(overrides)
         new_infraenv_params = default_infraenv_params
         new_infraenv_params['name'] = name
+        cluster = overrides.get('cluster_id') or overrides.get('cluster')
+        if cluster is not None:
+            overrides['cluster_id'] = self.get_cluster_id(cluster)
         allowed_parameters = self._allowed_parameters(models.InfraEnvCreateParams)
         for parameter in overrides:
             if parameter in allowed_parameters:
