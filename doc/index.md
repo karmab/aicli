@@ -140,7 +140,33 @@ The nomenclature we use for the infraenv is consistent with what happens in AI U
 
 You can set the parameter *infraenv* to false to prevent an infraenv to get created for the cluster. You will then have to use the bind subcommand to associate hosts discovered through a given infraenv to some specific cluster.
 
+### Custom ignition
+
+You can inject custom ignition in the discovery iso by either:
+
+- specifying `ignition_config_override` parameter with an ignition string
+
+For instance, 
+
+```
+ignition_config_override: "{\"ignition\":{\"version\":\"3.1.0\"},\"systemd\":{\"units\":[{\"name\":\"ca-patch.service\",\"enabled\":true,\"contents\":\"[Service]\\nType=oneshot\\nExecStart=/usr/local/bin/ca-patch.sh\\n\\n[Install]\\nWantedBy=multi-user.target\"}]},\"storage\":{\"files\":[{\"path\":\"/usr/local/bin/ca-patch.sh\",\"mode\":720,\"contents\":{\"source\":\"data:text/plain;charset=utf-8;base64,IyEvYmluL2Jhc2gKc3VjY2Vzcz0wCnVudGlsIFsgJHN1Y2Nlc3MgLWd0IDEgXTsgZG8KICB0bXA9JChta3RlbXApCiAgY2F0IDw8RU9GPiR7dG1wfSB8fCB0cnVlCmRhdGE6CiAgcmVxdWVzdGhlYWRlci1jbGllbnQtY2EtZmlsZTogfAokKHdoaWxlIElGUz0gcmVhZCAtYSBsaW5lOyBkbyBlY2hvICIgICAgJGxpbmUiOyBkb25lIDwgPChjYXQgL2V0Yy9rdWJlcm5ldGVzL2Jvb3RzdHJhcC1zZWNyZXRzL2FnZ3JlZ2F0b3ItY2EuY3J0KSkKRU9GCiAgS1VCRUNPTkZJRz0vZXRjL2t1YmVybmV0ZXMvYm9vdHN0cmFwLXNlY3JldHMva3ViZWNvbmZpZyBrdWJlY3RsIC1uIGt1YmUtc3lzdGVtIHBhdGNoIGNvbmZpZ21hcCBleHRlbnNpb24tYXBpc2VydmVyLWF1dGhlbnRpY2F0aW9uIC0tcGF0Y2gtZmlsZSAke3RtcH0KICBpZiBbWyAkPyAtZXEgMCBdXTsgdGhlbgoJcm0gJHt0bXB9CglzdWNjZXNzPTIKICBmaQogIHJtICR7dG1wfQogIHNsZWVwIDYwCmRvbmUK\"}}]},\"kernelArguments\":{\"shouldExist\":[\"ipv6.disable=1\"]}}"
+```
+
+- using the extra keyword `ignition_file` and providing a path where to store the ignition directly (that is, without specifying ignition_config_override)
+
+Note that for such ignition to be applied to the nodes once they really get installed, a machineconfig is needed (which can be injected as custom manifest)
+
 ### Custom networking
+
+#### Network type
+
+Default CNI when creating a cluster is `OVNKubernetes` 
+
+the network_type extra keyword can be used to specify another one such as OpenshiftSDN, Calico, Contrail
+
+Note that non standard CNIs typically have extra requirements of injecting custom manifests.
+
+#### Tuning network of the nodes
 
 In order to use custom/static networking for your hosts, you need to provide nmstate information in the parameter file using the field *static_network_config* 
 
@@ -163,6 +189,8 @@ aicli create manifests --dir mydir mycluster
 A flag allows you to have them stored in the openshift folder.
 
 You can then use `aicli list manifests mycluster` to confirm they were properly uploaded, or use `aicli delete manifests` for deletion
+
+Such manifests can be specified directly in your parameter file so that they get injected at cluster creation. For this, include the keyword manifests and point it to the directory where your manifests are stored.
 
 ### Gather iso
 
@@ -367,3 +395,29 @@ We also have the iso downloaded automatically to a path corresponding to a web s
 
 If you omit this kind of information, you can still have the deployment done semi automatically by just waiting for the iso url to be displayed and plug it manually to your target nodes.
 
+## Ansible Integration
+
+aicli modules are available at [https://github.com/karmab/ansible-aicli-modules](https://github.com/karmab/ansible-aicli-modules) and provide the following primitives:
+
+- ai_cluster
+- ai\_cluster\_info
+- ai_infraenv
+- ai\_infraenv\_info
+- ai\_host\_info
+
+## ZTP Integration
+
+ZTP Workflow is a deployment methodology that relies on Assisted Installer run as an operator to drive the deployment in a kubernetes native way.
+
+Although you shouldn't need aicli at all in that case, a subcommand `create cluster-manifests` is available to generate the YAML manifests that are typically used and taking as input an aicli parameter file
+
+For instance, using the sample [bili.yml](samples/bili.yml), the command `aicli create cluster-manifests --pf samples/bili.yml` will generate the following objects:
+
+- agent-cluster-install.yaml
+- cluster-deployment.yaml
+- cluster-image-set.yaml
+- infraenv.yaml
+- nmstateconfig.yaml
+- pull-secret.yaml
+
+This also plays well with openshift agent based install mechanism.
