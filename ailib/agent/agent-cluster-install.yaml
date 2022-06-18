@@ -3,6 +3,8 @@ kind: AgentClusterInstall
 metadata:
   name: test-agent-cluster-install
   namespace: cluster0
+  annotations:
+    agent-install.openshift.io/install-config-overrides: '{"networking":{"networkType":"%(network_type)s"}}'
 spec:
   apiVIP: %(api_ip)s
   ingressVIP: %(ingress_ip)s

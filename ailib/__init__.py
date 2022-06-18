@@ -1155,6 +1155,8 @@ class AssistedClient(object):
         agentfics = ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']
         self.set_default_values(overrides)
         overrides['cluster'] = cluster
+        if 'network_type' not in overrides:
+            overrides['network_type'] = 'OVNKubernetes'
         if 'domain' not in overrides:
             overrides['domain'] = overrides.get('base_dns_domain') or 'karmalabs.com'
         static_network_config = overrides.get('static_network_config', [])
