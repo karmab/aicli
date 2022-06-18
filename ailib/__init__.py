@@ -352,7 +352,9 @@ class AssistedClient(object):
                 new_cluster_params[parameter] = overrides[parameter]
             else:
                 extra_overrides[parameter] = overrides[parameter]
-        if 'network_type' not in new_cluster_params:
+        network_override = 'installconfig' in extra_overrides and 'networking' in extra_overrides['installconfig']\
+            and 'networkType' in extra_overrides['installconfig']['networking']
+        if 'network_type' not in overrides and not network_override:
             warning("Forcing network_type to OVNKubernetes")
             new_cluster_params['network_type'] = 'OVNKubernetes'
         if self.debug:
