@@ -32,8 +32,9 @@ class AssistedClient(object):
         self.config.host = self.url + "/api/assisted-install"
         self.config.verify_ssl = False
         self.config.debug = debug
+        self.saas = True if url in ['https://api.openshift.com', 'https://api.stage.openshift.com'] else False
         proxies = urllib.request.getproxies()
-        if proxies:
+        if self.saas and proxies:
             proxy = proxies.get('https') or proxies.get('http')
             if 'http' not in proxy:
                 proxy = "http://" + proxy
@@ -44,7 +45,6 @@ class AssistedClient(object):
         tokenpath = f'{aihome}/token.txt'
         if not os.path.exists(aihome):
             os.mkdir(aihome)
-        self.saas = True if url in ['https://api.openshift.com', 'https://api.stage.openshift.com'] else False
         if self.saas:
             if offlinetoken is None:
                 if os.path.exists(offlinetokenpath):
