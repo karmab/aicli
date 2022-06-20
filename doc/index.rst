@@ -67,7 +67,7 @@ by default, the tool targets the SAAS (which means providing an offline token)
 
 Alternatively, You can indicate a target AI_URL, using the flag *–url*
 
-The url needs to be provided in this format ``http://$AI_IP:8080``
+The url needs to be provided in this format ``http://$AI_IP:8090``
 
 The target url can also be specified through environment variable AI_URL
 
