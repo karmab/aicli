@@ -122,6 +122,12 @@ class AssistedClient(object):
             overrides['openshift_version'] = str(overrides['openshift_version'])
         if 'domain' in overrides:
             overrides['base_dns_domain'] = overrides['domain']
+        if 'api_ip' in overrides:
+            overrides['api_vip'] = overrides['api_ip']
+            del overrides['api_ip']
+        if 'ingress_ip' in overrides:
+            overrides['ingress_vip'] = overrides['ingress_ip']
+            del overrides['ingress_ip']
         if not existing:
             if 'pull_secret' not in overrides:
                 warning("Using openshift_pull.json as pull_secret file")
