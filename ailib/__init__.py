@@ -746,10 +746,26 @@ class AssistedClient(object):
 
     def update_cluster(self, name, overrides):
         cluster_id = self.get_cluster_id(name)
+        info = self.info_cluster(name)
+        machine_networks = info.machine_networks
         if 'api_ip' in overrides:
             overrides['api_vip'] = overrides['api_ip']
         if 'ingress_ip' in overrides:
             overrides['ingress_vip'] = overrides['ingress_ip']
+        if 'api_vip' in overrides:
+            api_vip = info.api_vip
+            if api_vip is not None and overrides['api_vip'] == api_vip:
+                del overrides['api_vip']
+            elif not machine_networks:
+                warning("Updating api_vip requires hosts to be discovered")
+                del overrides['api_vip']
+        if 'ingress_vip' in overrides:
+            ingress_vip = info.ingress_vip
+            if ingress_vip is not None and overrides['ingress_vip'] == ingress_vip:
+                del overrides['ingress_vip']
+            elif not machine_networks:
+                warning("Updating ingress_vip requires hosts to be discovered")
+                del overrides['ingress_vip']
         if 'pull_secret' in overrides:
             pull_secret = os.path.expanduser(overrides['pull_secret'])
             if os.path.exists(pull_secret):
