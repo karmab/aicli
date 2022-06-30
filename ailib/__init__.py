@@ -1176,7 +1176,9 @@ class AssistedClient(object):
             error("release_image is required")
             sys.exit(1)
         if 'disconnected_url' in overrides:
-            release_image = f"{overrides['disconnected_url']}/ocp4:{os.path.basename(release_image)}"
+            cpu_architecture = overrides.get('cpu_architecture', 'x86_64')
+            base_image = os.path.basename(release_image).replace('release:', '')
+            release_image = f"{overrides['disconnected_url']}/ocp4:{base_image}-{cpu_architecture}"
         overrides['release_image'] = release_image
         info(f"Using {release_image}")
         agentfics = ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']
