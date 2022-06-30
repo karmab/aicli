@@ -12,3 +12,4 @@ openshift_pull.json*
 assisted-service-client-*.tar.gz
 kubeconfig.*
 cluster-manifests
+mirror

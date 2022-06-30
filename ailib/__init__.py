@@ -1175,6 +1175,8 @@ class AssistedClient(object):
         else:
             error("release_image is required")
             sys.exit(1)
+        if 'disconnected_url' in overrides:
+            release_image = f"{overrides['disconnected_url']}/ocp4:{os.path.basename(release_image)}"
         overrides['release_image'] = release_image
         info(f"Using {release_image}")
         agentfics = ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']
@@ -1250,3 +1252,16 @@ class AssistedClient(object):
                         hosts.append(data)
                 hosts_data['spec'] = {'hosts': hosts}
                 dest.write(yaml.safe_dump(hosts_data))
+        if 'installconfig' in overrides and 'additionalTrustBundle' in overrides['installconfig']\
+           and 'imageContentSources' in overrides['installconfig']:
+            ca = overrides['installconfig']['additionalTrustBundle']
+            icsps = overrides['installconfig']['imageContentSources']
+            if not os.path.isdir('mirror'):
+                os.mkdir('mirror')
+            with open('mirror/ca-bundle.crt', 'w') as f:
+                f.write(ca)
+            with open('mirror/registries.conf', 'w') as f:
+                registrytemplate = open(f"{agentdir}/registries.conf.templ").read()
+                for icsp in icsps:
+                    icspdata = {'source': icsp['source'], 'mirror': icsp['mirrors'][0]}
+                    f.write(registrytemplate % icspdata)
