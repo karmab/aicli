@@ -116,3 +116,6 @@ static_network_config:
       next-hop-address: 192.168.128.1
       next-hop-interface: ens3
       table-id: 254
+hosts:
+ - mac: de:ad:bb:ef:00:38
+   disk: sdb

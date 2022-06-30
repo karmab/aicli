@@ -6,8 +6,8 @@ metadata:
   annotations:
     agent-install.openshift.io/install-config-overrides: '{"networking":{"networkType":"%(network_type)s"}}'
 spec:
-  apiVIP: %(api_ip)s
-  ingressVIP: %(ingress_ip)s
+  apiVIP: %(api_vip)s
+  ingressVIP: %(ingress_vip)s
   clusterDeploymentRef:
     name: %(cluster)s
   imageSetRef:

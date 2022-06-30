@@ -1196,11 +1196,11 @@ class AssistedClient(object):
             if overrides.get('workers') is None:
                 overrides['workers'] = 0
                 warning("Forcing workers to 0")
-            if overrides.get('api_ip') is None:
-                error("api_ip is required")
+            if overrides.get('api_vip') is None:
+                error("api_vip is required")
                 sys.exit(1)
-            if overrides.get('ingress_ip') is None:
-                error("ingress_ip is required")
+            if overrides.get('ingress_vip') is None:
+                error("ingress_vip is required")
                 sys.exit(1)
         else:
             agentfics.append('agent-cluster-install-sno.yaml')
@@ -1234,3 +1234,19 @@ class AssistedClient(object):
                     network_data['spec']['interfaces'] = mac_interface_map
                 dest.write(yaml.safe_dump(network_data))
                 dest.write('---\n')
+        if 'hosts' in overrides:
+            with open(f"{path}/agent-config.yaml", 'w') as dest:
+                hosts_data = {'kind': 'AgentConfig'}
+                hosts = []
+                for index, host in enumerate(overrides['hosts']):
+                    if 'mac' not in host or 'disk' not in host:
+                        warning(f"Skipping entry {index} in hosts array")
+                        continue
+                    else:
+                        mac = host['mac']
+                        disk = f"/dev/{os.path.basename(host['disk'])}"
+                        data = {'interfaces': [{'name': 'eth0', 'macAddress': mac}],
+                                'rootDeviceHints': {'deviceName': disk}}
+                        hosts.append(data)
+                hosts_data['spec'] = {'hosts': hosts}
+                dest.write(yaml.safe_dump(hosts_data))
