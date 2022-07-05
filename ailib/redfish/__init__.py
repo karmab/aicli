@@ -57,17 +57,42 @@ class Redfish(object):
         return f"{response['Inserted']}"
 
     def eject_iso(self):
+        if self.model == 'supermicro':
+            self.eject_iso_supermicro()
+            return
         manager_url = self.get_manager_url()
         request = Request(f"{manager_url}/VirtualMedia/{self.cdpath}/Actions/VirtualMedia.EjectMedia",
                           headers=self.headers, method='POST')
         urlopen(request, context=self.context)
 
+    def eject_iso_supermicro(self):
+        manager_url = self.get_manager_url()
+        headers = self.headers.copy()
+        headers['Content-Length'] = 0
+        request = Request(f"{manager_url}/VM1/CfgCD/Actions/IsoConfig.UnMount", data={}, headers=headers)
+        urlopen(request, context=self.context)
+
     def insert_iso(self, iso_url):
+        if self.model == 'supermicro':
+            self.insert_iso_supermicro(iso_url)
+            return
         data = {"Image": iso_url, "Inserted": True}
         data = json.dumps(data).encode('utf-8')
         manager_url = self.get_manager_url()
         request = Request(f"{manager_url}/VirtualMedia/{self.cdpath}/Actions/VirtualMedia.InsertMedia", data=data,
                           headers=self.headers)
+        urlopen(request, context=self.context)
+
+    def insert_iso_supermicro(self, iso_url):
+        p = urlparse(iso_url)
+        data = {"Host": f"{p.scheme}://{p.netloc}", "Path": p.path}
+        data = json.dumps(data).encode('utf-8')
+        manager_url = self.get_manager_url()
+        request = Request(f"{manager_url}/VM1/CfgCD", data=data, headers=self.headers, method='PATCH')
+        urlopen(request, context=self.context)
+        headers = self.headers.copy()
+        headers['Content-Length'] = 0
+        request = Request(f"{manager_url}/VM1/CfgCD/Actions/IsoConfig.Mount", data={}, headers=headers)
         urlopen(request, context=self.context)
 
     def set_iso_once(self):
