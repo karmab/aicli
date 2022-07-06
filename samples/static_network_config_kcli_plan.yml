@@ -1,0 +1,35 @@
+parameters:
+  cluster: static
+  masters: 3
+  workers: 0
+  network: static
+  cidr: 192.168.128.0/24
+
+{{ network }}:
+  type: network
+  dhcp: false
+  cidr: {{ cidr }}
+
+{% for num in range(0,masters) %}
+{{ cluster }}-master-{{ num }}:
+ iso: {{ cluster }}.iso
+ memory: 20480
+ user: core
+ numcpus: 16
+ disks: [200]
+ nets:
+ - name: {{ network }}
+   mac: de:ad:bb:ef:00:{{ "%02.d" | format(21 + num) }}
+{% endfor %}
+
+{% for num in range(0,workers) %}
+{{ cluster }}-worker-{{ num }}:
+ iso: {{ cluster }}.iso
+ memory: 20480
+ user: core
+ numcpus: 16
+ disks: [200]
+ nets:
+ - name: {{ network }}
+   mac: de:ad:bb:ef:00:{{ "%02.d" | format(21 + num + masters) }}
+{% endfor %}

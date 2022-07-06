@@ -1,12 +1,19 @@
 parameters:
- cluster: chen
- network: chen
+ cluster: bondingtest
+ network: bondingtest
+ cidr: 192.168.123.0/24
+
+{{ network }}:
+  type: network
+  dhcp: false
+  cidr: {{ cidr }}
 
 {% set total_number = namespace(value=1) %}
 {% for num in range(0,3) %}
 {{ cluster }}-{{ num }}:
  iso: {{ cluster }}.iso
  memory: 20480
+ user: core
  numcpus: 16
  disks: [200]
  nets:
