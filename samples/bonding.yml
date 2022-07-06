@@ -1,3 +1,6 @@
+api_vip: 192.168.123.253
+ingress_vip: 192.168.123.252
+domain: karmalabs.com
 static_network_config:
 - interfaces:
   - name: bond0
