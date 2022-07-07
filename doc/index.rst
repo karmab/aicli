@@ -278,7 +278,7 @@ To change the role of a given host to worker, you can run
 Updating extra args
 ^^^^^^^^^^^^^^^^^^^
 
-To specify extra args for a given , you can run
+To specify extra args for a given host, you can run
 
 ::
 
@@ -289,6 +289,23 @@ For instance, you can run the following to append kargs
 ::
 
    aicli update host $host -P extra_args="--append-karg=rd.multipath=default --append-karg=root=/dev/disk/by-label/dm-mpath-root"
+
+Specifying installation disk
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To specify installation disk for a given host, you can run
+
+::
+
+   aicli update $host -P disk="xxxx"
+
+For instance, To force installation disk to /dev/sdb, use
+
+::
+
+   aicli update host $host -P disk=sdb"
+
+Note: the parameter ``installation_disk_path`` can be used instead
 
 Updating from a parameter file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
