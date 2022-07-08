@@ -850,9 +850,9 @@ class AssistedClient(object):
             for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
                 if host['status'] == 'installed':
                     info(f"Skipping Host {host['requested_hostname']}")
-                    continue
-                host_id = host['id']
-                self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
+                else:
+                    host_id = host['id']
+                    self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
         else:
             self.client.v2_install_cluster(cluster_id=cluster_id)
 
@@ -1062,6 +1062,26 @@ class AssistedClient(object):
             bind_host_params = {'cluster_id': cluster_id}
             bind_host_params = models.BindHostParams(**bind_host_params)
             self.client.bind_host(infra_env_id, host_id, bind_host_params)
+
+    def start_infraenv(self, name):
+        infra_env_id = self.get_infra_env_id(name)
+        for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
+            if host['status'] == 'installed':
+                info(f"Skipping installed host {host['requested_hostname']}")
+            elif 'cluster_id' not in host:
+                info(f"Skipping unassigned host {host['requested_hostname']}")
+            else:
+                host_id = host['id']
+                self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
+
+    def stop_infraenv(self, name):
+        infra_env_id = self.get_infra_env_id(name)
+        for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
+            if host['status'] == 'installed':
+                info(f"Skipping Host {host['requested_hostname']}")
+            else:
+                host_id = host['id']
+                self.client.v2_reset_host(infra_env_id=infra_env_id, host_id=host_id)
 
     def unbind_infra_env(self, name):
         infra_env_id = self.get_infra_env_id(name)

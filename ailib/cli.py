@@ -335,6 +335,18 @@ def bind_infra_env(args):
     ai.bind_infra_env(args.infraenv, args.cluster, force=args.force)
 
 
+def start_infraenv(args):
+    info(f"Starting infraenv {args.infraenv}")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
+    ai.start_infraenv(args.infraenv)
+
+
+def stop_infraenv(args):
+    info(f"Stopping infraenv {args.infraenv}")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
+    ai.stop_infraenv(args.infraenv)
+
+
 def unbind_infra_env(args):
     info(f"Unbinding Infra Env {args.infraenv}")
     info("this will unbind all hosts of the infraenv from any cluster")
@@ -888,6 +900,21 @@ def cli():
     infraenvunbind_parser.set_defaults(func=unbind_infra_env)
     unbind_subparsers.add_parser('infraenv', parents=[infraenvunbind_parser],
                                  description=infraenvunbind_desc, help=infraenvunbind_desc)
+
+    infraenvstart_desc = 'Start Infraenv'
+    infraenvstart_epilog = None
+    infraenvstart_parser = start_subparsers.add_parser('infraenv', description=infraenvstart_desc,
+                                                       help=infraenvstart_desc,
+                                                       epilog=infraenvstart_epilog, formatter_class=rawhelp)
+    infraenvstart_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvstart_parser.set_defaults(func=start_infraenv)
+
+    infraenvstop_desc = 'Stop Infraenv'
+    infraenvstop_epilog = None
+    infraenvstop_parser = stop_subparsers.add_parser('infraenv', description=infraenvstop_desc, help=infraenvstop_desc,
+                                                     epilog=infraenvstop_epilog, formatter_class=rawhelp)
+    infraenvstop_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvstop_parser.set_defaults(func=stop_infraenv)
 
     infraenvupdate_desc = 'Update Infraenv'
     infraenvupdate_parser = argparse.ArgumentParser(add_help=False)
