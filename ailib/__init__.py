@@ -848,6 +848,9 @@ class AssistedClient(object):
         if cluster_info['status'] == 'adding-hosts':
             infra_env_id = self.get_infra_env_id(name)
             for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
+                if host['status'] == 'installed':
+                    info(f"Skipping Host {host['requested_hostname']}")
+                    continue
                 host_id = host['id']
                 self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
         else:
