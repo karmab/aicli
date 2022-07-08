@@ -851,6 +851,7 @@ class AssistedClient(object):
                 if host['status'] in ['installed', 'added-to-existing-cluster']:
                     info(f"Skipping installed Host {host['requested_hostname']}")
                 else:
+                    info(f"Installing Host {host['requested_hostname']}")
                     host_id = host['id']
                     self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
         else:
@@ -1071,6 +1072,7 @@ class AssistedClient(object):
             elif 'cluster_id' not in host:
                 info(f"Skipping unassigned host {host['requested_hostname']}")
             else:
+                info(f"Installing Host {host['requested_hostname']}")
                 host_id = host['id']
                 self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
 
