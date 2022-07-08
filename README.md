@@ -9,6 +9,8 @@
 [![Documentation Status](https://readthedocs.org/projects/aicli/badge/?version=latest)](https://aicli.readthedocs.io/en/latest/?badge=latest)
 [![](https://images.microbadger.com/badges/image/karmab/aicli.svg)](https://microbadger.com/images/karmab/aicli "Get your own image badge on microbadger.com")
 
+![Screenshot](aicli.png)
+
 ## Demo!
 
 ![](aicli.gif)
