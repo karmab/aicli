@@ -247,7 +247,12 @@ def list_hosts(args):
         status = host['status']
         inventory = json.loads(host['inventory']) if 'inventory' in host else {}
         ip = 'N/A'
-        if 'interfaces' in inventory and inventory['interfaces']:
+        for route in inventory.get('routes', []):
+            if route['destination'] == '0.0.0.0':
+                default_nic = route['interface']
+                nic_info = [nic for nic in inventory.get('interfaces') if nic['name'] == default_nic][0]
+                ip = nic_info['ipv4_addresses'][0].split('/')[0]
+        if ip == 'N/A' and 'interfaces' in inventory and inventory['interfaces']:
             if 'ipv6_addresses' in inventory['interfaces'][0] and inventory['interfaces'][0]['ipv6_addresses']:
                 ip = inventory['interfaces'][0]['ipv6_addresses'][0].split('/')[0]
             if 'ipv4_addresses' in inventory['interfaces'][0] and inventory['interfaces'][0]['ipv4_addresses']:
