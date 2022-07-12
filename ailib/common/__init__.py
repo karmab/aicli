@@ -40,7 +40,10 @@ def get_overrides(paramfile=None, param=[]):
     :return:
     """
     overrides = {}
-    if paramfile is not None and os.path.exists(os.path.expanduser(paramfile)):
+    if paramfile is not None:
+        if not os.path.exists(os.path.expanduser(paramfile)):
+            error(f"Parameter file {paramfile} not found. Leaving")
+            os._exit(1)
         with open(os.path.expanduser(paramfile)) as f:
             try:
                 overrides = yaml.safe_load(f)
