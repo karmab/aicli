@@ -353,6 +353,7 @@ class AssistedClient(object):
         allowed_parameters = self._allowed_parameters(models.ClusterCreateParams)
         for parameter in overrides:
             if parameter == 'network_type' and overrides[parameter] not in ['OpenShiftSDN', 'OVNKubernetes']:
+                new_cluster_params['network_type'] = 'OVNKubernetes'
                 extra_overrides[parameter] = overrides[parameter]
                 continue
             if parameter in update_parameters:
