@@ -1181,6 +1181,7 @@ class AssistedClient(object):
                     warning(f"Hit {e} when plugging iso to host {msg}")
 
     def create_cluster_manifests(self, cluster, overrides={}, path='cluster-manifests'):
+        disconnected_url = None
         if overrides.get('masters', 3) == 1 and overrides.get('workers', 0) == 0:
             overrides['sno'] = True
         if overrides.get('release_image') is not None:
@@ -1188,16 +1189,13 @@ class AssistedClient(object):
         elif 'OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE' in os.environ:
             info("Getting release_image from OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE env variable")
             release_image = os.environ['OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE']
+            disconnected_url = os.environ['OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE'].split('/')[0]
         elif which('openshift-install') is not None:
             info("Getting release_image from openshift-install binary")
             release_image = os.popen('openshift-install version').readlines()[2].split(" ")[2].strip()
         else:
             error("release_image is required")
             sys.exit(1)
-        if 'disconnected_url' in overrides:
-            cpu_architecture = overrides.get('cpu_architecture', 'x86_64')
-            base_image = os.path.basename(release_image).replace('release:', '')
-            release_image = f"{overrides['disconnected_url']}/ocp4:{base_image}-{cpu_architecture}"
         overrides['release_image'] = release_image
         info(f"Using {release_image}")
         agentfics = ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']
@@ -1273,10 +1271,24 @@ class AssistedClient(object):
                         hosts.append(data)
                 hosts_data['spec'] = {'hosts': hosts}
                 dest.write(yaml.safe_dump(hosts_data))
-        if 'installconfig' in overrides and 'additionalTrustBundle' in overrides['installconfig']\
-           and 'imageContentSources' in overrides['installconfig']:
-            ca = overrides['installconfig']['additionalTrustBundle']
-            icsps = overrides['installconfig']['imageContentSources']
+        ca, icsps = None, []
+        if 'installconfig' in overrides:
+            if 'additionalTrustBundle' in overrides['installconfig']:
+                ca = overrides['installconfig']['additionalTrustBundle']
+            if 'imageContentSources' in overrides['installconfig']:
+                icsps = overrides['installconfig']['imageContentSources']
+        if disconnected_url is not None:
+            if ca is None:
+                info(f"Trying to gather disconnected ca cert from {disconnected_url}")
+                cacmd = f"openssl s_client -showcerts -connect {disconnected_url} </dev/null 2>/dev/null|"
+                cacmd += "openssl x509 -outform PEM"
+                ca = os.popen(cacmd).read()
+            if not icsps:
+                icsps = [{'mirrors': [f"{disconnected_url}/ocp4"],
+                          'source': 'quay.io/openshift-release-dev/ocp-release'},
+                         {'mirrors': [f"{disconnected_url}/ocp4"],
+                          'source': 'quay.io/openshift-release-dev/ocp-v4.0-art-dev'}]
+        if ca is not None and icsps:
             if not os.path.isdir('mirror'):
                 os.mkdir('mirror')
             with open('mirror/ca-bundle.crt', 'w') as f:

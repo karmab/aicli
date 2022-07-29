@@ -119,46 +119,46 @@ static_network_config:
 #hosts:
 # - mac: de:ad:bb:ef:00:38
 #   disk: sdb
-installconfig:
-   additionalTrustBundle: |
-       -----BEGIN CERTIFICATE-----
-       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
-       -----END CERTIFICATE-----
-   imageContentSources:
-   - mirrors:
-     - 192-168-128-116.sslip.io:5000/ocp4
-     source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
-   - mirrors:
-     - 192-168-128-116.sslip.io:5000/ocp4
-     source: quay.io/openshift-release-dev/ocp-release
+#installconfig:
+#   additionalTrustBundle: |
+#       -----BEGIN CERTIFICATE-----
+#       MIIF+DCCA+CgAwIBAgIUQyOEchQNuRRwW+FhrCwP+v9YEz8wDQYJKoZIhvcNAQEL
+#       BQAweTELMAkGA1UEBhMCVVMxDzANBgNVBAgMBk1hZHJpZDERMA8GA1UEBwwIQ2hh
+#       bWJlcmkxEjAQBgNVBAoMCUthcm1hbGFiczEPMA0GA1UECwwGR3VpdGFyMSEwHwYD
+#       VQQDDBgxOTItMTY4LTEyOC0xMTYuc3NsaXAuaW8wHhcNMjIwNzI4MTc1MzAyWhcN
+#       MzIwNzI1MTc1MzAyWjB5MQswCQYDVQQGEwJVUzEPMA0GA1UECAwGTWFkcmlkMREw
+#       DwYDVQQHDAhDaGFtYmVyaTESMBAGA1UECgwJS2FybWFsYWJzMQ8wDQYDVQQLDAZH
+#       dWl0YXIxITAfBgNVBAMMGDE5Mi0xNjgtMTI4LTExNi5zc2xpcC5pbzCCAiIwDQYJ
+#       KoZIhvcNAQEBBQADggIPADCCAgoCggIBAOUji/GSyrXaK6mLGFltKaLYAfvJRyfT
+#       PYaJpCGLBT0wp1mbIRiSOg7LhMaChOOEP4M5fWqL9B7KDt8JQfztqMgjCXhSS1a9
+#       HEm9vfyjjLEGlfSFG5yLd0EW7uZlmBmCecotaePEJDJp5WHHR94DsPG2nTxKnasE
+#       pO4AevF0UzFCf1QS+PS3Xxo9RItNYsEPCzR2lUgXYRRx4AKghFI5MTvlEFjKCTP3
+#       1tgT+rD+l4iP0uNwljGGNOqOA0CzWtNYpjNoFQ6mZk1csgPLb6vSF9dP53hhT8V9
+#       u/reOXi5+pGpDwWxhSsHRzj/2aipdwmUkZvnL9Vi4Hjfx1OoiYjVcYH/TgA1PZ2Y
+#       EJnrLetMt07/m827EJUj+57jowwgtdECgoh+WUpY8EXnPbSYDcgHaHULpIE0jMDC
+#       1UCe6NZKjNUFZIlL2vsA0Klj0N6p0XHNX9jYCSFVuMcUNW5YWiya9OQSs2hjVj0s
+#       aQPjZWIRMocVUmhSPPItMNOJ289J1BQU34iuAC6vgicssAfKD/dzlwKavKHA5CV8
+#       cpg6fPpFXW39cc8MSEhbflQnqgdhSQH5prs30HuEJVsAgCEPrUHXo/PznLspovrr
+#       vdUcIiW844JxdZUrpcW1Kd4Kaz7FlwSbxCVc3dRnBYJo6IYMRbOWCzx+qzNJwvZK
+#       2GJ5+JQwXG8JAgMBAAGjeDB2MB0GA1UdDgQWBBRelFfyVkYcaaNq+hWX9odu4z1E
+#       ETAfBgNVHSMEGDAWgBRelFfyVkYcaaNq+hWX9odu4z1EETAPBgNVHRMBAf8EBTAD
+#       AQH/MCMGA1UdEQQcMBqCGDE5Mi0xNjgtMTI4LTExNi5zc2xpcC5pbzANBgkqhkiG
+#       9w0BAQsFAAOCAgEA4iHkTKE4AtKoH/jtvOnL/zm1WmEkMknp3QSeBi7ePMaso7ST
+#       yMD9VT+JNcKtgZuGqS+WaRCU6PDl/ggegnCGNZyYGXuNtMFTUWxjC8dIVlXK8AkP
+#       pFvtlT35c7NGvbVAT7adYQZO4PxTzz+cYf4BdDXTnm3Wdx972Vh5hP9UIFCsCF0S
+#       QkNkNcgIjP5NEuTMycAmI+YpRhy2+Zet1rwSxAYKVsUwFn4xv0xbJq+oN2/hVfO3
+#       2HVQO+S1lc+IvXSSpKwIxi8Qm8DLchUr8SoSILO04VzNFKcNhrcDzqDPdPU03mNc
+#       M/gpfsux9BCRa+9vnwqtJbpcb2APIo3acQDxyUafEcRaQJlTY6MU/utm5Q3U9zcp
+#       MsyFFohQTUZblJtL5yRuyE3unAdXZieolS+GYTIwHX8LJ5q6wdyc5c7I824/VGvf
+#       LMPcWv6VgOSX2twNKrgTta+iATQL3q+Y5PEqOPtkWxQm5UQ5hIsnWLy02/1OCYxJ
+#       oiYzLA78euKVSs0qMZuzx36MuoCUmr41ZZ0wjcDl+kKF50y3M9aHQkm0kK56ssNE
+#       frVFBCVQiclKcJFlj0Qk2p1fTDJ1LOobtBmY21gSplFnkhVxYpaYiam1pbbDowmc
+#       lyR8C7wvEjQwSloD4tOHIw3hyJ1hvYAHWnDZK72xz1vDgFiPKfkxBcZwX8c=
+#       -----END CERTIFICATE-----
+#   imageContentSources:
+#   - mirrors:
+#     - 192-168-128-116.sslip.io:5000/ocp4
+#     source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
+#   - mirrors:
+#     - 192-168-128-116.sslip.io:5000/ocp4
+#     source: quay.io/openshift-release-dev/ocp-release
