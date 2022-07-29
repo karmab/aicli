@@ -1,5 +1,4 @@
-release_image: "registry.ci.openshift.org/ocp/release:4.11"
-disconnected_url: testk-disconnecter.ipv6only:5000
+# set OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE to something like 192-168-128-116.sslip.io:5000/ocp4:4.11.0-rc.6-x86_64
 masters: 3
 workers: 0
 api_ip: 192.168.128.253
@@ -117,50 +116,49 @@ static_network_config:
       next-hop-address: 192.168.128.1
       next-hop-interface: ens3
       table-id: 254
-hosts:
- - mac: de:ad:bb:ef:00:38
-   disk: sdb
+#hosts:
+# - mac: de:ad:bb:ef:00:38
+#   disk: sdb
 installconfig:
    additionalTrustBundle: |
        -----BEGIN CERTIFICATE-----
-       MIIGCzCCA/OgAwIBAgIUYwFxO7EeEDFL52wY1hoNingo3pgwDQYJKoZIhvcNAQEL
-       BQAwgYAxCzAJBgNVBAYTAlVTMQ8wDQYDVQQIDAZNYWRyaWQxFTATBgNVBAcMDFNh
-       biBCZXJuYXJkbzESMBAGA1UECgwJS2FybWFsYWJzMQ8wDQYDVQQLDAZHdWl0YXIx
-       JDAiBgNVBAMMG3Rlc3RrLWRpc2Nvbm5lY3Rlci5pcHY2b25seTAeFw0yMTA0MDgx
-       MDUzNDRaFw0yMjA0MDgxMDUzNDRaMIGAMQswCQYDVQQGEwJVUzEPMA0GA1UECAwG
-       TWFkcmlkMRUwEwYDVQQHDAxTYW4gQmVybmFyZG8xEjAQBgNVBAoMCUthcm1hbGFi
-       czEPMA0GA1UECwwGR3VpdGFyMSQwIgYDVQQDDBt0ZXN0ay1kaXNjb25uZWN0ZXIu
-       aXB2Nm9ubHkwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQDVHZNDqBkG
-       e0BAs7SxVQSGzbd8bvNwNPn8pP2IRnjL2Vohz4qi7bqOpxWDI5YIY9MWyRGYAzAZ
-       A/ik8ncDl324/6o8BxbdrB8TPL4+vIpYsNKbKR4i6W138CRa+opL3QjTA6P8YqyG
-       GR/Tcb1jfDSKE6Z2alDFhFWgyexSkmsojwiFZqo5VySeR/miV783aJbgju9xwxw+
-       O4lQt8OxIt8fSW+DYV0Wkt/nrUZUlAiIQMXIq8M+zLgp+SGVuFwLTIawoU97aU0V
-       42AE29fCZFMmb0zSEZG1N8Q+dcur8Vk5O/g+ZGjwBavecYp01D0sdRSUXE2WxaI0
-       iM8dHlTtXRWOIGrTHEG1AtTqnKFELMTE0d9WeHXW/5cFBL2F8M37iH8uw1MANVFC
-       0UjAwJsHaoZgGYJ+gHsurlARSKx5G+SCopnvmEM8rleCjqT0yXwBs7YVhfDQOB6U
-       ap+af+Dq1YpXLmbIm4tVYIOe+kohsx0x0mMGq3b48yUIG6QkMAJ++yjdJVVBX2EQ
-       6NmEWDkTJIQSXG9o5XgrznICZR3zmLgbMuemoncpDRXymWZ4O7Dv2F11vLOAWg/c
-       vfhuCMZF5s3ZSVExgCv84L98OzLmdPSljNoyUTOcM95MkXAcenJ0sucmO2D3RXq9
-       UM80PpiRYcDwVH8qtvlQ0j+nd6PbzZ7y9QIDAQABo3sweTAdBgNVHQ4EFgQUDLhV
-       vXxGQXm4xJ4ZW/pk+83ZgqYwHwYDVR0jBBgwFoAUDLhVvXxGQXm4xJ4ZW/pk+83Z
-       gqYwDwYDVR0TAQH/BAUwAwEB/zAmBgNVHREEHzAdght0ZXN0ay1kaXNjb25uZWN0
-       ZXIuaXB2Nm9ubHkwDQYJKoZIhvcNAQELBQADggIBAMw6LJFimWzXRdByw2bWZoul
-       jRToZoOZdf9YddRQdxg08mllVKTBoDZ0gb8+TF3/PMGnF5Oi6+Gxm1dsNDFv+Qdt
-       7zm3zWEqKP+u3g+35alNkQgMfgDV21OVQjYwVS5BijAWuQM6exRZYs1I++19YvLW
-       NCaLuUqVxMdQUnl00+4cgOT2P5lBt1vkL4SFiR2Hy92NrhAfsbnacJN+MY77luei
-       rxfUC9qLzU+7Wl5SgnxEkalDRMYWp9u8KuhWS5yeli158gdgLBeqfJr8EWksTG2m
-       vK6w9zKcFwhYTcq7NgZJPECOg7DnjbvwDP7VdqrO2UMvHrf31ziXW1O5bzWnkqxF
-       0q8mdjiJJi1tQK/Vxb9lS64P4bbFBlVo9sEES4JnfY3pKs0s/hdzrdSJJHbSt/lG
-       aqHNpx+kHsWgC8/athDOqo66S97u39vumdWheUWPsx8sitZ9MvA6tOGbnIPvm/hB
-       +Gfpn1pUCk2rYuMY40qiAgpJsi56wfA6j2s1aX7sDp4pIgaslfoxyxXvbcpAhhQo
-       hizMMC0XdZhlUj9df4PQdPPrckha/9rrYf1GjIO4tqPPxdqPACNhR9UwDd8qJarp
-       Ig5BBu37RdjCR7JGSF/2QisMmyKoTnyD9P+lFKTgGfsbbxrp7XdeLYY7xaFRzkuZ
-       gAedh+jkW6mjkMIu5RUU
+       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
        -----END CERTIFICATE-----
    imageContentSources:
    - mirrors:
-     - testk-disconnecter.ipv6only:5000/ocp4
+     - 192-168-128-116.sslip.io:5000/ocp4
      source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
    - mirrors:
-     - testk-disconnecter.ipv6only:5000/ocp4
-     source: registry.ci.openshift.org/ocp-release
+     - 192-168-128-116.sslip.io:5000/ocp4
+     source: quay.io/openshift-release-dev/ocp-release
