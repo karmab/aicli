@@ -4,6 +4,7 @@ from urllib.request import urlopen
 from urllib.parse import urlencode
 import json
 import os
+import sys
 import yaml
 from time import time
 import urllib3
@@ -102,3 +103,15 @@ def get_token(token, offlinetoken=None):
     with open(f"{aihome}/token.txt", 'w') as f:
         f.write(token)
     return token
+
+
+def confirm(message):
+    message = f"{message} [y/N]: "
+    try:
+        _input = input(message)
+        if _input.lower() not in ['y', 'yes']:
+            error("Leaving...")
+            sys.exit(1)
+    except:
+        sys.exit(1)
+    return

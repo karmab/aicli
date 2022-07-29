@@ -1,6 +1,6 @@
 import argparse
 from argparse import RawDescriptionHelpFormatter as rawhelp
-from ailib.common import get_overrides, info, error, warning
+from ailib.common import get_overrides, info, error, warning, confirm
 import json
 from prettytable import PrettyTable
 import os
@@ -73,6 +73,10 @@ def create_cluster(args):
 
 
 def delete_cluster(args):
+    yes = args.yes
+    yes_top = args.yes_top
+    if not yes and not yes_top:
+        confirm("Are you sure?")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     for cluster in args.clusters:
         info(f"Deleting cluster {cluster}")
@@ -176,6 +180,10 @@ def create_manifests(args):
 
 
 def delete_manifests(args):
+    yes = args.yes
+    yes_top = args.yes_top
+    if not yes and not yes_top:
+        confirm("Are you sure?")
     info(f"Delete manifests from Cluster {args.cluster}")
     directory = args.dir
     manifests = args.manifests
@@ -184,6 +192,10 @@ def delete_manifests(args):
 
 
 def delete_host(args):
+    yes = args.yes
+    yes_top = args.yes_top
+    if not yes and not yes_top:
+        confirm("Are you sure?")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
@@ -279,6 +291,10 @@ def create_infra_env(args):
 
 
 def delete_infra_env(args):
+    yes = args.yes
+    yes_top = args.yes_top
+    if not yes and not yes_top:
+        confirm("Are you sure?")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug)
     for infraenv in args.infraenvs:
         info(f"Deleting infraenv {infraenv}")
@@ -700,6 +716,7 @@ def cli():
                                                         help=clusterdelete_desc,
                                                         epilog=clusterdelete_epilog, formatter_class=rawhelp,
                                                         aliases=['deployment'])
+    clusterdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
     clusterdelete_parser.add_argument('clusters', metavar='CLUSTERS', nargs='*')
     clusterdelete_parser.set_defaults(func=delete_cluster)
 
@@ -778,6 +795,7 @@ def cli():
                                                           help=manifestsdelete_desc, epilog=manifestsdelete_epilog,
                                                           formatter_class=rawhelp, aliases=['manifests'])
     manifestsdelete_parser.add_argument('--dir', '--directory', help='directory with stored manifests')
+    manifestsdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
     manifestsdelete_parser.add_argument('cluster', metavar='CLUSTER')
     manifestsdelete_parser.add_argument('manifests', metavar='MANIFESTS', nargs='*')
     manifestsdelete_parser.set_defaults(func=delete_manifests)
@@ -872,6 +890,7 @@ def cli():
     infraenvdelete_parser = delete_subparsers.add_parser('infraenv', description=infraenvdelete_desc,
                                                          help=infraenvdelete_desc,
                                                          epilog=infraenvdelete_epilog, formatter_class=rawhelp)
+    infraenvdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
     infraenvdelete_parser.add_argument('infraenvs', metavar='INFRAENVS', nargs='*')
     infraenvdelete_parser.set_defaults(func=delete_infra_env)
 
@@ -1010,6 +1029,7 @@ def cli():
     hostdelete_parser = argparse.ArgumentParser(add_help=False)
     hostdelete_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     hostdelete_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    hostdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
     hostdelete_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
     hostdelete_parser.set_defaults(func=delete_host)
     delete_subparsers.add_parser('host', parents=[hostdelete_parser], description=hostdelete_desc, help=hostdelete_desc)
