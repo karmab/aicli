@@ -31,7 +31,7 @@ jobs:
          run: |
            kcli delete plan --yes $CLUSTER || true
            [ -f /var/www/html/$CLUSTER.iso ] && rm -rf /var/www/html/$CLUSTER.iso
-           aicli delete cluster $CLUSTER || true
+           aicli delete --yes cluster $CLUSTER || true
            systemctl restart sushy
 
     deploy-kcli-plan:
@@ -58,4 +58,4 @@ jobs:
         run: |
           kcli delete plan --yes $CLUSTER
           [ -f /var/www/html/$CLUSTER.iso ] && rm -rf /var/www/html/$CLUSTER.iso
-          aicli delete cluster $CLUSTER
+          aicli delete cluster --yes $CLUSTER
