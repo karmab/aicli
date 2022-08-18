@@ -824,6 +824,9 @@ class AssistedClient(object):
             if not httpsProxy.startswith('http'):
                 httpsProxy = f'http://{httpsProxy}'
             installconfig['proxy'] = {'httpProxy': httpProxy, 'httpsProxy': httpsProxy, 'noProxy': noproxy}
+        if 'tags' in overrides:
+            if isinstance(overrides['tags'], list):
+                overrides['tags'] = ','.join(sorted(overrides['tags']))
         if 'installconfig' in overrides and isinstance(overrides['installconfig'], dict):
             installconfig.update(overrides['installconfig'])
             del overrides['installconfig']
