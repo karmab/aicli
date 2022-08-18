@@ -162,6 +162,12 @@ class AssistedClient(object):
             if isinstance(tang_servers, list):
                 tang_servers = ','.join(tang_servers)
             overrides['disk_encryption'] = {"enable_on": "all", "mode": "tpmv2", "tang_servers": tang_servers}
+        tags = overrides.get('tags', [])
+        if not isinstance(tags, list):
+            tags = str(tags).split(',')
+        if 'aicli' not in tags:
+            tags.append('aicli')
+        overrides['tags'] = ','.join(sorted(tags))
 
     def set_default_infraenv_values(self, overrides):
         if 'cluster' in overrides:
