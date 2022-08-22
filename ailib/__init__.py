@@ -1205,7 +1205,7 @@ class AssistedClient(object):
             info("Getting release_image from openshift-install binary")
             release_image = os.popen('openshift-install version').readlines()[2].split(" ")[2].strip()
         else:
-            error("release_image is required")
+            error("release_image (or setting OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE) is required")
             sys.exit(1)
         overrides['release_image'] = release_image
         info(f"Using {release_image}")
