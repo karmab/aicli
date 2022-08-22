@@ -14,10 +14,10 @@ spec:
     name: openshift
   networking:
     clusterNetwork:
-    - cidr: 10.128.0.0/14
-      hostPrefix: 23
+    - cidr: %(cluster_network_cidr)s
+      hostPrefix: %(cluster_network_prefix)s
     serviceNetwork:
-    - 172.30.0.0/16
+    - %(service_network)s
   provisionRequirements:
     controlPlaneAgents: 3
     workerAgents: 0

@@ -1212,6 +1212,22 @@ class AssistedClient(object):
         agentfics = ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']
         self.set_default_values(overrides)
         overrides['cluster'] = cluster
+        api_ip = overrides.get('api_ip') or overrides.get('api_vip')
+        if 'cluster_networks' in overrides:
+            overrides['cluster_network_cidr'] = overrides['cluster_networks'][0]['cidr']
+            overrides['cluster_network_prefix'] = overrides['cluster_networks'][0]['hostPrefix']
+        elif api_ip is not None and ':' in api_ip:
+            overrides['cluster_network_cidr'] = 'fd01::/48'
+            overrides['cluster_network_prefix'] = 64
+        else:
+            overrides['cluster_network_cidr'] = '10.128.0.0/14'
+            overrides['cluster_network_prefix'] = 23
+        if 'service_networks' in overrides:
+            overrides['service_network'] = overrides['service_networks'][0]
+        elif api_ip is not None and ':' in api_ip:
+            overrides['service_network'] = 'fd02::/112'
+        else:
+            overrides['service_network'] = '172.30.0.0/16'
         if 'network_type' not in overrides:
             overrides['network_type'] = 'OVNKubernetes'
         if 'domain' not in overrides:
