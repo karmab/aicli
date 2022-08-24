@@ -21,7 +21,7 @@ import yaml
 
 
 default_cluster_params = {"openshift_version": "4.11", "base_dns_domain": "karmalabs.com", "vip_dhcp_allocation": False}
-default_infraenv_params = {"openshift_version": "4.11", "image_type": "minimal-iso"}
+default_infraenv_params = {"openshift_version": "4.11", "image_type": "full-iso"}
 SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub']
 
 

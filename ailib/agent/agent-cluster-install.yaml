@@ -3,8 +3,6 @@ kind: AgentClusterInstall
 metadata:
   name: test-agent-cluster-install
   namespace: cluster0
-  annotations:
-    agent-install.openshift.io/install-config-overrides: '{"networking":{"networkType":"%(network_type)s"}}'
 spec:
   apiVIP: %(api_vip)s
   ingressVIP: %(ingress_vip)s
@@ -13,6 +11,7 @@ spec:
   imageSetRef:
     name: openshift
   networking:
+    networkType: %(network_type)s
     clusterNetwork:
     - cidr: %(cluster_network_cidr)s
       hostPrefix: %(cluster_network_prefix)s
