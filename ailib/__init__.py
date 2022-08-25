@@ -54,7 +54,8 @@ class AssistedClient(object):
                 sys.exit(1)
             self.config.key_file = key_file
         self.config.debug = debug
-        self.saas = True if url in ['https://api.openshift.com', 'https://api.stage.openshift.com'] else False
+        self.saas = True if url in ['https://api.openshift.com', 'https://api.stage.openshift.com',
+                                    'https://api.integration.openshift.com'] else False
         proxies = urllib.request.getproxies()
         if self.saas and proxies:
             proxy = proxies.get('https') or proxies.get('http')

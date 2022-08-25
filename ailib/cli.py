@@ -680,7 +680,8 @@ def cli():
     parser = argparse.ArgumentParser(description='Assisted installer assistant')
     parser.add_argument('-d', '--debug', action='store_true')
     parser.add_argument('-o', '--output', choices=['json', 'name', 'yaml'], help='Format of the output')
-    parser.add_argument('--staging', action='store_true', default=bool(os.environ.get('STAGING', "")))
+    parser.add_argument('--staging', action='store_true', default=bool(os.environ.get('AI_STAGING', "")))
+    parser.add_argument('--integration', action='store_true', default=bool(os.environ.get('AI_INTEGRATION', "")))
     parser.add_argument('-U', '--url', default=os.environ.get('AI_URL'))
     parser.add_argument('--token', default=os.environ.get('AI_TOKEN'))
     parser.add_argument('--offlinetoken', default=os.environ.get('AI_OFFLINETOKEN'))
@@ -1198,7 +1199,12 @@ def cli():
                 os._exit(0)
         os._exit(0)
     if args.url is None:
-        args.url = "https://api.openshift.com" if not args.staging else "https://api.stage.openshift.com"
+        if args.staging:
+            args.url = "https://api.stage.openshift.com"
+        elif args.integration:
+            args.url = "https://api.integration.openshift.com"
+        else:
+            args.url = "https://api.openshift.com"
     args.func(args)
 
 
