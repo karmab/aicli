@@ -207,7 +207,11 @@ class AssistedClient(object):
             for entry in static_network_config:
                 interface_map = []
                 mac_interface_map = entry.get('mac_interface_map', [])
-                for interface in entry['interfaces']:
+                interfaces = entry.get('interfaces', [])
+                if not interfaces:
+                    error("You need to provide a list of interfaces")
+                    sys.exit(1)
+                for interface in interfaces:
                     bond = True if interface.get('type', 'ethernet') == 'bond' else False
                     if not bond:
                         logical_nic_name, mac_address = interface['name'], interface['mac-address']
@@ -1292,7 +1296,11 @@ class AssistedClient(object):
                                  'labels': {'cluster0-nmstate-label-name': 'cluster0-nmstate-label-value'}}}
                 network_data['spec'] = {'config': entry}
                 mac_interface_map = entry.get('mac_interface_map', [])
-                for interface in entry['interfaces']:
+                interfaces = entry.get('interfaces', [])
+                if not interfaces:
+                    error("You need to provide a list of interfaces")
+                    sys.exit(1)
+                for interface in interfaces:
                     ethernet = True if interface.get('type', 'ethernet') == 'ethernet' else False
                     if not mac_interface_map:
                         if ethernet:
