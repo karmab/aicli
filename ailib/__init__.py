@@ -1171,7 +1171,7 @@ class AssistedClient(object):
         info(f"Setting hosts_number to {hosts_number}")
         self.wait_hosts(infraenv, hosts_number, filter_installed=True)
         bad_hostnames = [h['id'] for h in self.list_hosts() if h['cluster_id'] == cluster_id and
-                         h['requested_hostname'] == 'localhost' or h['requested_hostname'] == h['id']]
+                         h['requested_hostname'].startswith('localhost') or h['requested_hostname'] == h['id']]
         for index, host in enumerate(bad_hostnames):
             role = 'master' if index < 3 else 'worker'
             self.update_host(host, {'name': f"{cluster}-{role}-{index}"})
