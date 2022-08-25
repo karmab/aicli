@@ -288,13 +288,20 @@ def list_hosts(args):
     print(hoststable)
 
 
-def start_hosts(args):
+def boot_hosts(args):
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     hostnames = args.hostnames
-    ai.start_hosts(overrides, hostnames=hostnames)
+    ai.boot_hosts(overrides, hostnames=hostnames)
+
+
+def start_hosts(args):
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
+                        ca=args.ca, cert=args.cert, key=args.key)
+    hostnames = args.hostnames
+    ai.start_hosts(hostnames=hostnames)
 
 
 def create_infra_env(args):
@@ -690,9 +697,13 @@ def cli():
     parser.add_argument('--key', default=os.environ.get('AI_KEY'))
     subparsers = parser.add_subparsers(metavar='', title='Available Commands')
 
-    bind_desc = 'bind Object'
+    bind_desc = 'Bind Object'
     bind_parser = subparsers.add_parser('bind', description=bind_desc, help=bind_desc)
     bind_subparsers = bind_parser.add_subparsers(metavar='', dest='subcommand_bind')
+
+    boot_desc = 'boot Object'
+    boot_parser = subparsers.add_parser('boot', description=boot_desc, help=boot_desc)
+    boot_subparsers = boot_parser.add_subparsers(metavar='', dest='subcommand_boot')
 
     create_desc = 'Create Object'
     create_parser = subparsers.add_parser('create', description=create_desc, help=create_desc, aliases=['add'])
@@ -1078,6 +1089,16 @@ def cli():
     hostbind_parser.set_defaults(func=bind_host)
     bind_subparsers.add_parser('host', parents=[hostbind_parser], description=hostbind_desc, help=hostbind_desc)
 
+    hostsboot_desc = 'Boot Hosts through redfish'
+    hostsboot_epilog = None
+    hostsboot_parser = boot_subparsers.add_parser('host', description=hostsboot_desc,
+                                                  help=hostsboot_desc, epilog=hostsboot_epilog, formatter_class=rawhelp,
+                                                  aliases=['hosts'])
+    hostsboot_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    hostsboot_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    hostsboot_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
+    hostsboot_parser.set_defaults(func=boot_hosts)
+
     hostdelete_desc = 'Delete host'
     hostdelete_parser = argparse.ArgumentParser(add_help=False)
     hostdelete_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
@@ -1105,7 +1126,7 @@ def cli():
     list_subparsers.add_parser('host', parents=[hostslist_parser], description=hostslist_desc,
                                help=hostslist_desc, aliases=['hosts'])
 
-    hostsstart_desc = 'Start Hosts'
+    hostsstart_desc = 'Start (day2) Hosts'
     hostsstart_epilog = None
     hostsstart_parser = start_subparsers.add_parser('host', description=hostsstart_desc,
                                                     help=hostsstart_desc,

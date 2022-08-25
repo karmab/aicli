@@ -896,6 +896,20 @@ class AssistedClient(object):
         else:
             self.client.v2_install_cluster(cluster_id=cluster_id)
 
+    def start_hosts(self, hostnames=[]):
+        for infra_env in self.client.list_infra_envs():
+            infra_env_id = infra_env['id']
+            infra_env_hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+            hosts = [h for h in infra_env_hosts if h['requested_hostname'] in hostnames or h['id'] in hostnames]
+            if hosts:
+                host = hosts[0]
+                if host['status'] in ['installed', 'added-to-existing-cluster']:
+                    info(f"Skipping installed Host {host['requested_hostname']}")
+                else:
+                    info(f"Installing Host {host['requested_hostname']}")
+                    host_id = host['id']
+                    self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
+
     def stop_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         self.client.v2_reset_cluster(cluster_id=cluster_id)
@@ -1166,7 +1180,7 @@ class AssistedClient(object):
         if download_iso_cmd is not None:
             call(download_iso_cmd, shell=True)
         if 'hosts' in overrides:
-            self.start_hosts(overrides)
+            self.boot_hosts(overrides)
         if 'hosts_number' in overrides:
             hosts_number = overrides.get('hosts_number')
         elif 'hosts' in overrides and isinstance(overrides['hosts'], list):
@@ -1187,9 +1201,9 @@ class AssistedClient(object):
         info(f"Downloading Kubeconfig for Cluster {cluster} in current directory")
         self.download_kubeconfig(cluster, '.')
 
-    def start_hosts(self, overrides, hostnames=[]):
+    def boot_hosts(self, overrides, hostnames=[]):
         if 'hosts' not in overrides:
-            warning("No hosts to start found in your parameter file")
+            warning("No hosts to boot found in your parameter file")
             return
         iso_url = overrides['iso_url']
         if iso_url is None:
@@ -1211,7 +1225,7 @@ class AssistedClient(object):
             bmc_model = host.get('bmc_model') or overrides.get('bmc_model', 'dell')
             if bmc_url is not None and bmc_user is not None and bmc_password is not None:
                 msg = host['name'] if 'name' in host else f"with url {bmc_url}"
-                info(f"Starting Host {msg}")
+                info(f"Booting Host {msg}")
                 red = Redfish(bmc_url, bmc_user, bmc_password, model=bmc_model)
                 try:
                     red.set_iso(iso_url)
