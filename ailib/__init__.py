@@ -785,17 +785,17 @@ class AssistedClient(object):
 
     def update_cluster(self, name, overrides):
         cluster_id = self.get_cluster_id(name)
-        info = self.info_cluster(name)
+        info_cluster = self.info_cluster(name)
         if 'api_ip' in overrides:
             overrides['api_vip'] = overrides['api_ip']
         if 'ingress_ip' in overrides:
             overrides['ingress_vip'] = overrides['ingress_ip']
         if 'api_vip' in overrides:
-            api_vip = info.api_vip
+            api_vip = info_cluster.api_vip
             if api_vip is not None and overrides['api_vip'] == api_vip:
                 del overrides['api_vip']
         if 'ingress_vip' in overrides:
-            ingress_vip = info.ingress_vip
+            ingress_vip = info_cluster.ingress_vip
             if ingress_vip is not None and overrides['ingress_vip'] == ingress_vip:
                 del overrides['ingress_vip']
         if 'pull_secret' in overrides:
@@ -880,6 +880,14 @@ class AssistedClient(object):
             self.upload_manifests(name, directory=overrides['manifests'], openshift=False)
         if 'openshift_manifests' in overrides:
             self.upload_manifests(name, directory=overrides['openshift_manifests'], openshift=True)
+        if 'openshift_manifests' in overrides:
+            self.upload_manifests(name, directory=overrides['openshift_manifests'], openshift=True)
+        if 'openshift_manifests' in overrides:
+            self.upload_manifests(name, directory=overrides['openshift_manifests'], openshift=True)
+        if 'day2' in overrides and isinstance(overrides['day2'], bool) and overrides['day2']\
+           and info_cluster.status == "installed":
+            info(f"Converting cluster {name} to day2")
+            self.client.transform_cluster_to_day2(cluster_id)
 
     def start_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
