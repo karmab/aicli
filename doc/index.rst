@@ -60,8 +60,11 @@ The container engine can also be docker.
 How to use
 ==========
 
+Configuration
+-------------
+
 Setting target url
-------------------
+~~~~~~~~~~~~~~~~~~
 
 by default, the tool targets the SAAS (which means providing an offline token)
 
@@ -76,6 +79,13 @@ the flag ``--staging`` can be set to target the internal staging environment
 Alternatively, set the env variable STAGING to true
 
 In container mode, that would be ``-e STAGING=true``
+
+TLS settings
+~~~~~~~~~~~~
+
+You can use the flag ca, cert and key to provide ssl ca content, an ssl cert and key path to use for tls purpose
+
+Alternatively, set the env variable AI_CA, AI_CERT and AI_KEY
 
 Basic usage
 -----------

@@ -26,11 +26,33 @@ SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub
 
 
 class AssistedClient(object):
-    def __init__(self, url='https://api.openshift.com', token=None, offlinetoken=None, debug=False):
+    def __init__(self, url='https://api.openshift.com', token=None, offlinetoken=None, debug=False,
+                 ca=None, cert=None, key=None):
         self.url = url
         self.config = Configuration()
         self.config.host = self.url + "/api/assisted-install"
         self.config.verify_ssl = False
+        if ca is not None:
+            if '-----BEGIN CERTIFICATE-----' not in ca:
+                ca_file = os.path.expanduser(ca)
+                if os.path.exists(ca_file):
+                    ca = open(ca_file).read()
+                else:
+                    error(f'{ca_file} file not found')
+                    sys.exit(1)
+            self.config.ssl_ca_cert = ca
+        if cert is not None:
+            cert_file = os.path.expanduser(cert)
+            if not os.path.exists(cert_file):
+                error(f'{cert_file} file not found')
+                sys.exit(1)
+            self.config.cert_file = cert_file
+        if key is not None:
+            key_file = os.path.expanduser(key)
+            if not os.path.exists(key_file):
+                error(f'{key_file} file not found')
+                sys.exit(1)
+            self.config.key_file = key_file
         self.config.debug = debug
         self.saas = True if url in ['https://api.openshift.com', 'https://api.stage.openshift.com'] else False
         proxies = urllib.request.getproxies()
