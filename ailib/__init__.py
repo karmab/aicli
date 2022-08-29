@@ -1322,6 +1322,8 @@ class AssistedClient(object):
                 workers = 0
             agent_install_data['spec']['provisionRequirements']['controlPlaneAgents'] = masters
             agent_install_data['spec']['provisionRequirements']['workerAgents'] = workers
+            if 'machine_networks' in overrides:
+                agent_install_data['spec']['networking']['machineNetwork'] = overrides['machine_networks']
             dest.write(yaml.safe_dump(agent_install_data))
         for fic in ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']:
             with open(f"{agentdir}/{fic}") as ori:

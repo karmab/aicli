@@ -10,6 +10,9 @@ cluster_networks:
 service_networks:
 - 172.30.0.0/16
 - fd02::/112
+machine_networks:
+- cidr: 192.168.134.0/24
+- cidr: 2620:52:0:1304::/64
 static_network_config:
 - interfaces:
     - name: ens3
