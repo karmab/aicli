@@ -1258,53 +1258,68 @@ class AssistedClient(object):
             sys.exit(1)
         overrides['release_image'] = release_image
         info(f"Using {release_image}")
-        agentfics = ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']
         self.set_default_values(overrides)
         overrides['cluster'] = cluster
         api_ip = overrides.get('api_ip') or overrides.get('api_vip')
         if 'cluster_networks' in overrides:
-            overrides['cluster_network_cidr'] = overrides['cluster_networks'][0]['cidr']
-            overrides['cluster_network_prefix'] = overrides['cluster_networks'][0]['hostPrefix']
+            cluster_networks = overrides['cluster_networks']
         elif api_ip is not None and ':' in api_ip:
-            overrides['cluster_network_cidr'] = 'fd01::/48'
-            overrides['cluster_network_prefix'] = 64
+            cluster_networks = [{'cidr': 'fd01::/48', 'hostPrefix': 64}]
         else:
-            overrides['cluster_network_cidr'] = '10.128.0.0/14'
-            overrides['cluster_network_prefix'] = 23
+            cluster_networks = [{'cidr': '10.128.0.0/14', 'hostPrefix': 23}]
         if 'service_networks' in overrides:
-            overrides['service_network'] = overrides['service_networks'][0]
+            service_networks = overrides['service_networks']
         elif api_ip is not None and ':' in api_ip:
-            overrides['service_network'] = 'fd02::/112'
+            service_networks = ['fd02::/112']
         else:
-            overrides['service_network'] = '172.30.0.0/16'
-        if 'network_type' not in overrides:
-            overrides['network_type'] = 'OVNKubernetes'
+            service_networks = ['172.30.0.0/16']
+        network_type = overrides.get('network_type', 'OVNKubernetes')
         if 'domain' not in overrides:
             overrides['domain'] = overrides.get('base_dns_domain') or 'karmalabs.com'
         static_network_config = overrides.get('static_network_config', [])
         if not static_network_config:
             error("static_network_config is required")
             sys.exit(1)
-        if not overrides.get('sno', False):
-            agentfics.append('agent-cluster-install.yaml')
-            if overrides.get('masters') is None:
-                overrides['masters'] = 3
-                warning("Forcing masters to 3")
-            if overrides.get('workers') is None:
-                overrides['workers'] = 0
-                warning("Forcing workers to 0")
-            if overrides.get('api_vip') is None:
-                error("api_vip is required")
-                sys.exit(1)
-            if overrides.get('ingress_vip') is None:
-                error("ingress_vip is required")
-                sys.exit(1)
-        else:
-            agentfics.append('agent-cluster-install-sno.yaml')
         agentdir = os.path.dirname(AssistedClient.create_cluster.__code__.co_filename) + '/agent'
         if not os.path.isdir(path):
             os.mkdir(path)
-        for fic in agentfics:
+        with open(f"{path}/agent-cluster-install.yaml", 'w') as dest:
+            ssh_public_key = overrides['ssh_public_key']
+            agent_install_data = {'apiVersion': 'extensions.hive.openshift.io/v1beta1', 'kind': 'AgentClusterInstall',
+                                  'metadata': {'name': 'test-agent-cluster-install', 'namespace': 'cluster0'},
+                                  'spec': {'clusterDeploymentRef': {'name': cluster}, 'imageSetRef':
+                                           {'name': 'openshift'}, 'networking': {'networkType': network_type,
+                                                                                 'clusterNetwork': cluster_networks,
+                                                                                 'serviceNetwork': service_networks},
+                                           'provisionRequirements': {}, 'sshPublicKey': ssh_public_key}}
+            if not overrides.get('sno', False):
+                if overrides.get('masters') is None:
+                    masters = 3
+                    warning("Forcing masters to 3")
+                else:
+                    masters = overrides['masters']
+                if overrides.get('workers') is None:
+                    workers = 0
+                    warning("Forcing workers to 0")
+                else:
+                    workers = overrides['workers']
+                if overrides.get('api_vip') is None:
+                    error("api_vip is required")
+                    sys.exit(1)
+                else:
+                    agent_install_data['spec']['apiVIP'] = overrides['api_vip']
+                if overrides.get('ingress_vip') is None:
+                    error("ingress_vip is required")
+                    sys.exit(1)
+                else:
+                    agent_install_data['spec']['ingressVIP'] = overrides['ingress_vip']
+            else:
+                masters = 1
+                workers = 0
+            agent_install_data['spec']['provisionRequirements']['controlPlaneAgents'] = masters
+            agent_install_data['spec']['provisionRequirements']['workerAgents'] = workers
+            dest.write(yaml.safe_dump(agent_install_data))
+        for fic in ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']:
             with open(f"{agentdir}/{fic}") as ori:
                 data = ori.read()
                 target_fic = fic.replace('-sno', '')

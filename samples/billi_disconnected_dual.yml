@@ -1,0 +1,121 @@
+masters: 3
+workers: 0
+api_ip: 2620:52:0:1304::2
+ingress_ip: 2620:52:0:1304::3
+cluster_networks:
+- cidr: fd01::/48
+  hostPrefix: 64
+- cidr: 10.132.0.0/14
+  hostPrefix: 2
+service_networks:
+- fd02::/112
+- 172.30.0.0/16
+static_network_config:
+- interfaces:
+    - name: ens3
+      type: ethernet
+      state: up
+      ethernet:
+        auto-negotiation: true
+        duplex: full
+        speed: 1000
+      ipv4:
+        address:
+        - ip: 192.168.134.21
+          prefix-length: 24
+        enabled: true
+      ipv6:
+        address:
+        - ip: 2620:52:0:1304::21
+          prefix-length: 64
+        enabled: true
+      mtu: 1500
+      mac-address: de:ad:bb:ef:00:21
+  dns-resolver:
+    config:
+      server:
+      - 2620:52:0:1304::1
+  routes:
+    config:
+    - destination: 192.168.134.0/24
+      next-hop-address: 192.168.134.1
+      next-hop-interface: ens3
+    - destination: 0.0.0.0/0
+      next-hop-address: 192.168.134.1
+      next-hop-interface: ens3
+      table-id: 25
+    - destination: ::/0
+      next-hop-address: 2620:52:0:1304::1
+      next-hop-interface: ens3
+- interfaces:
+    - name: ens3
+      type: ethernet
+      state: up
+      ethernet:
+        auto-negotiation: true
+        duplex: full
+        speed: 1000
+      ipv4:
+        address:
+        - ip: 192.168.134.22
+          prefix-length: 24
+        enabled: true
+      ipv6:
+        address:
+        - ip: 2620:52:0:1304::22
+          prefix-length: 64
+        enabled: true
+      mtu: 1500
+      mac-address: de:ad:bb:ef:00:22
+  dns-resolver:
+    config:
+      server:
+      - 2620:52:0:1304::1
+  routes:
+    config:
+    - destination: 192.168.134.0/24
+      next-hop-address: 192.168.134.1
+      next-hop-interface: ens3
+    - destination: 0.0.0.0/0
+      next-hop-address: 192.168.134.1
+      next-hop-interface: ens3
+      table-id: 25
+    - destination: ::/0
+      next-hop-address: 2620:52:0:1304::1
+      next-hop-interface: ens3
+- interfaces:
+    - name: ens3
+      type: ethernet
+      state: up
+      ethernet:
+        auto-negotiation: true
+        duplex: full
+        speed: 1000
+      ipv4:
+        address:
+        - ip: 192.168.134.23
+          prefix-length: 24
+        enabled: true
+      ipv6:
+        address:
+        - ip: 2620:52:0:1304::23
+          prefix-length: 64
+        enabled: true
+      mtu: 1500
+      mac-address: de:ad:bb:ef:00:23
+  dns-resolver:
+    config:
+      server:
+      - 2620:52:0:1304::1
+  routes:
+    config:
+    - destination: 192.168.134.0/24
+      next-hop-address: 192.168.134.1
+      next-hop-interface: ens3
+    - destination: 0.0.0.0/0
+      next-hop-address: 192.168.134.1
+      next-hop-interface: ens3
+      table-id: 25
+    - destination: ::/0
+      next-hop-address: 2620:52:0:1304::1
+      next-hop-interface: ens3
