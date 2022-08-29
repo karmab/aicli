@@ -676,6 +676,8 @@ class AssistedClient(object):
             hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
             matchingids = [host['id'] for host in hosts
                            if host['requested_hostname'] == hostname or host['id'] == hostname]
+            if matchingids:
+                infra_envs[infra_env_id] = matchingids
         else:
             for infra_env in self.client.list_infra_envs():
                 infra_env_id = infra_env['id']
