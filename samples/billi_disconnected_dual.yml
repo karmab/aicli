@@ -1,7 +1,7 @@
 masters: 3
 workers: 0
-api_ip: 2620:52:0:1304::2
-ingress_ip: 2620:52:0:1304::3
+api_ip: 192.168.134.253
+ingress_ip: 192.168.134.252
 cluster_networks:
 - cidr: 10.132.0.0/14
   hostPrefix: 23
@@ -46,7 +46,7 @@ static_network_config:
     - destination: 0.0.0.0/0
       next-hop-address: 192.168.134.1
       next-hop-interface: ens3
-      table-id: 25
+      table-id: 254
     - destination: ::/0
       next-hop-address: 2620:52:0:1304::1
       next-hop-interface: ens3
@@ -82,7 +82,7 @@ static_network_config:
     - destination: 0.0.0.0/0
       next-hop-address: 192.168.134.1
       next-hop-interface: ens3
-      table-id: 25
+      table-id: 254
     - destination: ::/0
       next-hop-address: 2620:52:0:1304::1
       next-hop-interface: ens3
@@ -118,7 +118,7 @@ static_network_config:
     - destination: 0.0.0.0/0
       next-hop-address: 192.168.134.1
       next-hop-interface: ens3
-      table-id: 25
+      table-id: 254
     - destination: ::/0
       next-hop-address: 2620:52:0:1304::1
       next-hop-interface: ens3
