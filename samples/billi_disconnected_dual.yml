@@ -3,13 +3,13 @@ workers: 0
 api_ip: 2620:52:0:1304::2
 ingress_ip: 2620:52:0:1304::3
 cluster_networks:
+- cidr: 10.132.0.0/14
+  hostPrefix: 23
 - cidr: fd01::/48
   hostPrefix: 64
-- cidr: 10.132.0.0/14
-  hostPrefix: 2
 service_networks:
-- fd02::/112
 - 172.30.0.0/16
+- fd02::/112
 static_network_config:
 - interfaces:
     - name: ens3
