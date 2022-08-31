@@ -3,6 +3,8 @@ masters: 3
 workers: 0
 api_ip: 192.168.128.253
 ingress_ip: 192.168.128.252
+machine_networks:
+- cidr: 192.168.128.0/24
 static_network_config:
 - interfaces:
     - name: ens3

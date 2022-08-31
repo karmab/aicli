@@ -1405,8 +1405,8 @@ class AssistedClient(object):
                     agent_install_data['platform']['baremetal']['apiVIP'] = api_vip
                 if ingress_vip is not None:
                     agent_install_data['platform']['baremetal']['ingressVIP'] = ingress_vip
-                if machine_networks is not None:
-                    agent_install_data['networking']['machineNetwork'] = overrides['machine_networks']
+                if machine_networks:
+                    agent_install_data['networking']['machineNetwork'] = machine_networks
                 dest.write(yaml.safe_dump(agent_install_data))
                 if ca is not None:
                     dest.write('additionalTrustBundle: |\n  %s' % ca.replace('\n', '\n  ').rstrip())
@@ -1426,8 +1426,8 @@ class AssistedClient(object):
                     agent_install_data['spec']['apiVIP'] = api_vip
                 if ingress_vip is not None:
                     agent_install_data['spec']['ingressVIP'] = ingress_vip
-                if machine_networks is not None:
-                    agent_install_data['spec']['networking']['machineNetwork'] = overrides['machine_networks']
+                if machine_networks:
+                    agent_install_data['spec']['networking']['machineNetwork'] = machine_networks
                 dest.write(yaml.safe_dump(agent_install_data))
             for fic in ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']:
                 with open(f"{agentdir}/{fic}") as ori:

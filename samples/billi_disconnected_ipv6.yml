@@ -7,6 +7,8 @@ cluster_networks:
   hostPrefix: 64
 service_networks:
  - fd02::/112
+machine_networks:
+- cidr: 2620:52:0:1303::/64
 static_network_config:
 - interfaces:
     - name: ens3
