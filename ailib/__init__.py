@@ -1244,7 +1244,7 @@ class AssistedClient(object):
                 except Exception as e:
                     warning(f"Hit {e} when plugging iso to host {msg}")
 
-    def create_cluster_manifests(self, cluster, overrides={}, path='cluster-manifests', simplified=False):
+    def create_agent_manifests(self, cluster, overrides={}, path='.', ztp=False):
         disconnected_url = None
         if overrides.get('masters', 3) == 1 and overrides.get('workers', 0) == 0:
             overrides['sno'] = True
@@ -1314,7 +1314,7 @@ class AssistedClient(object):
             api_vip = None
             ingress_vip = None
         machine_networks = overrides.get('machine_networks', [])
-        if simplified and not machine_networks:
+        if ztp and not machine_networks:
             error("machine_network is required for generating install config yaml")
             sys.exit(1)
         ssh_public_key = overrides['ssh_public_key']
@@ -1348,7 +1348,7 @@ class AssistedClient(object):
                     if 'name' in host:
                         new_data['name'] = host['name']
                     param_hosts.append(new_data)
-        if simplified:
+        if not ztp:
             custom_hosts = []
             domain = overrides['domain']
             pull_secret = overrides['pull_secret']

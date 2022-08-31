@@ -670,13 +670,15 @@ def list_extra_keywords(args):
     print(keywordstable)
 
 
-def create_cluster_manifests(args):
-    info(f"Creating cluster manifests for {args.cluster} in {args.path}")
+def create_agent_manifests(args):
+    path = args.path or args.cluster
+    manifests = 'ztp like agent manifests' if args.ztp else 'agent manifests'
+    info(f"Creating {manifests} for {args.cluster} in path")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.create_cluster_manifests(args.cluster, overrides, path=args.path, simplified=args.simplified)
+    ai.create_agent_manifests(args.cluster, overrides, path=path, ztp=args.ztp)
 
 
 def cli():
@@ -750,6 +752,20 @@ def cli():
     wait_parser = subparsers.add_parser('wait', description=wait_desc, help=wait_desc)
     wait_subparsers = wait_parser.add_subparsers(metavar='', dest='subcommand_wait')
 
+    agentmanifestscreate_desc = 'Create agent based installer manifests'
+    agentmanifestscreate_epilog = None
+    agentmanifestscreate_parser = create_subparsers.add_parser('agent-manifests',
+                                                               description=agentmanifestscreate_desc,
+                                                               help=agentmanifestscreate_desc,
+                                                               epilog=agentmanifestscreate_epilog,
+                                                               formatter_class=rawhelp)
+    agentmanifestscreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    agentmanifestscreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    agentmanifestscreate_parser.add_argument('--path', metavar='PATH', help='Where to store generated assets')
+    agentmanifestscreate_parser.add_argument('-z', '--ztp', action='store_true', help='Generate ZTP like manifests')
+    agentmanifestscreate_parser.add_argument('cluster', metavar='CLUSTER')
+    agentmanifestscreate_parser.set_defaults(func=create_agent_manifests)
+
     clustercreate_desc = 'Create Cluster'
     clustercreate_epilog = None
     clustercreate_parser = create_subparsers.add_parser('cluster', description=clustercreate_desc,
@@ -759,22 +775,6 @@ def cli():
     clustercreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
     clustercreate_parser.add_argument('cluster', metavar='CLUSTER')
     clustercreate_parser.set_defaults(func=create_cluster)
-
-    clustermanifestscreate_desc = 'Create ZTP Cluster manifests'
-    clustermanifestscreate_epilog = None
-    clustermanifestscreate_parser = create_subparsers.add_parser('cluster-manifests',
-                                                                 description=clustermanifestscreate_desc,
-                                                                 help=clustermanifestscreate_desc,
-                                                                 epilog=clustermanifestscreate_epilog,
-                                                                 formatter_class=rawhelp)
-    clustermanifestscreate_parser.add_argument('-s', '--simplified', action='store_true',
-                                               help='Generate install-config.yaml and agent-config.yaml')
-    clustermanifestscreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    clustermanifestscreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
-    clustermanifestscreate_parser.add_argument('--path', metavar='PATH', default='cluster-manifests',
-                                               help='Where to store generated assets')
-    clustermanifestscreate_parser.add_argument('cluster', metavar='CLUSTER')
-    clustermanifestscreate_parser.set_defaults(func=create_cluster_manifests)
 
     clusterdelete_desc = 'Delete Cluster'
     clusterdelete_epilog = None

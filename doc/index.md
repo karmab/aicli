@@ -442,13 +442,19 @@ aicli modules are available at [https://github.com/karmab/ansible-aicli-modules]
 - ai\_infraenv\_info
 - ai\_host\_info
 
-## ZTP Integration
+## Billi/ZTP Integration
 
 ZTP Workflow is a deployment methodology that relies on Assisted Installer run as an operator to drive the deployment in a kubernetes native way.
 
-Although you shouldn't need aicli at all in that case, a subcommand `create cluster-manifests` is available to generate the YAML manifests that are typically used and taking as input an aicli parameter file
+Billi is another way to deploy which involves running Assisted Installer in an ephemeral way on one of the target nodes.
 
-For instance, using the sample [bili.yml](samples/bili.yml), the command `aicli create cluster-manifests --pf samples/bili.yml` will generate the following objects:
+Although you shouldn't need aicli at all for those use cases, a subcommand `create cluster-manifests` is available to generate the YAML manifests that are typically used and taking as input an aicli parameter file
+
+For instance, using the sample [bili.yml](samples/bili.yml), the command `aicli create agent-manifests --pf samples/bili.yml` will generate the following objects ready to be used with Billi
+- install-config.yaml
+- agent-config.yaml
+
+With the flag `--ztp`, the following objects will be generated that could be used as input in ZTP workflow
 
 - agent-cluster-install.yaml
 - cluster-deployment.yaml
@@ -456,5 +462,3 @@ For instance, using the sample [bili.yml](samples/bili.yml), the command `aicli 
 - infraenv.yaml
 - nmstateconfig.yaml
 - pull-secret.yaml
-
-This also plays well with openshift agent based install mechanism.
