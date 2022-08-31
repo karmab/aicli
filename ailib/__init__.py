@@ -1335,14 +1335,19 @@ class AssistedClient(object):
                           'source': 'quay.io/openshift-release-dev/ocp-release'},
                          {'mirrors': [f"{disconnected_url}/ocp4"],
                           'source': 'quay.io/openshift-release-dev/ocp-v4.0-art-dev'}]
-        disk_hosts = []
+        param_hosts = []
         if 'hosts' in overrides:
             for index, host in enumerate(overrides['hosts']):
-                if 'mac' not in host or 'disk' not in host:
+                if 'mac' not in host:
                     warning(f"Skipping entry {index} in hosts array")
                     continue
                 else:
-                    disk_hosts.append({'mac': host['mac'], 'disk': f"/dev/{os.path.basename(host['disk'])}"})
+                    new_data = {'mac': host['mac']}
+                    if 'disk' in host:
+                        new_data['disk'] = f"/dev/{os.path.basename(host['disk'])}"
+                    if 'name' in host:
+                        new_data['name'] = host['name']
+                    param_hosts.append(new_data)
         if simplified:
             custom_hosts = []
             domain = overrides['domain']
@@ -1351,7 +1356,7 @@ class AssistedClient(object):
                 agent_config = {'kind': 'AgentConfig', 'apiVersion': 'v1alpha1', 'metadata': {'name': 'billi'}}
                 hosts = []
                 for index, entry in enumerate(static_network_config):
-                    node_name = f"node-{index}"
+                    node_name = f"{cluster}-{index}"
                     new_host = {'hostname': node_name}
                     new_host['networkConfig'] = entry
                     mac_interface_map = entry.get('mac_interface_map', [])
@@ -1380,9 +1385,12 @@ class AssistedClient(object):
                     hosts.append(new_host)
                     custom_host = {'name': node_name, 'bootMACAddress': mac_address}
                     custom_host['role'] = 'master' if index < masters else 'worker'
-                    for disk_host in disk_hosts:
-                        if disk_host['mac'] == mac_address:
-                            custom_host['rootDeviceHints'] = {'deviceName': disk_host['disk']}
+                    for param_host in param_hosts:
+                        if param_host['mac'] == mac_address:
+                            if 'disk' in param_host:
+                                custom_host['rootDeviceHints'] = {'deviceName': param_host['disk']}
+                            if 'name' in param_host:
+                                custom_host['name'] = param_host['name']
                             break
                     custom_hosts.append(custom_host)
                     if index == 0:
@@ -1437,7 +1445,7 @@ class AssistedClient(object):
                         dest.write(data % overrides)
             with open(f"{path}/nmstateconfig.yaml", 'w') as dest:
                 for index, entry in enumerate(static_network_config):
-                    node_name = f"node-{index}"
+                    node_name = f"{cluster}-{index}"
                     network_data = {'apiVersion': 'agent-install.openshift.io/v1beta1',
                                     'kind': 'NMStateConfig', 'metadata':
                                     {'name': node_name, 'namespace': 'openshift-machine-api',
@@ -1470,10 +1478,10 @@ class AssistedClient(object):
                     for icsp in icsps:
                         icspdata = {'source': icsp['source'], 'mirror': icsp['mirrors'][0]}
                         f.write(registrytemplate % icspdata)
-            if disk_hosts:
-                disk_hosts = [{'interfaces': [{'name': 'eth0', 'macAddress': entry['mac']}],
-                               'rootDeviceHints': {'deviceName': entry['disk']}} for entry in disk_hosts]
+            if param_hosts:
+                custom_hosts = [{'interfaces': [{'name': 'eth0', 'macAddress': entry['mac']}],
+                                 'rootDeviceHints': {'deviceName': entry['disk']}} for entry in param_hosts]
                 with open(f"{path}/agent-config.yaml", 'w') as dest:
                     hosts_data = {'kind': 'AgentConfig'}
-                    hosts_data['spec'] = {'hosts': disk_hosts}
+                    hosts_data['spec'] = {'hosts': custom_hosts}
                     dest.write(yaml.safe_dump(hosts_data))
