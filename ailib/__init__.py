@@ -1244,7 +1244,7 @@ class AssistedClient(object):
                 except Exception as e:
                     warning(f"Hit {e} when plugging iso to host {msg}")
 
-    def create_cluster_manifests(self, cluster, overrides={}, path='cluster-manifests'):
+    def create_cluster_manifests(self, cluster, overrides={}, path='cluster-manifests', simplified=False):
         disconnected_url = None
         if overrides.get('masters', 3) == 1 and overrides.get('workers', 0) == 0:
             overrides['sno'] = True
@@ -1287,91 +1287,37 @@ class AssistedClient(object):
         agentdir = os.path.dirname(AssistedClient.create_cluster.__code__.co_filename) + '/agent'
         if not os.path.isdir(path):
             os.mkdir(path)
-        with open(f"{path}/agent-cluster-install.yaml", 'w') as dest:
-            ssh_public_key = overrides['ssh_public_key']
-            agent_install_data = {'apiVersion': 'extensions.hive.openshift.io/v1beta1', 'kind': 'AgentClusterInstall',
-                                  'metadata': {'name': 'test-agent-cluster-install', 'namespace': 'cluster0'},
-                                  'spec': {'clusterDeploymentRef': {'name': cluster}, 'imageSetRef':
-                                           {'name': 'openshift'}, 'networking': {'networkType': network_type,
-                                                                                 'clusterNetwork': cluster_networks,
-                                                                                 'serviceNetwork': service_networks},
-                                           'provisionRequirements': {}, 'sshPublicKey': ssh_public_key}}
-            if not overrides.get('sno', False):
-                if overrides.get('masters') is None:
-                    masters = 3
-                    warning("Forcing masters to 3")
-                else:
-                    masters = overrides['masters']
-                if overrides.get('workers') is None:
-                    workers = 0
-                    warning("Forcing workers to 0")
-                else:
-                    workers = overrides['workers']
-                if overrides.get('api_vip') is None:
-                    error("api_vip is required")
-                    sys.exit(1)
-                else:
-                    agent_install_data['spec']['apiVIP'] = overrides['api_vip']
-                if overrides.get('ingress_vip') is None:
-                    error("ingress_vip is required")
-                    sys.exit(1)
-                else:
-                    agent_install_data['spec']['ingressVIP'] = overrides['ingress_vip']
+        if not overrides.get('sno', False):
+            if overrides.get('masters') is None:
+                masters = 3
+                warning("Forcing masters to 3")
             else:
-                masters = 1
+                masters = overrides['masters']
+            if overrides.get('workers') is None:
                 workers = 0
-            agent_install_data['spec']['provisionRequirements']['controlPlaneAgents'] = masters
-            agent_install_data['spec']['provisionRequirements']['workerAgents'] = workers
-            if 'machine_networks' in overrides:
-                agent_install_data['spec']['networking']['machineNetwork'] = overrides['machine_networks']
-            dest.write(yaml.safe_dump(agent_install_data))
-        for fic in ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']:
-            with open(f"{agentdir}/{fic}") as ori:
-                data = ori.read()
-                target_fic = fic.replace('-sno', '')
-                with open(f"{path}/{target_fic}", 'w') as dest:
-                    dest.write(data % overrides)
-        with open(f"{path}/nmstateconfig.yaml", 'w') as dest:
-            for index, entry in enumerate(static_network_config):
-                node_name = f"node-{index}"
-                network_data = {'apiVersion': 'agent-install.openshift.io/v1beta1',
-                                'kind': 'NMStateConfig', 'metadata':
-                                {'name': node_name, 'namespace': 'openshift-machine-api',
-                                 'labels': {'cluster0-nmstate-label-name': 'cluster0-nmstate-label-value'}}}
-                network_data['spec'] = {'config': entry}
-                mac_interface_map = entry.get('mac_interface_map', [])
-                interfaces = entry.get('interfaces', [])
-                if not interfaces:
-                    error("You need to provide a list of interfaces")
-                    sys.exit(1)
-                for interface in interfaces:
-                    ethernet = True if interface.get('type', 'ethernet') == 'ethernet' else False
-                    if not mac_interface_map:
-                        if ethernet:
-                            logical_nic_name, mac_address = interface['name'], interface['mac-address']
-                            mac_interface_map.append({"macAddress": mac_address, "name": logical_nic_name})
-                        else:
-                            error("Providing mac_interface_map is mandatory when some types are not ethernet")
-                            sys.exit(1)
-                    network_data['spec']['interfaces'] = mac_interface_map
-                dest.write(yaml.safe_dump(network_data))
-                dest.write('---\n')
-        if 'hosts' in overrides:
-            with open(f"{path}/agent-config.yaml", 'w') as dest:
-                hosts_data = {'kind': 'AgentConfig'}
-                hosts = []
-                for index, host in enumerate(overrides['hosts']):
-                    if 'mac' not in host or 'disk' not in host:
-                        warning(f"Skipping entry {index} in hosts array")
-                        continue
-                    else:
-                        mac = host['mac']
-                        disk = f"/dev/{os.path.basename(host['disk'])}"
-                        data = {'interfaces': [{'name': 'eth0', 'macAddress': mac}],
-                                'rootDeviceHints': {'deviceName': disk}}
-                        hosts.append(data)
-                hosts_data['spec'] = {'hosts': hosts}
-                dest.write(yaml.safe_dump(hosts_data))
+                warning("Forcing workers to 0")
+            else:
+                workers = overrides['workers']
+            if overrides.get('api_vip') is None:
+                error("api_vip is required")
+                sys.exit(1)
+            else:
+                api_vip = overrides['api_vip']
+            if overrides.get('ingress_vip') is None:
+                error("ingress_vip is required")
+                sys.exit(1)
+            else:
+                ingress_vip = overrides['ingress_vip']
+        else:
+            masters = 1
+            workers = 0
+            api_vip = None
+            ingress_vip = None
+        machine_networks = overrides.get('machine_networks', [])
+        if simplified and not machine_networks:
+            error("machine_network is required for generating install config yaml")
+            sys.exit(1)
+        ssh_public_key = overrides['ssh_public_key']
         ca, icsps = None, []
         if 'installconfig' in overrides:
             if 'additionalTrustBundle' in overrides['installconfig']:
@@ -1389,13 +1335,145 @@ class AssistedClient(object):
                           'source': 'quay.io/openshift-release-dev/ocp-release'},
                          {'mirrors': [f"{disconnected_url}/ocp4"],
                           'source': 'quay.io/openshift-release-dev/ocp-v4.0-art-dev'}]
-        if ca is not None and icsps:
-            if not os.path.isdir('mirror'):
-                os.mkdir('mirror')
-            with open('mirror/ca-bundle.crt', 'w') as f:
-                f.write(ca)
-            with open('mirror/registries.conf', 'w') as f:
-                registrytemplate = open(f"{agentdir}/registries.conf.templ").read()
-                for icsp in icsps:
-                    icspdata = {'source': icsp['source'], 'mirror': icsp['mirrors'][0]}
-                    f.write(registrytemplate % icspdata)
+        disk_hosts = []
+        if 'hosts' in overrides:
+            for index, host in enumerate(overrides['hosts']):
+                if 'mac' not in host or 'disk' not in host:
+                    warning(f"Skipping entry {index} in hosts array")
+                    continue
+                else:
+                    disk_hosts.append({'mac': host['mac'], 'disk': f"/dev/{os.path.basename(host['disk'])}"})
+        if simplified:
+            custom_hosts = []
+            domain = overrides['domain']
+            pull_secret = overrides['pull_secret']
+            with open(f"{path}/agent-config.yaml", 'w') as dest:
+                agent_config = {'kind': 'AgentConfig', 'apiVersion': 'v1alpha1', 'metadata': {'name': 'billi'}}
+                hosts = []
+                for index, entry in enumerate(static_network_config):
+                    node_name = f"node-{index}"
+                    new_host = {'hostname': node_name}
+                    new_host['networkConfig'] = entry
+                    mac_interface_map = entry.get('mac_interface_map', [])
+                    mac_address = None
+                    if mac_interface_map:
+                        new_host['interfaces'] = mac_interface_map
+                        mac_address = mac_interface_map[0]['macAddress']
+                    else:
+                        interfaces = entry.get('interfaces', [])
+                        if not interfaces:
+                            error("You need to provide a list of interfaces")
+                            sys.exit(1)
+                        for interface in interfaces:
+                            ethernet = True if interface.get('type', 'ethernet') == 'ethernet' else False
+                            if not mac_interface_map:
+                                if ethernet:
+                                    logical_nic_name, mac_address = interface['name'], interface['mac-address']
+                                    mac_interface_map.append({"macAddress": mac_address, "name": logical_nic_name})
+                                else:
+                                    error("Providing mac_interface_map is mandatory when some types are not ethernet")
+                                    sys.exit(1)
+                            new_host['interfaces'] = mac_interface_map
+                        if mac_address is None:
+                            error(f"No mac address detected for static entry {index}")
+                            sys.exit(1)
+                    hosts.append(new_host)
+                    custom_host = {'name': node_name, 'bootMACAddress': mac_address}
+                    custom_host['role'] = 'master' if index < masters else 'worker'
+                    for disk_host in disk_hosts:
+                        if disk_host['mac'] == mac_address:
+                            custom_host['rootDeviceHints'] = {'deviceName': disk_host['disk']}
+                            break
+                    custom_hosts.append(custom_host)
+                    if index == 0:
+                        ip_info = interfaces[0].get('ipv6') or interfaces[0].get('ipv4')
+                        agent_config['rendezvousIP'] = ip_info['address'][0]['ip']
+                agent_config['hosts'] = hosts
+                dest.write(yaml.safe_dump(agent_config))
+            with open(f"{path}/install-config.yaml", 'w') as dest:
+                agent_install_data = {'apiVersion': 'v1', 'baseDomain': domain,
+                                      'compute': [{'architecture': 'amd64', 'hyperthreading': 'Enabled',
+                                                   'name': 'worker', 'replicas': workers}],
+                                      'controlPlane': {'architecture': 'amd64', 'hyperthreading':
+                                                       'Enabled', 'name': 'master', 'replicas': masters},
+                                      'metadata': {'name': cluster},
+                                      'networking': {'clusterNetwork': cluster_networks,
+                                                     'networkType': network_type, 'serviceNetwork': service_networks},
+                                      'platform': {'baremetal': {'hosts': custom_hosts}}, 'pullSecret': pull_secret,
+                                      'sshKey': ssh_public_key, 'imageContentSources': icsps}
+                if api_vip is not None:
+                    agent_install_data['platform']['baremetal']['apiVIP'] = api_vip
+                if ingress_vip is not None:
+                    agent_install_data['platform']['baremetal']['ingressVIP'] = ingress_vip
+                if machine_networks is not None:
+                    agent_install_data['networking']['machineNetwork'] = overrides['machine_networks']
+                dest.write(yaml.safe_dump(agent_install_data))
+                if ca is not None:
+                    dest.write('additionalTrustBundle: |\n  %s' % ca.replace('\n', '\n  ').rstrip())
+        else:
+            with open(f"{path}/agent-cluster-install.yaml", 'w') as dest:
+                agent_install_data = {'apiVersion': 'extensions.hive.openshift.io/v1beta1',
+                                      'kind': 'AgentClusterInstall',
+                                      'metadata': {'name': 'test-agent-cluster-install', 'namespace': 'cluster0'},
+                                      'spec': {'clusterDeploymentRef': {'name': cluster}, 'imageSetRef':
+                                               {'name': 'openshift'}, 'networking':
+                                               {'networkType': network_type, 'clusterNetwork': cluster_networks,
+                                                'serviceNetwork': service_networks},
+                                               'provisionRequirements': {}, 'sshPublicKey': ssh_public_key}}
+                agent_install_data['spec']['provisionRequirements']['controlPlaneAgents'] = masters
+                agent_install_data['spec']['provisionRequirements']['workerAgents'] = workers
+                if api_vip is not None:
+                    agent_install_data['spec']['apiVIP'] = api_vip
+                if ingress_vip is not None:
+                    agent_install_data['spec']['ingressVIP'] = ingress_vip
+                if machine_networks is not None:
+                    agent_install_data['spec']['networking']['machineNetwork'] = overrides['machine_networks']
+                dest.write(yaml.safe_dump(agent_install_data))
+            for fic in ['cluster-deployment.yaml', 'cluster-image-set.yaml', 'infraenv.yaml', 'pull-secret.yaml']:
+                with open(f"{agentdir}/{fic}") as ori:
+                    data = ori.read()
+                    target_fic = fic.replace('-sno', '')
+                    with open(f"{path}/{target_fic}", 'w') as dest:
+                        dest.write(data % overrides)
+            with open(f"{path}/nmstateconfig.yaml", 'w') as dest:
+                for index, entry in enumerate(static_network_config):
+                    node_name = f"node-{index}"
+                    network_data = {'apiVersion': 'agent-install.openshift.io/v1beta1',
+                                    'kind': 'NMStateConfig', 'metadata':
+                                    {'name': node_name, 'namespace': 'openshift-machine-api',
+                                     'labels': {'cluster0-nmstate-label-name': 'cluster0-nmstate-label-value'}}}
+                    network_data['spec'] = {'config': entry}
+                    mac_interface_map = entry.get('mac_interface_map', [])
+                    interfaces = entry.get('interfaces', [])
+                    if not interfaces:
+                        error("You need to provide a list of interfaces")
+                        sys.exit(1)
+                    for interface in interfaces:
+                        ethernet = True if interface.get('type', 'ethernet') == 'ethernet' else False
+                        if not mac_interface_map:
+                            if ethernet:
+                                logical_nic_name, mac_address = interface['name'], interface['mac-address']
+                                mac_interface_map.append({"macAddress": mac_address, "name": logical_nic_name})
+                            else:
+                                error("Providing mac_interface_map is mandatory when some types are not ethernet")
+                                sys.exit(1)
+                        network_data['spec']['interfaces'] = mac_interface_map
+                    dest.write(yaml.safe_dump(network_data))
+                    dest.write('---\n')
+            if ca is not None and icsps:
+                if not os.path.isdir('mirror'):
+                    os.mkdir('mirror')
+                with open('mirror/ca-bundle.crt', 'w') as f:
+                    f.write(ca)
+                with open('mirror/registries.conf', 'w') as f:
+                    registrytemplate = open(f"{agentdir}/registries.conf.templ").read()
+                    for icsp in icsps:
+                        icspdata = {'source': icsp['source'], 'mirror': icsp['mirrors'][0]}
+                        f.write(registrytemplate % icspdata)
+            if disk_hosts:
+                disk_hosts = [{'interfaces': [{'name': 'eth0', 'macAddress': entry['mac']}],
+                               'rootDeviceHints': {'deviceName': entry['disk']}} for entry in disk_hosts]
+                with open(f"{path}/agent-config.yaml", 'w') as dest:
+                    hosts_data = {'kind': 'AgentConfig'}
+                    hosts_data['spec'] = {'hosts': disk_hosts}
+                    dest.write(yaml.safe_dump(hosts_data))

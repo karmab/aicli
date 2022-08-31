@@ -676,7 +676,7 @@ def create_cluster_manifests(args):
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.create_cluster_manifests(args.cluster, overrides, path=args.path)
+    ai.create_cluster_manifests(args.cluster, overrides, path=args.path, simplified=args.simplified)
 
 
 def cli():
@@ -767,6 +767,8 @@ def cli():
                                                                  help=clustermanifestscreate_desc,
                                                                  epilog=clustermanifestscreate_epilog,
                                                                  formatter_class=rawhelp)
+    clustermanifestscreate_parser.add_argument('-s', '--simplified', action='store_true',
+                                               help='Generate install-config.yaml and agent-config.yaml')
     clustermanifestscreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     clustermanifestscreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
     clustermanifestscreate_parser.add_argument('--path', metavar='PATH', default='cluster-manifests',
