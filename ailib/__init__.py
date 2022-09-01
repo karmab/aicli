@@ -259,6 +259,11 @@ class AssistedClient(object):
                     and 'additionalTrustBundle' in overrides['installconfig']:
                 info("using cert from installconfig/additionalTrustBundle")
                 ca = overrides['installconfig']['additionalTrustBundle']
+            elif disconnected_url is not None:
+                info(f"Trying to gather disconnected ca cert from {disconnected_url}")
+                cacmd = f"openssl s_client -showcerts -connect {disconnected_url} </dev/null 2>/dev/null|"
+                cacmd += "openssl x509 -outform PEM"
+                ca = os.popen(cacmd).read()
         if 'ignition_config_override' not in overrides and disconnected_url is not None and ca is not None:
             ignition_version = overrides.get('ignition_version')
             if ignition_version is None:
