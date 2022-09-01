@@ -10,7 +10,7 @@ LABEL name="karmab/aicli" \
       summary="Assisted installer cli" \
       description="Assisted installer wrapper"
 
-RUN apk add --update --no-cache python3-dev
+RUN apk add --update --no-cache python3-dev openssl
 
 # Group the pip installation
 RUN mkdir /root/aicli
