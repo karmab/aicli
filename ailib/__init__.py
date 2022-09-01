@@ -270,10 +270,27 @@ class AssistedClient(object):
                 ori = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="discovery.ign",
                                                               _preload_content=False)
                 ignition_version = json.loads(ori.read().decode("utf-8"))['ignition']['version']
-            ailibdir = os.path.dirname(warning.__code__.co_filename)
-            with open(f"{ailibdir}/registries.conf.templ") as f:
-                data = f.read()
-                registries = data % {'url': disconnected_url}
+            if 'installconfig' in overrides and isinstance(overrides['installconfig'], dict)\
+                    and 'imageContentSources' in overrides['installconfig']:
+                info("using imageContentSources from installconfig")
+                registries = 'unqualified-search-registries = ["registry.access.redhat.com", "docker.io"]\n'
+                for registry in overrides['installconfig']['imageContentSources']:
+                    source = registry.get('source')
+                    target = registry.get('mirrors')[0]
+                    new_registry = """[[registry]]
+   prefix = ""
+   location = "{source}"
+   mirror-by-digest-only = false
+
+   [[registry.mirror]]
+   location = "{target}"\n""".format(source=source, target=target)
+                    registries += new_registry
+            else:
+                ailibdir = os.path.dirname(warning.__code__.co_filename)
+                with open(f"{ailibdir}/registries.conf.templ") as f:
+                    data = f.read()
+                    registries = data % {'url': disconnected_url}
+            print(registries)
             registries_encoded = base64.b64encode(registries.encode()).decode("UTF-8")
             ca_encoded = base64.b64encode(ca.encode()).decode("UTF-8")
             fil1 = {"path": "/etc/containers/registries.conf", "mode": 420, "overwrite": True,
