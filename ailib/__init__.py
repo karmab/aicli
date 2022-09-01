@@ -377,11 +377,20 @@ class AssistedClient(object):
             error(f"Cluster {_id} not found")
             sys.exit(1)
 
-    def create_cluster(self, name, overrides={}):
+    def create_cluster(self, name, overrides={}, force=False):
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
         if existing_ids:
-            error(f"Cluster {name} already there. Leaving")
-            sys.exit(1)
+            if force:
+                info(f"Cluster {name} there. Deleting")
+                self.delete_cluster(name)
+                for infra_env in self.list_infra_envs():
+                    infra_env_name = infra_env.get('name')
+                    if infra_env_name is not None and infra_env_name == f"{name}_infra-env":
+                        self.delete_infra_env(infra_env['id'])
+                        break
+            else:
+                error(f"Cluster {name} already there. Leaving")
+                sys.exit(1)
         if name.endswith('-day2'):
             self.create_day2_cluster(name, overrides)
             return

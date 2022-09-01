@@ -66,7 +66,7 @@ def create_cluster(args):
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.create_cluster(args.cluster, overrides.copy())
+    ai.create_cluster(args.cluster, overrides.copy(), force=args.force)
     if overrides.get('infraenv', True):
         infraenv = f"{args.cluster}_infra-env"
         overrides['cluster'] = args.cluster
@@ -771,6 +771,7 @@ def cli():
     clustercreate_parser = create_subparsers.add_parser('cluster', description=clustercreate_desc,
                                                         help=clustercreate_desc,
                                                         epilog=clustercreate_epilog, formatter_class=rawhelp)
+    clustercreate_parser.add_argument('-f', '--force', action='store_true', help='Delete existing cluster if needed')
     clustercreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     clustercreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
     clustercreate_parser.add_argument('cluster', metavar='CLUSTER')
