@@ -253,6 +253,8 @@ class AssistedClient(object):
     def set_disconnected_ignition_config_override(self, infra_env_id=None, overrides={}):
         ignition_config_override = None
         disconnected_url = overrides.get('disconnected_url')
+        if disconnected_url is not None and ':' not in disconnected_url:
+            disconnected_url += ':443'
         ca = overrides.get('disconnected_ca')
         if ca is None:
             if 'installconfig' in overrides and isinstance(overrides['installconfig'], dict)\
