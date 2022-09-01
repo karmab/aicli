@@ -333,7 +333,7 @@ For instance, if you have the following information in your parameter file
      role: role
      extra_args: "ip=dhcp6"
 
-Running ``aicli update hosts --parameterfile my_params.yml`` will change the roles of the hosts with the corresponding name, if found, and add the specified extra_args for the second host.
+Running ``aicli update hosts --paramfile my_params.yml`` will change the roles of the hosts with the corresponding name, if found, and add the specified extra_args for the second host.
 
 Updating cluster
 ~~~~~~~~~~~~~~~~
@@ -442,7 +442,7 @@ You can use a command such as the following one
 
 ::
 
-   aicli create deployment --parameterfile my_params.yml myclu
+   aicli create deployment --paramfile my_params.yml myclu
 
 The parameter file could be similar to the following one
 
