@@ -290,7 +290,6 @@ class AssistedClient(object):
                 with open(f"{ailibdir}/registries.conf.templ") as f:
                     data = f.read()
                     registries = data % {'url': disconnected_url}
-            print(registries)
             registries_encoded = base64.b64encode(registries.encode()).decode("UTF-8")
             ca_encoded = base64.b64encode(ca.encode()).decode("UTF-8")
             fil1 = {"path": "/etc/containers/registries.conf", "mode": 420, "overwrite": True,
