@@ -1,7 +1,7 @@
 openshift_version: 4.8
 sno: true
 pull_secret: my_pull_secret.json
-disconnected_url: testk-disconnecter.ipv6only:5000
+registry_url: testk-disconnecter.ipv6only:5000
 installconfig:
    additionalTrustBundle: |
        -----BEGIN CERTIFICATE-----

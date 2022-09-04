@@ -252,7 +252,7 @@ class AssistedClient(object):
 
     def set_disconnected_ignition_config_override(self, infra_env_id=None, overrides={}):
         ignition_config_override = None
-        disconnected_url = overrides.get('disconnected_url')
+        disconnected_url = overrides.get('disconnected_url') or overrides.get('registry_url')
         if disconnected_url is not None and ':' not in disconnected_url:
             disconnected_url += ':443'
         ca = overrides.get('disconnected_ca')
@@ -262,7 +262,7 @@ class AssistedClient(object):
                 info("using cert from installconfig/additionalTrustBundle")
                 ca = overrides['installconfig']['additionalTrustBundle']
             elif disconnected_url is not None:
-                info(f"Trying to gather disconnected ca cert from {disconnected_url}")
+                info(f"Trying to gather registry ca cert from {disconnected_url}")
                 cacmd = f"openssl s_client -showcerts -connect {disconnected_url} </dev/null 2>/dev/null|"
                 cacmd += "openssl x509 -outform PEM"
                 ca = os.popen(cacmd).read()
@@ -1204,7 +1204,7 @@ class AssistedClient(object):
         return ['sno', 'pull_secret', 'domain', 'tpm', 'minimal', 'static_network_config', 'proxy', 'disconnected_url',
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_masters', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
-                'hosts']
+                'hosts', 'registry_url']
 
     def create_deployment(self, cluster, overrides):
         self.create_cluster(cluster, overrides.copy())

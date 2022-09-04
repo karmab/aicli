@@ -207,6 +207,13 @@ You can find different samples `here <https://github.com/karmab/aicli/tree/main/
 -  bonding
 -  dual stack
 
+Registry url
+^^^^^^^^^^^^
+
+A non standard registry can be specified using the keyword ``registry_url`` (or ``disconnected_url``) which is useful for disconnected install or testing okd.
+
+Specify the corresponding ca content using the ``ca`` variable or let it undefined to let aicli fetch this cert using openssl. This approach requires that there exists connectivity between aicli and your custom registry.
+
 Adding extra manifests
 ~~~~~~~~~~~~~~~~~~~~~~
 
