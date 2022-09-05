@@ -294,7 +294,7 @@ class AssistedClient(object):
                     registries = data % {'url': disconnected_url}
             registries_encoded = base64.b64encode(registries.encode()).decode("UTF-8")
             ca_encoded = base64.b64encode(ca.encode()).decode("UTF-8")
-            fil1 = {"path": "/etc/containers/registries.conf", "mode": 420, "overwrite": True,
+            fil1 = {"path": "/etc/containers/registries.conf.d/99-mirror.conf", "mode": 420, "overwrite": True,
                     "user": {"name": "root"},
                     "contents": {"source": f"data:text/plain;base64,{registries_encoded}"}}
             fil2 = {"path": "/etc/pki/ca-trust/source/anchors/domain.crt", "mode": 420, "overwrite": True,
