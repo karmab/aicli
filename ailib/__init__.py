@@ -242,6 +242,12 @@ class AssistedClient(object):
                                                                                       overrides=iso_overrides)
             if ignition_config_override is not None:
                 overrides['ignition_config_override'] = ignition_config_override
+        if 'discovery_ignition_file' in overrides:
+            discovery_ignition_path = overrides['discovery_ignition_file']
+            if not os.path.exists(discovery_ignition_path):
+                warning(f"Ignition File {discovery_ignition_path} not found. Ignoring")
+            else:
+                overrides['ignition_config_override'] = open(discovery_ignition_path).read()
         if 'proxy' in overrides and isinstance(overrides['proxy'], str):
             proxy = overrides['proxy']
             if not proxy.startswith('http'):
@@ -1042,7 +1048,7 @@ class AssistedClient(object):
     def update_iso(self, name, overrides={}):
         iso_overrides = overrides.copy()
         infra_env_id = self.get_infra_env_id(name)
-        if 'ignition_config_override'not in iso_overrides:
+        if 'ignition_config_override' not in iso_overrides:
             ignition_config_override = self.set_disconnected_ignition_config_override(infra_env_id, iso_overrides)
             if ignition_config_override is not None:
                 iso_overrides['ignition_config_override'] = ignition_config_override
@@ -1204,7 +1210,7 @@ class AssistedClient(object):
         return ['sno', 'pull_secret', 'domain', 'tpm', 'minimal', 'static_network_config', 'proxy', 'disconnected_url',
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_masters', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
-                'hosts', 'registry_url']
+                'discovery_ignition_file', 'hosts', 'registry_url']
 
     def create_deployment(self, cluster, overrides):
         self.create_cluster(cluster, overrides.copy())
