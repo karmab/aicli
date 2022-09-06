@@ -13,7 +13,7 @@ static_network_config:
           prefix-length: 24
         enabled: true
       mtu: 1500
-      mac-address: de:ad:bb:ef:00:25
+      mac-address: 'de:ad:bb:ef:00:25'
   dns-resolver:
     config:
       server:
