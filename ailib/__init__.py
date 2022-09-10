@@ -1469,9 +1469,9 @@ class AssistedClient(object):
                 agent_install_data['spec']['provisionRequirements']['controlPlaneAgents'] = masters
                 agent_install_data['spec']['provisionRequirements']['workerAgents'] = workers
                 if api_vip is not None:
-                    agent_install_data['spec']['apiVIP'] = api_vip
+                    agent_install_data['spec']['apiVips'] = [api_vip]
                 if ingress_vip is not None:
-                    agent_install_data['spec']['ingressVIP'] = ingress_vip
+                    agent_install_data['spec']['ingressVips'] = [ingress_vip]
                 if machine_networks:
                     agent_install_data['spec']['networking']['machineNetwork'] = machine_networks
                 dest.write(yaml.safe_dump(agent_install_data))
