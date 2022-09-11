@@ -24,7 +24,7 @@ static_network_config:
           prefix-length: 64
         enabled: true
       mtu: 1500
-      mac-address: de:ad:bb:ef:00:21
+      mac-address: 'de:ad:bb:ef:00:21'
   dns-resolver:
     config:
       server:
@@ -48,7 +48,7 @@ static_network_config:
           prefix-length: 64
         enabled: true
       mtu: 1500
-      mac-address: de:ad:bb:ef:00:22
+      mac-address: 'de:ad:bb:ef:00:22'
   dns-resolver:
     config:
       server:
@@ -72,7 +72,7 @@ static_network_config:
           prefix-length: 64
         enabled: true
       mtu: 1500
-      mac-address: de:ad:bb:ef:00:23
+      mac-address: 'de:ad:bb:ef:00:23'
   dns-resolver:
     config:
       server:

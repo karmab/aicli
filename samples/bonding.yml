@@ -29,9 +29,9 @@ static_network_config:
       server:
         - 192.168.123.1
   mac_interface_map:
-  - mac_address: aa:aa:aa:aa:cc:01
+  - mac_address: 'aa:aa:aa:aa:cc:01'
     logical_nic_name: ens3
-  - mac_address: aa:aa:aa:aa:cc:02
+  - mac_address: 'aa:aa:aa:aa:cc:02'
     logical_nic_name: ens4
 - interfaces:
   - name: bond0
@@ -60,9 +60,9 @@ static_network_config:
       server:
         - 192.168.123.1
   mac_interface_map:
-  - mac_address: aa:aa:aa:aa:cc:03
+  - mac_address: 'aa:aa:aa:aa:cc:03'
     logical_nic_name: ens3
-  - mac_address: aa:aa:aa:aa:cc:04
+  - mac_address: 'aa:aa:aa:aa:cc:04'
     logical_nic_name: ens4
 - interfaces:
   - name: bond0
@@ -91,7 +91,7 @@ static_network_config:
       server:
         - 192.168.123.1
   mac_interface_map:
-   - mac_address: aa:aa:aa:aa:cc:05
+   - mac_address: 'aa:aa:aa:aa:cc:05'
      logical_nic_name: ens3
-   - mac_address: aa:aa:aa:aa:cc:06
+   - mac_address: 'aa:aa:aa:aa:cc:06'
      logical_nic_name: ens4
