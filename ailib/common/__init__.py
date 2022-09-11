@@ -115,3 +115,7 @@ def confirm(message):
     except:
         sys.exit(1)
     return
+
+
+def same_uuid(id1, id2):
+    return id1.split('-')[3:] == id2.split('-')[3:]
