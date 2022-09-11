@@ -530,7 +530,8 @@ def update_host(args):
     if 'hosts' in overrides:
         host_param_overrides = overrides['hosts']
         if not hostnames:
-            hostnames = [h.get('id') or h.get('name') for h in host_param_overrides if 'id' in h or 'name' in h]
+            hostnames = [h.get('mac') or h.get('id') or h.get('name') for h in host_param_overrides if 'mac' in h or
+                         'id' in h or 'name' in h]
     if not hostnames:
         warning("No hosts provided to update")
         return 1
@@ -538,7 +539,7 @@ def update_host(args):
         info(f"Updating Host {hostname}")
         host_overrides = overrides.copy()
         for entry in host_param_overrides:
-            if entry.get('id', '') == hostname or entry.get('name', '') == hostname:
+            if entry.get('mac', '') == hostname or entry.get('id', '') == hostname or entry.get('name', '') == hostname:
                 host_overrides.update(entry)
                 break
         ai.update_host(hostname, host_overrides)

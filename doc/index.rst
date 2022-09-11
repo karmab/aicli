@@ -351,6 +351,8 @@ For instance, if you have the following information in your parameter file
 
 Running ``aicli update hosts --paramfile my_params.yml`` will change the roles of the hosts with the corresponding name, if found, and add the specified extra_args for the second host.
 
+You can either use the name to match a host, or specify id (to match system uuid) or mac (to match any mac address from the host inventory) so that the name of the host can be forced.
+
 Updating cluster
 ~~~~~~~~~~~~~~~~
 

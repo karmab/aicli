@@ -1,5 +1,5 @@
 from assisted_service_client import ApiClient, Configuration, api, models
-from ailib.common import warning, error, info, get_token, same_uuid
+from ailib.common import warning, error, info, get_token, same_uuid, match_mac
 from ailib.redfish import Redfish
 import base64
 from datetime import datetime
@@ -713,7 +713,8 @@ class AssistedClient(object):
             infra_env_id = self.get_infra_env_id(infra_env)
             hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
             matchingids = [host['id'] for host in hosts
-                           if host['requested_hostname'] == hostname or host['id'] == hostname]
+                           if host['requested_hostname'] == hostname or host['id'] == hostname or
+                           same_uuid(host['id'], hostname) or match_mac(host, hostname)]
             if matchingids:
                 infra_envs[infra_env_id] = matchingids
         else:
@@ -721,7 +722,8 @@ class AssistedClient(object):
                 infra_env_id = infra_env['id']
                 hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
                 matchingids = [host['id'] for host in hosts
-                               if host['requested_hostname'] == hostname or same_uuid(host['id'], hostname)]
+                               if host['requested_hostname'] == hostname or same_uuid(host['id'], hostname) or
+                               match_mac(host, hostname)]
                 if matchingids:
                     infra_envs[infra_env_id] = matchingids
         if not infra_envs:

@@ -119,3 +119,14 @@ def confirm(message):
 
 def same_uuid(id1, id2):
     return id1.split('-')[3:] == id2.split('-')[3:]
+
+
+def match_mac(host, mac):
+    if ':' not in mac or 'inventory' not in host:
+        return False
+    found = False
+    for interface in json.loads(host['inventory'])['interfaces']:
+        if interface.get('mac_address', '') == mac:
+            found = True
+            break
+    return found
