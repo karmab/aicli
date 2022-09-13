@@ -20,7 +20,9 @@ from urllib.request import urlretrieve
 import yaml
 
 
-default_cluster_params = {"openshift_version": "4.11", "base_dns_domain": "karmalabs.com", "vip_dhcp_allocation": False}
+default_cluster_params = {"openshift_version": "4.11", "base_dns_domain": "karmalabs.local",
+                          "vip_dhcp_allocation": False}
+default_cluster_params = {"openshift_version": "4.11", "vip_dhcp_allocation": False}
 default_infraenv_params = {"openshift_version": "4.11", "image_type": "full-iso"}
 SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub']
 
@@ -148,6 +150,8 @@ class AssistedClient(object):
                 overrides['openshift_version'] = '4.10'
         if 'domain' in overrides:
             overrides['base_dns_domain'] = overrides['domain']
+        elif 'base_dns_domain' not in overrides:
+            warning("Using karmalabs.local as DNS domain as no one was provided")
         if 'api_ip' in overrides:
             overrides['api_vip'] = overrides['api_ip']
             del overrides['api_ip']
@@ -1319,7 +1323,10 @@ class AssistedClient(object):
             service_networks = ['172.30.0.0/16']
         network_type = overrides.get('network_type', 'OVNKubernetes')
         if 'domain' not in overrides:
-            overrides['domain'] = overrides.get('base_dns_domain') or 'karmalabs.com'
+            overrides['domain'] = overrides.get('base_dns_domain')
+        elif 'base_dns_domain' not in overrides:
+            print("Using karmalabs.local as DNS domain as no one was provided")
+            overrides['domain'] = 'karmalabs.local'
         static_network_config = overrides.get('static_network_config', [])
         if not static_network_config:
             error("static_network_config is required")
