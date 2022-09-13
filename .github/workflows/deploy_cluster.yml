@@ -19,6 +19,9 @@ on:
         description: 'paramfile'
         required: false
         default: .github/aicli_parameters.yml
+      EXTRAPARAMS:
+        description: 'Extra params'
+        default: ''
 
 env:
  HOME: /root
@@ -27,6 +30,7 @@ env:
  NODES: ${{github.event.inputs.NODES}}
  PULLSECRET: ${{github.event.inputs.PULLSECRET}}
  PARAMFILE: ${{github.event.inputs.PARAMFILE}}
+ EXTRAPARAMS: ${{github.event.inputs.EXTRAPARAMS}}
  AI_OFFLINETOKEN: ${{ secrets.AI_OFFLINETOKEN }}
 # CLUSTER: ai-ci
 # PULLSECRET: /root/openshift_pull.json
@@ -58,7 +62,7 @@ jobs:
       steps:
       - name: Deploy kcli plan
         run: |
-          kcli create plan -f .github -P nodes=$NODES $CLUSTER
+          kcli create plan -f .github -P nodes=$NODES $EXTRAPARAMS $CLUSTER
 
     deploy-ai-cluster:
       needs: deploy-kcli-plan
@@ -66,4 +70,4 @@ jobs:
       steps:
       - name: Deploy ai cluster
         run: |
-          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER
+          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $EXTRAPARAMS $CLUSTER
