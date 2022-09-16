@@ -217,12 +217,11 @@ class AssistedClient(object):
                     error("You need to provide a list of interfaces")
                     sys.exit(1)
                 for interface in interfaces:
-                    bond = True if interface.get('type', 'ethernet') == 'bond' else False
-                    if not bond:
+                    if interface.get('type', 'ethernet') == 'ethernet':
                         logical_nic_name, mac_address = interface['name'], interface['mac-address']
                         interface_map.append({"mac_address": mac_address, "logical_nic_name": logical_nic_name})
                     elif not mac_interface_map:
-                        error("Providing mac_interface_map is mandatory when setting bond")
+                        error("Providing mac_interface_map is mandatory when setting bond or vlan")
                         sys.exit(1)
                 mac_interface_map = mac_interface_map or interface_map
                 new_entry = {'network_yaml': yaml.dump(entry), 'mac_interface_map': mac_interface_map}
