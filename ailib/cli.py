@@ -234,6 +234,9 @@ def info_host(args):
     hostinfo = ai.info_host(args.host)
     if hostinfo is None:
         error(f"Host {args.host} not found")
+    elif args.output is not None:
+        _list_output(hostinfo, args.output)
+        return
     else:
         if fields:
             for key in list(hostinfo):
