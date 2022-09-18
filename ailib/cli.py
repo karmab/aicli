@@ -16,7 +16,7 @@ def _list_output(_list, output):
     if output == 'yaml':
         print(yaml.dump(_list))
     elif output == 'json':
-        print(json.dumps(_list))
+        print(json.dumps(_list, default=str))
     elif output == 'name':
         if isinstance(_list, list):
             for entry in sorted(_list, key=lambda x: x['name']):
@@ -112,6 +112,9 @@ def info_cluster(args):
         print(ai.preflight_cluster(args.cluster))
         return
     info = ai.info_cluster(args.cluster).to_dict()
+    if args.output is not None:
+        _list_output(info, args.output)
+        return
     if fields:
         for key in list(info):
             if key not in fields:
