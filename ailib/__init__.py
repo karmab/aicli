@@ -898,6 +898,8 @@ class AssistedClient(object):
             if not httpsProxy.startswith('http'):
                 httpsProxy = f'http://{httpsProxy}'
             installconfig['proxy'] = {'httpProxy': httpProxy, 'httpsProxy': httpsProxy, 'noProxy': noproxy}
+        if 'fips' in overrides and isinstance(overrides['fips'], bool):
+            installconfig['fips'] = overrides['fips']
         if 'tags' in overrides:
             if isinstance(overrides['tags'], list):
                 overrides['tags'] = ','.join(sorted(overrides['tags']))
@@ -1215,7 +1217,7 @@ class AssistedClient(object):
         return ['sno', 'pull_secret', 'domain', 'tpm', 'minimal', 'static_network_config', 'proxy', 'disconnected_url',
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_masters', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
-                'discovery_ignition_file', 'hosts', 'registry_url']
+                'discovery_ignition_file', 'hosts', 'registry_url', 'fips']
 
     def create_deployment(self, cluster, overrides):
         self.create_cluster(cluster, overrides.copy())
