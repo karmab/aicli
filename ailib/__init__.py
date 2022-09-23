@@ -148,10 +148,6 @@ class AssistedClient(object):
                 overrides['openshift_version'] = str(overrides['openshift_version'])
             if overrides['openshift_version'] == 4.1:
                 overrides['openshift_version'] = '4.10'
-        if 'domain' in overrides:
-            overrides['base_dns_domain'] = overrides['domain']
-        elif 'base_dns_domain' not in overrides:
-            warning("Using karmalabs.local as DNS domain as no one was provided")
         if 'api_ip' in overrides:
             overrides['api_vip'] = overrides['api_ip']
             del overrides['api_ip']
@@ -174,6 +170,11 @@ class AssistedClient(object):
                 else:
                     error(f"Missing public key file {pub_key}")
                     sys.exit(1)
+            if 'domain' in overrides:
+                overrides['base_dns_domain'] = overrides['domain']
+            elif 'base_dns_domain' not in overrides:
+                warning("Using karmalabs.local as DNS domain as no one was provided")
+                overrides['base_dns_domain'] = overrides['karmalabs.local']
         if 'sno' in overrides:
             if overrides['sno']:
                 overrides['high_availability_mode'] = "None"
