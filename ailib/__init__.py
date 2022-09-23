@@ -212,19 +212,31 @@ class AssistedClient(object):
             final_network_config = []
             for entry in static_network_config:
                 interface_map = []
+                bonds = []
+                nics = []
                 mac_interface_map = entry.get('mac_interface_map', [])
                 interfaces = entry.get('interfaces', [])
                 if not interfaces:
                     error("You need to provide a list of interfaces")
                     sys.exit(1)
                 for interface in interfaces:
-                    if interface.get('type', 'ethernet') == 'ethernet':
+                    interface_type = interface.get('type', 'ethernet')
+                    if interface_type == 'ethernet':
                         logical_nic_name, mac_address = interface['name'], interface['mac-address']
                         interface_map.append({"mac_address": mac_address, "logical_nic_name": logical_nic_name})
-                    elif not mac_interface_map:
-                        error("Providing mac_interface_map is mandatory when setting bond or vlan")
-                        sys.exit(1)
+                    elif interface_type == 'bond' and 'link-aggregation' in interface\
+                            and 'port' in interface['link-aggregation']:
+                        bonds.append(interface['name'])
+                        for port in interface['link-aggregation']['port']:
+                            nics.append(port)
+                    elif interface_type == 'vlan' and 'vlan' in interface and 'base-iface' in interface['vlan']:
+                        nics.append(interface['vlan']['base-iface'])
                 mac_interface_map = mac_interface_map or interface_map
+                mac_interface_map_nics = [interface['logical_nic_name'] for interface in mac_interface_map]
+                for nic in nics:
+                    if nic not in bonds and nic not in mac_interface_map_nics:
+                        error(f"Nic {nic} is missing from mac_interface_map")
+                        sys.exit(1)
                 new_entry = {'network_yaml': yaml.dump(entry), 'mac_interface_map': mac_interface_map}
                 final_network_config.append(models.HostStaticNetworkConfig(**new_entry))
             static_network_config = final_network_config
