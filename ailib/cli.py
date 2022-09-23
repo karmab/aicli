@@ -70,6 +70,7 @@ def create_cluster(args):
     if overrides.get('infraenv', True):
         infraenv = f"{args.cluster}_infra-env"
         overrides['cluster'] = args.cluster
+        info(f"Creating infraenv {infraenv}")
         ai.create_infra_env(infraenv, overrides)
 
 
