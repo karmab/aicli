@@ -157,7 +157,8 @@ def update_cluster(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     ai.update_cluster(args.cluster, overrides)
-    ai.update_infra_env(args.cluster, overrides)
+    if overrides.get('infraenv', True):
+        ai.update_infra_env(args.cluster, overrides)
 
 
 def start_cluster(args):

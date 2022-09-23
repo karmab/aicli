@@ -146,7 +146,7 @@ In general, you shouldn't have to care about this object, but notice it is actua
 
 The nomenclature we use for the infraenv is consistent with what happens in AI UI, which means you can create a cluster and follow in the UI or use aicli to interact with a cluster created through the UI.
 
-You can set the parameter *infraenv* to false to prevent an infraenv to get created for the cluster. You will then have to use the bind subcommand to associate hosts discovered through a given infraenv to some specific cluster.
+You can set the parameter *infraenv* to false to prevent an infraenv to get created for the cluster. You will then have to use the bind subcommand to associate hosts discovered through a given infraenv to some specific cluster. This same parameter can be provided when updating a cluster so that no action on infraenvs happen.
 
 ### Custom ignition
 
