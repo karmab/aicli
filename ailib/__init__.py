@@ -174,7 +174,7 @@ class AssistedClient(object):
                 overrides['base_dns_domain'] = overrides['domain']
             elif 'base_dns_domain' not in overrides:
                 warning("Using karmalabs.local as DNS domain as no one was provided")
-                overrides['base_dns_domain'] = overrides['karmalabs.local']
+                overrides['base_dns_domain'] = 'karmalabs.local'
         if 'sno' in overrides:
             if overrides['sno']:
                 overrides['high_availability_mode'] = "None"
