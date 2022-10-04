@@ -1232,8 +1232,8 @@ class AssistedClient(object):
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
                 'discovery_ignition_file', 'hosts', 'registry_url', 'fips']
 
-    def create_deployment(self, cluster, overrides):
-        self.create_cluster(cluster, overrides.copy())
+    def create_deployment(self, cluster, overrides, force=False):
+        self.create_cluster(cluster, overrides.copy(), force=force)
         cluster_id = self.get_cluster_id(cluster)
         infraenv = f"{cluster}_infra-env"
         minimal = overrides.get('minimal', False)

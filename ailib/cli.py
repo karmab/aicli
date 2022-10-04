@@ -182,7 +182,7 @@ def create_deployment(args):
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.create_deployment(args.cluster, overrides)
+    ai.create_deployment(args.cluster, overrides, force=args.force)
 
 
 def create_manifests(args):
@@ -853,6 +853,7 @@ def cli():
     deploymentcreate_parser = create_subparsers.add_parser('deployment', description=deploymentcreate_desc,
                                                            help=deploymentcreate_desc,
                                                            epilog=deploymentcreate_epilog, formatter_class=rawhelp)
+    deploymentcreate_parser.add_argument('-f', '--force', action='store_true', help='Delete existing cluster if needed')
     deploymentcreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     deploymentcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
     deploymentcreate_parser.add_argument('cluster', metavar='CLUSTER')

@@ -70,4 +70,4 @@ jobs:
       steps:
       - name: Deploy ai cluster
         run: |
-          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $EXTRAPARAMS $CLUSTER
+          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $EXTRAPARAMS $CLUSTER --force
