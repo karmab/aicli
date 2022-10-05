@@ -379,19 +379,19 @@ aicli download kubeconfig mycluster
 
 For this purpose, we assume we already have the cluster installed.
 
-This cluster can be created into a cluster for adding hosts by using the following call:
-
-```
-aicli update cluster mycluster -P day2=true
-```
-
-Alternatively, if we create a new cluster with the same original name and the '-day2' extension, the api code will create a dedicated cluster for adding host purposes.
+If we create a new cluster with the same original name and the '-day2' extension, the api code will create a dedicated cluster for adding host purposes.
 
 ```
 aicli create cluster mycluster-day2
 ```
 
-Note that when creating the day2 cluster, a DNS check on api_vip_dnsname is done. If it doesn't succeed and the base cluster is HA, then api vip is used instead of fqdn to garantee functionality
+Alternatively, we can convert the original cluster into one to use for adding hosts by using the following call but note this is not the recommended approach
+
+```
+aicli update cluster mycluster -P day2=true
+```
+
+Note that when creating the day2 cluster, a DNS check on api_vip_dnsname is done. If it doesn't succeed and the base cluster is HA, then api vip is used instead of fqdn to guarantee functionality
 
 You can also update manually this data using the following command
 
@@ -401,12 +401,12 @@ aicli update cluster mycluster-day2 -P api_vip_dnsname=$api_ip
 
 In both cases, once we have the day2 cluster in the proper state, the same workflow is to be used:
 
-- gathering the iso associated to this cluster with `aicli info iso mycluster-day2`
-- booting nodes with this iso
+- gather the iso associated to this cluster/infraenv with `aicli info iso mycluster-day2`.
+- boot nodes with this iso.
 - wait for them to show in `aicli list hosts` output as *known*
 - launch `aicli start cluster mycluster-day2`
 
-Individual hosts installation can also be triggered by calling
+Individual hosts installation can also be triggered by calling:
 
 ```
 aicli start hosts $host1 $host2 ...
