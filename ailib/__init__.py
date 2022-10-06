@@ -586,14 +586,13 @@ class AssistedClient(object):
 
     def download_installconfig(self, name, path, stdout=False):
         cluster_id = self.get_cluster_id(name)
-        response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
-                                                         _preload_content=False)
+        response = self.client.v2_get_cluster_install_config(cluster_id=cluster_id)
         if stdout:
-            print(response.data.decode())
+            print(response)
         else:
             installconfig_path = f"{path}/install-config.yaml.{name}"
-            with open(installconfig_path, "wb") as f:
-                copyfileobj(response, f)
+            with open(installconfig_path, "w") as f:
+                f.write(response)
 
     def download_kubeadminpassword(self, name, path, stdout=False):
         cluster_id = self.get_cluster_id(name)
