@@ -1057,8 +1057,8 @@ class AssistedClient(object):
         else:
             installconfig = overrides.get('installconfig')
             if installconfig is None:
-                error("installconfig is not set")
-                sys.exit(1)
+                warning("installconfig is not set. Using provided parameters to craft install config")
+                installconfig = overrides
             if not isinstance(installconfig, dict):
                 error("installconfig is not in correct format")
                 sys.exit(1)
