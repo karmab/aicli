@@ -1470,9 +1470,9 @@ class AssistedClient(object):
                                       'platform': {'baremetal': {'hosts': custom_hosts}}, 'pullSecret': pull_secret,
                                       'sshKey': ssh_public_key, 'imageContentSources': icsps}
                 if api_vip is not None:
-                    agent_install_data['platform']['baremetal']['apiVIP'] = api_vip
+                    agent_install_data['platform']['baremetal']['apiVips'] = [api_vip]
                 if ingress_vip is not None:
-                    agent_install_data['platform']['baremetal']['ingressVIP'] = ingress_vip
+                    agent_install_data['platform']['baremetal']['ingressVips'] = [ingress_vip]
                 if machine_networks:
                     agent_install_data['networking']['machineNetwork'] = machine_networks
                 dest.write(yaml.safe_dump(agent_install_data))
