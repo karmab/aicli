@@ -2,7 +2,7 @@ name: nightly-ci
 
 on:
    schedule:
-    - cron: '01 2 * * *'
+    - cron: '01 1 * * *'
 
 env:
  HOME: /root
