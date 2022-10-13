@@ -1,4 +1,4 @@
-base_dns_domain: karmalabs.com
+base_dns_domain: karmalabs.local
 api_vip: 192.168.122.251
 ingress_vip: 192.168.122.250
 download_iso_path: /var/www/html
