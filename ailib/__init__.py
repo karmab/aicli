@@ -283,7 +283,7 @@ class AssistedClient(object):
                     and 'additionalTrustBundle' in overrides['installconfig']:
                 info("using cert from installconfig/additionalTrustBundle")
                 ca = overrides['installconfig']['additionalTrustBundle']
-            elif disconnected_url is not None:
+            elif disconnected_url is not None and 'quay.io' not in disconnected_url:
                 info(f"Trying to gather registry ca cert from {disconnected_url}")
                 cacmd = f"openssl s_client -showcerts -connect {disconnected_url} </dev/null 2>/dev/null|"
                 cacmd += "openssl x509 -outform PEM"
@@ -1384,7 +1384,7 @@ class AssistedClient(object):
                 ca = overrides['installconfig']['additionalTrustBundle']
             if 'imageContentSources' in overrides['installconfig']:
                 icsps = overrides['installconfig']['imageContentSources']
-        if disconnected_url is not None:
+        if disconnected_url is not None and 'quay.io' not in disconnected_url:
             if ca is None:
                 info(f"Trying to gather disconnected ca cert from {disconnected_url}")
                 cacmd = f"openssl s_client -showcerts -connect {disconnected_url} </dev/null 2>/dev/null|"
