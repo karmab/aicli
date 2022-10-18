@@ -128,6 +128,24 @@ def info_cluster(args):
         print(currententry)
 
 
+def info_validation(args):
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
+                        ca=args.ca, cert=args.cert, key=args.key)
+    info = ai.info_cluster(args.cluster).to_dict()
+    validations = json.loads(info.get('validations_info'))
+    validationstable = PrettyTable(["Id", "Type", "Status", "Message"])
+    for validation in validations:
+        for entry in validations[validation]:
+            _id = entry['id']
+            status = entry['status']
+            if not args.all and status == 'success':
+                continue
+            message = entry['message']
+            entry = [_id, validation, status, message]
+            validationstable.add_row(entry)
+    print(validationstable)
+
+
 def list_cluster(args):
     ams_subscription_id, org_id = args.subscription, args.org
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
@@ -817,6 +835,15 @@ def cli():
     clusterinfo_parser.add_argument('-p', '--preflight', action='store_true', help='Show preflight')
     clusterinfo_parser.add_argument('cluster', metavar='CLUSTER')
     clusterinfo_parser.set_defaults(func=info_cluster)
+
+    validationinfo_desc = 'Info validation'
+    validationinfo_epilog = None
+    validationinfo_parser = info_subparsers.add_parser('validation', description=validationinfo_desc,
+                                                       help=validationinfo_desc, epilog=validationinfo_epilog,
+                                                       formatter_class=rawhelp, aliases=['validations'])
+    validationinfo_parser.add_argument('-a', '--all', action='store_true', help='Report successful checks too')
+    validationinfo_parser.add_argument('cluster', metavar='CLUSTER')
+    validationinfo_parser.set_defaults(func=info_validation)
 
     clusterlist_desc = 'List Clusters'
     clusterlist_parser = argparse.ArgumentParser(add_help=False)
