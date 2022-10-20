@@ -321,8 +321,18 @@ class AssistedClient(object):
                     "contents": {"source": f"data:text/plain;base64,{registries_encoded}"}}
             fil2 = {"path": "/etc/pki/ca-trust/source/anchors/domain.crt", "mode": 420, "overwrite": True,
                     "user": {"name": "root"}, "contents": {"source": f"data:text/plain;base64,{ca_encoded}"}}
-            ignition_config_override = json.dumps({"ignition": {"version": ignition_version},
-                                                   "storage": {"files": [fil1, fil2]}})
+            ignition_config_override = {"ignition": {"version": ignition_version}, "storage": {"files": [fil1, fil2]}}
+        if 'password' in overrides:
+            info("Creating aicli user with password aicli in the discovery iso")
+            password = '$2y$05$OuDf.Q80OWQsK75AAW1oreQnGqDykML9Zq4VW9.J1yqs/2Qlvoun.'
+            password_overrides = {'ignition': {'version': "3.1.0"},
+                                  "passwd": {'users': [{"groups": ["sudo"], "name":"aicli", 'passwordHash': password}]}}
+            if ignition_config_override is not None:
+                ignition_config_override.update(password_overrides)
+            else:
+                ignition_config_override = password_overrides
+        if ignition_config_override is not None:
+            ignition_config_override = json.dumps(ignition_config_override)
         return ignition_config_override
 
     def set_olm_operators(self, olm_operators_data):
