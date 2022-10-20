@@ -685,6 +685,13 @@ class AssistedClient(object):
                 with socketserver.TCPServer(("", PORT), handler) as httpd:
                     httpd.serve_forever()
 
+    def download_static_networking_config(self, name, path):
+        infra_env_id = self.get_infra_env_id(name)
+        response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="static-network-config",
+                                                           _preload_content=False)
+        with open(f"{path}/static-network-config.{name}", "wb") as f:
+            copyfileobj(response, f)
+
     def list_clusters(self):
         return self.client.v2_list_clusters()
 

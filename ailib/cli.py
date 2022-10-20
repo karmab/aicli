@@ -530,6 +530,13 @@ def download_ipxe_script(args):
     ai.download_ipxe_script(args.infraenv, args.path, local=local, serve=args.serve)
 
 
+def download_static_networking_config(args):
+    info(f"Downloading Static networking config for infraenv {args.infraenv} in {args.path}")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
+                        ca=args.ca, cert=args.cert, key=args.key)
+    ai.download_static_networking_config(args.infraenv, args.path)
+
+
 def bind_host(args):
     info(f"binding Host {args.hostname} to Cluster {args.cluster}")
     overrides = {'cluster': args.cluster}
@@ -1124,6 +1131,16 @@ def cli():
     download_subparsers.add_parser('kubeconfig', parents=[kubeconfigdownload_parser],
                                    description=kubeconfigdownload_desc,
                                    help=kubeconfigdownload_desc)
+
+    staticnetworkingdownload_desc = 'Download Static network config'
+    staticnetworkingdownload_parser = argparse.ArgumentParser(add_help=False)
+    staticnetworkingdownload_parser.add_argument('-p', '--path', metavar='PATH', default='.',
+                                                 help='Where to download asset')
+    staticnetworkingdownload_parser.add_argument('infraenv', metavar='INFRAENV')
+    staticnetworkingdownload_parser.set_defaults(func=download_static_networking_config)
+    download_subparsers.add_parser('static-network-config', parents=[staticnetworkingdownload_parser],
+                                   description=staticnetworkingdownload_desc,
+                                   help=staticnetworkingdownload_desc)
 
     hostbind_desc = 'Bind Host'
     hostbind_parser = argparse.ArgumentParser(add_help=False)
