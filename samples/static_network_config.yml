@@ -1,6 +1,6 @@
 api_vip: 192.168.128.253
 ingress_vip: 192.168.128.252
-domain: karmalabs.com
+domain: karmalabs.corp
 static_network_config:
 - interfaces:
     - name: ens3

@@ -1,3 +1,3 @@
-base_dns_domain: karmalabs.com
+base_dns_domain: karmalabs.corp
 api_vip: 192.168.122.253
 ingress_vip: 192.168.122.252

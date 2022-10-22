@@ -20,7 +20,7 @@ from urllib.request import urlretrieve
 import yaml
 
 
-default_cluster_params = {"openshift_version": "4.11", "base_dns_domain": "karmalabs.local",
+default_cluster_params = {"openshift_version": "4.11", "base_dns_domain": "karmalabs.corp",
                           "vip_dhcp_allocation": False}
 default_cluster_params = {"openshift_version": "4.11", "vip_dhcp_allocation": False}
 default_infraenv_params = {"openshift_version": "4.11", "image_type": "full-iso"}
@@ -173,8 +173,8 @@ class AssistedClient(object):
             if 'domain' in overrides:
                 overrides['base_dns_domain'] = overrides['domain']
             elif 'base_dns_domain' not in overrides:
-                warning("Using karmalabs.local as DNS domain as no one was provided")
-                overrides['base_dns_domain'] = 'karmalabs.local'
+                warning("Using karmalabs.corp as DNS domain as no one was provided")
+                overrides['base_dns_domain'] = 'karmalabs.corp'
         if 'sno' in overrides:
             if overrides['sno']:
                 overrides['high_availability_mode'] = "None"
@@ -1355,8 +1355,8 @@ class AssistedClient(object):
         if 'domain' not in overrides:
             overrides['domain'] = overrides.get('base_dns_domain')
         elif 'base_dns_domain' not in overrides:
-            print("Using karmalabs.local as DNS domain as no one was provided")
-            overrides['domain'] = 'karmalabs.local'
+            print("Using karmalabs.corp as DNS domain as no one was provided")
+            overrides['domain'] = 'karmalabs.corp'
         static_network_config = overrides.get('static_network_config', [])
         if not static_network_config:
             error("static_network_config is required")
