@@ -824,10 +824,15 @@ class AssistedClient(object):
                     warning("Nothing updated for this host")
 
     def wait_hosts(self, name, number=3, filter_installed=False):
+        client = self.client
         infra_env_id = self.get_infra_env_id(name)
+        infra_env = client.get_infra_env(infra_env_id=infra_env_id)
+        cluster_id = infra_env.cluster_id
+        if cluster_id is not None and client.v2_get_cluster(cluster_id=cluster_id).high_availability_mode == 'None':
+            number = 1
         while True:
             try:
-                current_hosts = [host for host in self.client.v2_list_hosts(infra_env_id=infra_env_id)]
+                current_hosts = [host for host in client.v2_list_hosts(infra_env_id=infra_env_id)]
                 if filter_installed:
                     current_hosts = [host for host in current_hosts if host['status'] != 'installed']
                 if len(current_hosts) >= number:
