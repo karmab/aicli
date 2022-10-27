@@ -823,6 +823,17 @@ class AssistedClient(object):
                         disk = os.path.basename(disk)
                         disk = f"/dev/{disk}"
                         host_update_params['disks_skip_formatting'].append({"id": disk, "skip_formatting": True})
+                if 'node_labels' in overrides:
+                    host_update_params['node_labels'] = overrides['node_labels']
+                elif 'labels' in overrides:
+                    node_labels = []
+                    for label in overrides['labels']:
+                        if isinstance(label, str):
+                            node_labels.append({"key": label, "value": ""})
+                        elif isinstance(label, dict) and len(label) == 1:
+                            key, value = list(label.keys())[0], str(list(label.values())[0])
+                            node_labels.append({"key": key, "value": value})
+                    host_update_params['node_labels'] = node_labels
                 if host_update_params:
                     info(f"Updating host with id {host_id}")
                     host_update_params = models.HostUpdateParams(**host_update_params)
@@ -1259,7 +1270,7 @@ class AssistedClient(object):
         return ['sno', 'pull_secret', 'domain', 'tpm', 'minimal', 'static_network_config', 'proxy', 'disconnected_url',
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_masters', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
-                'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks']
+                'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels']
 
     def create_deployment(self, cluster, overrides, force=False):
         self.create_cluster(cluster, overrides.copy(), force=force)
