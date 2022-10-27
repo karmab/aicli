@@ -815,6 +815,14 @@ class AssistedClient(object):
                     disk = os.path.basename(disk)
                     disk = f"/dev/{disk}"
                     host_update_params['disks_selected_config'] = [{"id": disk, "role": "install"}]
+                if 'disks_skip_formatting' in overrides:
+                    host_update_params['disks_skip_formatting'] = overrides['disks_skip_formatting']
+                elif 'skip_disks' in overrides:
+                    host_update_params['disks_skip_formatting'] = []
+                    for entry in overrides['skip_disks']:
+                        disk = os.path.basename(disk)
+                        disk = f"/dev/{disk}"
+                        host_update_params['disks_skip_formatting'].append({"id": disk, "skip_formatting": True})
                 if host_update_params:
                     info(f"Updating host with id {host_id}")
                     host_update_params = models.HostUpdateParams(**host_update_params)
@@ -1251,7 +1259,7 @@ class AssistedClient(object):
         return ['sno', 'pull_secret', 'domain', 'tpm', 'minimal', 'static_network_config', 'proxy', 'disconnected_url',
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_masters', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
-                'discovery_ignition_file', 'hosts', 'registry_url', 'fips']
+                'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks']
 
     def create_deployment(self, cluster, overrides, force=False):
         self.create_cluster(cluster, overrides.copy(), force=force)
