@@ -829,7 +829,8 @@ class AssistedClient(object):
                     node_labels = []
                     for label in overrides['labels']:
                         if isinstance(label, str):
-                            node_labels.append({"key": label, "value": ""})
+                            key, value = tuple(label.split('=')) if '=' in label else (label, '')
+                            node_labels.append({"key": key, "value": value})
                         elif isinstance(label, dict) and len(label) == 1:
                             key, value = list(label.keys())[0], str(list(label.values())[0])
                             node_labels.append({"key": key, "value": value})
