@@ -818,11 +818,17 @@ class AssistedClient(object):
                 if 'disks_skip_formatting' in overrides:
                     host_update_params['disks_skip_formatting'] = overrides['disks_skip_formatting']
                 elif 'skip_disks' in overrides:
+                    hostinfo = json.loads(self.client.v2_get_host(infra_env_id=infra_env_id, host_id=host_id).inventory)
+                    disks = {disk['name']: disk['id'] for disk in hostinfo['disks']}
                     host_update_params['disks_skip_formatting'] = []
                     for entry in overrides['skip_disks']:
-                        disk = os.path.basename(disk)
-                        disk = f"/dev/{disk}"
-                        host_update_params['disks_skip_formatting'].append({"id": disk, "skip_formatting": True})
+                        disk = os.path.basename(entry)
+                        if disk in disks:
+                            disk_id = disks[disk]
+                        else:
+                            continue
+                        host_update_params['disks_skip_formatting'].append({"disk_id": disk_id,
+                                                                            "skip_formatting": True})
                 if 'node_labels' in overrides:
                     host_update_params['node_labels'] = overrides['node_labels']
                 elif 'labels' in overrides:
