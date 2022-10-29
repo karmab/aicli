@@ -248,6 +248,17 @@ Note that when AI api was in v1, a specific call ``create iso`` was needed to tr
 
 When using this call, the expiration time of the token associated to the iso is checked and if necessary, it gets refreshed (and as such so does the url)
 
+Use a debugging user in the iso
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For troubleshooting purposes, typically when the host cant be accessed through ssh, you can add a user named aicli with password aicli in the discovery iso by running
+
+::
+
+   aicli update cluster -P password=true mycluster
+
+password boolean can be specified at cluster’s creation
+
 Wait for hosts
 ~~~~~~~~~~~~~~
 
@@ -322,7 +333,39 @@ For instance, To force installation disk to /dev/sdb, use
 
    aicli update host $host -P disk=sdb"
 
-Note: the parameter ``installation_disk_path`` can be used instead
+Skipping formatting specific disks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To avoid formatting of given disks, you can run
+
+::
+
+   aicli update $host -P skip_disks=[disk1,disk2]
+
+For instance, To skip formatting of disks /dev/sdb and /dev/sdc, use
+
+::
+
+   aicli update host $host -P skip_disk=[sdb,sdc]"
+
+Note: the parameter ``skip_formatting_disks`` can be used instead but you will need to provide a dict with disk_id and skip_formatting
+
+Specifying node labels
+^^^^^^^^^^^^^^^^^^^^^^
+
+To declare specific labels for a host, you can run
+
+::
+
+   aicli update $host -P labels=[label1,label2,key3=value3]
+
+For instance, To specify the label ``productionready`` for a host, use
+
+::
+
+   aicli update host $host -P labels=[productionready]"
+
+Note: the parameter ``node_labels`` can be used instead
 
 Applying custom ignition on first boot of a host
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
