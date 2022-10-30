@@ -159,10 +159,11 @@ class AssistedClient(object):
                 warning("Using openshift_pull.json as pull_secret file")
                 overrides['pull_secret'] = "openshift_pull.json"
             pull_secret = os.path.expanduser(overrides['pull_secret'])
-            if not os.path.exists(pull_secret):
+            if os.path.exists(pull_secret):
+                overrides['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
+            elif '{' not in pull_secret:
                 error(f"Missing pull secret file {pull_secret}")
                 sys.exit(1)
-            overrides['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
             if 'ssh_public_key' not in overrides:
                 pub_key = overrides.get('public_key', self.get_default_ssh_pub())
                 if os.path.exists(pub_key):
