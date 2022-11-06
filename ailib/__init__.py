@@ -1341,10 +1341,14 @@ class AssistedClient(object):
             bmc_user = host.get('bmc_user') or overrides.get('bmc_user')
             bmc_password = host.get('bmc_password') or overrides.get('bmc_password')
             bmc_model = host.get('bmc_model') or overrides.get('bmc_model', 'dell')
+            bmc_reset = host.get('reset') or host.get('bmc_reset') or overrides.get('bmc_reset', False)
             if bmc_url is not None and bmc_user is not None and bmc_password is not None:
+                red = Redfish(bmc_url, bmc_user, bmc_password, model=bmc_model)
+                if bmc_reset:
+                    red.reset()
+                    sleep(240)
                 msg = host['name'] if 'name' in host else f"with url {bmc_url}"
                 info(f"Booting Host {msg}")
-                red = Redfish(bmc_url, bmc_user, bmc_password, model=bmc_model)
                 try:
                     red.set_iso(iso_url)
                 except Exception as e:
