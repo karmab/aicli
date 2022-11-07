@@ -1375,6 +1375,7 @@ class AssistedClient(object):
         self.set_default_values(overrides)
         overrides['cluster'] = cluster
         api_ip = overrides.get('api_ip') or overrides.get('api_vip')
+        sno = overrides.get('sno', False)
         if 'cluster_networks' in overrides:
             cluster_networks = overrides['cluster_networks']
         elif api_ip is not None and ':' in api_ip:
@@ -1400,7 +1401,7 @@ class AssistedClient(object):
         agentdir = os.path.dirname(AssistedClient.create_cluster.__code__.co_filename) + '/agent'
         if not os.path.isdir(path):
             os.mkdir(path)
-        if not overrides.get('sno', False):
+        if not sno:
             if overrides.get('masters') is None:
                 masters = 3
                 warning("Forcing masters to 3")
@@ -1512,6 +1513,7 @@ class AssistedClient(object):
                 agent_config['hosts'] = hosts
                 dest.write(yaml.safe_dump(agent_config))
             with open(f"{path}/install-config.yaml", 'w') as dest:
+                platform = {'none': {}} if sno else {'baremetal': {'hosts': custom_hosts}}
                 agent_install_data = {'apiVersion': 'v1', 'baseDomain': domain,
                                       'compute': [{'architecture': 'amd64', 'hyperthreading': 'Enabled',
                                                    'name': 'worker', 'replicas': workers}],
@@ -1520,8 +1522,8 @@ class AssistedClient(object):
                                       'metadata': {'name': cluster},
                                       'networking': {'clusterNetwork': cluster_networks,
                                                      'networkType': network_type, 'serviceNetwork': service_networks},
-                                      'platform': {'baremetal': {'hosts': custom_hosts}}, 'pullSecret': pull_secret,
-                                      'sshKey': ssh_public_key, 'imageContentSources': icsps}
+                                      'platform': platform, 'pullSecret': pull_secret, 'sshKey': ssh_public_key,
+                                      'imageContentSources': icsps}
                 if api_vip is not None:
                     agent_install_data['platform']['baremetal']['apiVips'] = [api_vip]
                 if ingress_vip is not None:
