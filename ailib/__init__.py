@@ -217,6 +217,9 @@ class AssistedClient(object):
                 nics = []
                 mac_interface_map = entry.get('mac_interface_map', [])
                 interfaces = entry.get('interfaces', [])
+                if entry.get('network_yaml') is not None:
+                    final_network_config.append(models.HostStaticNetworkConfig(**entry))
+                    continue
                 if not interfaces:
                     error("You need to provide a list of interfaces")
                     sys.exit(1)
