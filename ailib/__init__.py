@@ -1028,6 +1028,20 @@ class AssistedClient(object):
                     host_id = host['id']
                     self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
 
+    def stop_hosts(self, hostnames=[]):
+        for infra_env in self.client.list_infra_envs():
+            infra_env_id = infra_env['id']
+            infra_env_hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+            hosts = [h for h in infra_env_hosts if h['requested_hostname'] in hostnames or h['id'] in hostnames]
+            if hosts:
+                host = hosts[0]
+                if host['status'] != "adding-hosts":
+                    info(f"Skipping Host {host['requested_hostname']}")
+                else:
+                    info(f"Resetting Host {host['requested_hostname']}")
+                    host_id = host['id']
+                    self.client.v2_reset_host(infra_env_id=infra_env_id, host_id=host_id)
+
     def stop_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
         self.client.v2_reset_cluster(cluster_id=cluster_id)

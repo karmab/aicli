@@ -330,6 +330,13 @@ def start_hosts(args):
     ai.start_hosts(hostnames=hostnames)
 
 
+def stop_hosts(args):
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
+                        ca=args.ca, cert=args.cert, key=args.key)
+    hostnames = args.hostnames
+    ai.stop_hosts(hostnames=hostnames)
+
+
 def create_infra_env(args):
     info(f"Creating infraenv {args.infraenv}")
     paramfile = choose_parameter_file(args.paramfile)
@@ -1196,6 +1203,16 @@ def cli():
     hostsstart_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
     hostsstart_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
     hostsstart_parser.set_defaults(func=start_hosts)
+
+    hostsstop_desc = 'Stop (day2) Hosts'
+    hostsstop_epilog = None
+    hostsstop_parser = stop_subparsers.add_parser('host', description=hostsstop_desc, help=hostsstop_desc,
+                                                  epilog=hostsstop_epilog, formatter_class=rawhelp,
+                                                  aliases=['hosts'])
+    hostsstop_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    hostsstop_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    hostsstop_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
+    hostsstop_parser.set_defaults(func=stop_hosts)
 
     hostunbind_desc = 'Unbind Host'
     hostunbind_parser = argparse.ArgumentParser(add_help=False)
