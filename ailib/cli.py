@@ -8,6 +8,7 @@ import sys
 import yaml
 from time import sleep
 from ailib import AssistedClient
+from ailib import boot_hosts as ai_boot_hosts
 
 PARAMHELP = "specify parameter or keyword for rendering (multiple can be specified)"
 
@@ -317,10 +318,8 @@ def list_hosts(args):
 def boot_hosts(args):
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
-    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
-                        ca=args.ca, cert=args.cert, key=args.key)
     hostnames = args.hostnames
-    ai.boot_hosts(overrides, hostnames=hostnames)
+    ai_boot_hosts(overrides, hostnames=hostnames)
 
 
 def start_hosts(args):

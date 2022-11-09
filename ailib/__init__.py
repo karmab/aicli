@@ -27,6 +27,42 @@ default_infraenv_params = {"openshift_version": "4.11", "image_type": "full-iso"
 SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub']
 
 
+def boot_hosts(overrides, hostnames=[]):
+    if 'hosts' not in overrides:
+        warning("No hosts to boot found in your parameter file")
+        return
+    iso_url = overrides['iso_url']
+    if iso_url is None:
+        warning("Missing iso_url in your parameters")
+        return
+    elif not iso_url.endswith('.iso'):
+        cluster = overrides.get('cluster')
+        if cluster is None:
+            warning("Missing cluster name in your parameters to append it to iso_url")
+            return 1
+        iso_url += f"{cluster}.iso"
+    hosts = overrides['hosts']
+    for host in hosts:
+        if hostnames and host.get('name', '') not in hostnames:
+            continue
+        bmc_url = host.get('bmc_url')
+        bmc_user = host.get('bmc_user') or overrides.get('bmc_user')
+        bmc_password = host.get('bmc_password') or overrides.get('bmc_password')
+        bmc_model = host.get('bmc_model') or overrides.get('bmc_model', 'dell')
+        bmc_reset = host.get('reset') or host.get('bmc_reset') or overrides.get('bmc_reset', False)
+        if bmc_url is not None and bmc_user is not None and bmc_password is not None:
+            red = Redfish(bmc_url, bmc_user, bmc_password, model=bmc_model)
+            if bmc_reset:
+                red.reset()
+                sleep(240)
+            msg = host['name'] if 'name' in host else f"with url {bmc_url}"
+            info(f"Booting Host {msg}")
+            try:
+                red.set_iso(iso_url)
+            except Exception as e:
+                warning(f"Hit {e} when plugging iso to host {msg}")
+
+
 class AssistedClient(object):
     def __init__(self, url='https://api.openshift.com', token=None, offlinetoken=None, debug=False,
                  ca=None, cert=None, key=None):
@@ -1315,7 +1351,7 @@ class AssistedClient(object):
         if download_iso_cmd is not None:
             call(download_iso_cmd, shell=True)
         if 'hosts' in overrides:
-            self.boot_hosts(overrides)
+            boot_hosts(overrides)
         if 'hosts_number' in overrides:
             hosts_number = overrides.get('hosts_number')
         elif 'hosts' in overrides and isinstance(overrides['hosts'], list):
@@ -1335,41 +1371,6 @@ class AssistedClient(object):
         self.wait_cluster(cluster)
         info(f"Downloading Kubeconfig for Cluster {cluster} in current directory")
         self.download_kubeconfig(cluster, '.')
-
-    def boot_hosts(self, overrides, hostnames=[]):
-        if 'hosts' not in overrides:
-            warning("No hosts to boot found in your parameter file")
-            return
-        iso_url = overrides['iso_url']
-        if iso_url is None:
-            warning("Missing iso_url in your parameters")
-            return
-        elif not iso_url.endswith('.iso'):
-            cluster = overrides.get('cluster')
-            if cluster is None:
-                warning("Missing cluster name in your parameters to append it to iso_url")
-                return 1
-            iso_url += f"{cluster}.iso"
-        hosts = overrides['hosts']
-        for host in hosts:
-            if hostnames and host.get('name', '') not in hostnames:
-                continue
-            bmc_url = host.get('bmc_url')
-            bmc_user = host.get('bmc_user') or overrides.get('bmc_user')
-            bmc_password = host.get('bmc_password') or overrides.get('bmc_password')
-            bmc_model = host.get('bmc_model') or overrides.get('bmc_model', 'dell')
-            bmc_reset = host.get('reset') or host.get('bmc_reset') or overrides.get('bmc_reset', False)
-            if bmc_url is not None and bmc_user is not None and bmc_password is not None:
-                red = Redfish(bmc_url, bmc_user, bmc_password, model=bmc_model)
-                if bmc_reset:
-                    red.reset()
-                    sleep(240)
-                msg = host['name'] if 'name' in host else f"with url {bmc_url}"
-                info(f"Booting Host {msg}")
-                try:
-                    red.set_iso(iso_url)
-                except Exception as e:
-                    warning(f"Hit {e} when plugging iso to host {msg}")
 
     def create_agent_manifests(self, cluster, overrides={}, path='.', ztp=False):
         disconnected_url = None
