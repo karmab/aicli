@@ -10,7 +10,7 @@ parameters:
 {{ cluster }}-node-{{ num }}:
  memory: {{ memory }}
  numcpus: {{ numcpus }}
- uuid: 11111111-1111-1111-1111-11111111118{{ num + 1 }}
+ uuid: 21111111-1111-1111-1111-11111111118{{ num + 1 }}
  uefi: true
  start: false
  disks:
