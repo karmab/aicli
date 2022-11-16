@@ -31,6 +31,8 @@ To use with SAAS, gather an offline token at [https://cloud.redhat.com/openshift
 sudo dnf -y copr enable karmab/aicli ; sudo dnf -y install aicli
 ```
 
+or
+
 ```
 pip3 install aicli
 ```
