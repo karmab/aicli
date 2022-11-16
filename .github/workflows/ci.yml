@@ -10,9 +10,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
       - uses: actions/setup-python@v2
+      - name: Install Dependencies
+        run: sudo .github/prep.sh
+        shell: bash
       - name: Lint Code
         run: ./.github/linting.sh
         shell: bash
+      - if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository_owner == 'karmab'
+        name: Release RPM
+        run: .github/copr.sh
+        shell: bash
+        env:
+         COPR_BASE64: ${{ secrets.COPR_BASE64 }}
       - name: Build Container
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ./.github/build.sh
