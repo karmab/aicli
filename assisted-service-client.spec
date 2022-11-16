@@ -16,7 +16,7 @@ Source:         {{{ git_dir_pack }}}
 AutoReq:        no
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildRequires:  java python3 python3-setuptools
-Requires:       python3
+Requires:       python3 certifi
 
 %description
 assisted-installer python library
