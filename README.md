@@ -6,6 +6,7 @@
 [![Build Status](https://travis-ci.org/karmab/kcli.svg?branch=master)](https://travis-ci.org/karmab/kcli)
 ![CI](https://github.com/karmab/aicli/actions/workflows/ci.yml/badge.svg)
 [![Pypi](http://img.shields.io/pypi/v/aicli.svg)](https://pypi.python.org/pypi/aicli/)
+[![Copr](https://copr.fedorainfracloud.org/coprs/karmab/aicli/package/aicli/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/karmab/kcli/package/aicli)
 [![Documentation Status](https://readthedocs.org/projects/aicli/badge/?version=latest)](https://aicli.readthedocs.io/en/latest/?badge=latest)
 [![](https://images.microbadger.com/badges/image/karmab/aicli.svg)](https://microbadger.com/images/karmab/aicli "Get your own image badge on microbadger.com")
 
@@ -25,6 +26,10 @@ Refer to the [documentation](https://aicli.readthedocs.io) for more information
 ## Quick Start
 
 To use with SAAS, gather an offline token at [https://cloud.redhat.com/openshift/token](https://cloud.redhat.com/openshift/token), then
+
+```
+sudo dnf -y copr enable karmab/aicli ; sudo dnf -y install aicli
+```
 
 ```
 pip3 install aicli

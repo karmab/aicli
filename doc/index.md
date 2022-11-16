@@ -24,6 +24,12 @@ Available features:
 
 When using SAAS mode, an offline token is needed in order to interact with the api. This token can be retrieved at [https://cloud.redhat.com/openshift/token](https://cloud.redhat.com/openshift/token)
 
+## using rpm
+
+```
+sudo dnf -y copr enable karmab/aicli ; sudo dnf -y install aicli
+```
+
 ## using pip
 
 Install the package with
