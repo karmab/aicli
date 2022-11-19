@@ -1,5 +1,5 @@
 from assisted_service_client import ApiClient, Configuration, api, models
-from ailib.common import warning, error, info, get_token, same_uuid, match_mac
+from ailib.common import warning, error, info, get_token, same_uuid, match_mac, valid_uuid
 from ailib.redfish import Redfish
 import base64
 from datetime import datetime
@@ -50,6 +50,8 @@ def boot_hosts(overrides, hostnames=[], debug=False):
         bmc_password = host.get('bmc_password') or overrides.get('bmc_password')
         bmc_model = host.get('bmc_model') or overrides.get('bmc_model', 'dell')
         bmc_reset = host.get('reset') or host.get('bmc_reset') or overrides.get('bmc_reset', False)
+        if bmc_url is not None and 'redfish/v1/Systems/' in bmc_url and valid_uuid(os.path.basename(bmc_url)):
+            bmc_user, bmc_password = 'fake', 'fake'
         if bmc_url is not None and bmc_user is not None and bmc_password is not None:
             red = Redfish(bmc_url, bmc_user, bmc_password, model=bmc_model, debug=debug)
             if bmc_reset:
