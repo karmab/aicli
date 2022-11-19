@@ -319,7 +319,7 @@ def boot_hosts(args):
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     hostnames = args.hostnames
-    ai_boot_hosts(overrides, hostnames=hostnames)
+    ai_boot_hosts(overrides, hostnames=hostnames, debug=args.debug)
 
 
 def start_hosts(args):

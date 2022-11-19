@@ -27,7 +27,7 @@ default_infraenv_params = {"openshift_version": "4.11", "image_type": "full-iso"
 SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub']
 
 
-def boot_hosts(overrides, hostnames=[]):
+def boot_hosts(overrides, hostnames=[], debug=False):
     if 'hosts' not in overrides:
         warning("No hosts to boot found in your parameter file")
         return
@@ -51,7 +51,7 @@ def boot_hosts(overrides, hostnames=[]):
         bmc_model = host.get('bmc_model') or overrides.get('bmc_model', 'dell')
         bmc_reset = host.get('reset') or host.get('bmc_reset') or overrides.get('bmc_reset', False)
         if bmc_url is not None and bmc_user is not None and bmc_password is not None:
-            red = Redfish(bmc_url, bmc_user, bmc_password, model=bmc_model)
+            red = Redfish(bmc_url, bmc_user, bmc_password, model=bmc_model, debug=debug)
             if bmc_reset:
                 red.reset()
                 sleep(240)
