@@ -243,7 +243,9 @@ def delete_host(args):
 def info_host(args):
     if not args.full:
         skipped = ['kind', 'logs_collected_at', 'href', 'validations_info', 'discovery_agent_version',
-                   'installer_version', 'progress_stages', 'connectivity']
+                   'installer_version', 'progress_stages', 'connectivity', 'ntp_sources', 'images_status',
+                   'domain_name_resolutions', 'user_name', 'timestamp', 'stage_started_at', 'stage_updated_at',
+                   'logs_info', 'logs_started_at']
         if not args.inventory:
             skipped.append('inventory')
     else:
