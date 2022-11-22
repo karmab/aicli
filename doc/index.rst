@@ -189,6 +189,11 @@ For instance,
 
 Note that for such ignition to be applied to the nodes once they really get installed, a machineconfig is needed (which can be injected as custom manifest)
 
+Custom kernel arguments
+~~~~~~~~~~~~~~~~~~~~~~~
+
+You can specify kernel arguments that only apply to the discovery ISO by using the keyword ``discovery_kernel_arguments`` and providing data as a string.
+
 Custom networking
 ~~~~~~~~~~~~~~~~~
 
