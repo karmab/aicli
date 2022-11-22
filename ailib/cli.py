@@ -267,17 +267,18 @@ def info_host(args):
         for key in list(hostinfo):
             if key in skipped or hostinfo[key] is None:
                 del hostinfo[key]
-
-        routes = inventory.get('routes', [])
-        ip = 'N/A'
-        all_addr = []
-        default_nics = [x['interface'] for x in routes if x['destination'] == '0.0.0.0']
-        for default_nic in default_nics:
-            nic_info = next(nic for nic in inventory.get('interfaces') if nic["name"] == default_nic)
-            addr = nic_info['ipv4_addresses'][0].split('/')[0]
-            all_addr.append(addr)
-        ip = ",".join(all_addr) if all_addr else 'N/A'
-        hostinfo["ip"] = ip
+        if inventory:
+            routes = inventory.get('routes', [])
+            all_addr = []
+            default_nics = [x['interface'] for x in routes if x['destination'] == '0.0.0.0']
+            for default_nic in default_nics:
+                nic_info = next(nic for nic in inventory.get('interfaces') if nic["name"] == default_nic)
+                addr = nic_info['ipv4_addresses'][0].split('/')[0]
+                all_addr.append(addr)
+                if 'ip' not in hostinfo:
+                    hostinfo["ip"] = addr
+            if len(all_addr) > 1:
+                hostinfo["ips"] = all_addr
 
         for entry in sorted(hostinfo):
             currententry = f"{entry}: {hostinfo[entry]}" if not values else hostinfo[entry]
