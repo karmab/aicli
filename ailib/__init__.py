@@ -313,6 +313,17 @@ class AssistedClient(object):
             overrides['proxy'] = {'http_proxy': proxy, 'https_proxy': proxy}
             if 'noproxy' in overrides:
                 overrides['proxy']['no_proxy'] = overrides['noproxy']
+        if 'kernel_arguments' in overrides:
+            kernel_arguments = overrides['kernel_arguments']
+            if isinstance(kernel_arguments, str):
+                kernel_arguments = kernel_arguments.split(" ")
+            overrides['kernel_arguments'] = []
+            for entry in kernel_arguments:
+                if isinstance(entry, dict):
+                    new_entry = entry
+                else:
+                    new_entry = {'operation': 'append', 'value': entry}
+                overrides['kernel_arguments'].append(models.KernelArgument(**new_entry))
 
     def set_disconnected_ignition_config_override(self, infra_env_id=None, overrides={}):
         ignition_config_override = None

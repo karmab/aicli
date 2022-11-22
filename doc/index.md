@@ -172,7 +172,17 @@ Note that for such ignition to be applied to the nodes once they really get inst
 
 ### Custom kernel arguments
 
-You can specify kernel arguments that only apply to the discovery ISO by using the keyword `discovery_kernel_arguments` and providing data as a string.
+You can specify kernel arguments that only apply to the discovery ISO by using the keyword `kernel_arguments`.
+
+The data can be provided either as a string (say `a=xxx b=yyy`) in which case the arguments are considered to be appended or as a dict such as
+
+```
+kernel_arguments:
+- operation: append
+  value: 'a=xxx'
+- operation: append
+  value: 'b=yyy'
+```
 
 ### Custom networking
 
