@@ -762,54 +762,39 @@ def cli():
     bind_parser = subparsers.add_parser('bind', description=bind_desc, help=bind_desc)
     bind_subparsers = bind_parser.add_subparsers(metavar='', dest='subcommand_bind')
 
+    hostbind_desc = 'Bind Host'
+    hostbind_parser = argparse.ArgumentParser(add_help=False)
+    hostbind_parser.add_argument('hostname', metavar='HOSTNAME')
+    hostbind_parser.add_argument('cluster', metavar='CLUSTER')
+    hostbind_parser.set_defaults(func=bind_host)
+    bind_subparsers.add_parser('host', parents=[hostbind_parser], description=hostbind_desc, help=hostbind_desc)
+
+    infraenvbind_desc = 'Bind Infraenv'
+    infraenvbind_parser = argparse.ArgumentParser(add_help=False)
+    infraenvbind_parser.add_argument('-f', '--force', action='store_true', help='Force')
+    infraenvbind_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvbind_parser.add_argument('cluster', metavar='CLUSTER')
+    infraenvbind_parser.set_defaults(func=bind_infra_env)
+    bind_subparsers.add_parser('infraenv', parents=[infraenvbind_parser], description=infraenvbind_desc,
+                               help=infraenvbind_desc)
+
     boot_desc = 'boot Object'
     boot_parser = subparsers.add_parser('boot', description=boot_desc, help=boot_desc)
     boot_subparsers = boot_parser.add_subparsers(metavar='', dest='subcommand_boot')
 
+    hostsboot_desc = 'Boot Hosts through redfish'
+    hostsboot_epilog = None
+    hostsboot_parser = boot_subparsers.add_parser('host', description=hostsboot_desc,
+                                                  help=hostsboot_desc, epilog=hostsboot_epilog, formatter_class=rawhelp,
+                                                  aliases=['hosts'])
+    hostsboot_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    hostsboot_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    hostsboot_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
+    hostsboot_parser.set_defaults(func=boot_hosts)
+
     create_desc = 'Create Object'
     create_parser = subparsers.add_parser('create', description=create_desc, help=create_desc, aliases=['add'])
     create_subparsers = create_parser.add_subparsers(metavar='', dest='subcommand_create')
-
-    delete_desc = 'Delete Object'
-    delete_parser = subparsers.add_parser('delete', description=delete_desc, help=delete_desc, aliases=['remove'])
-    delete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation', dest="yes_top")
-    delete_subparsers = delete_parser.add_subparsers(metavar='', dest='subcommand_delete')
-
-    download_desc = 'Download Assets'
-    download_parser = subparsers.add_parser('download', description=download_desc, help=download_desc)
-    download_subparsers = download_parser.add_subparsers(metavar='', dest='subcommand_download')
-
-    export_desc = 'Export Object'
-    export_parser = subparsers.add_parser('export', description=export_desc, help=export_desc)
-    export_subparsers = export_parser.add_subparsers(metavar='', dest='subcommand_export')
-
-    info_desc = 'Info Object'
-    info_parser = subparsers.add_parser('info', description=info_desc, help=info_desc)
-    info_subparsers = info_parser.add_subparsers(metavar='', dest='subcommand_info')
-
-    list_desc = 'List Object'
-    list_parser = subparsers.add_parser('list', description=list_desc, help=list_desc, aliases=['get'])
-    list_subparsers = list_parser.add_subparsers(metavar='', dest='subcommand_list')
-
-    start_desc = 'Start Object'
-    start_parser = subparsers.add_parser('start', description=start_desc, help=start_desc, aliases=['launch'])
-    start_subparsers = start_parser.add_subparsers(metavar='', dest='subcommand_start')
-
-    stop_desc = 'Stop Object'
-    stop_parser = subparsers.add_parser('stop', description=stop_desc, help=stop_desc, aliases=['reset'])
-    stop_subparsers = stop_parser.add_subparsers(metavar='', dest='subcommand_stop')
-
-    unbind_desc = 'Unbind Object'
-    unbind_parser = subparsers.add_parser('unbind', description=unbind_desc, help=unbind_desc)
-    unbind_subparsers = unbind_parser.add_subparsers(metavar='', dest='subcommand_unbind')
-
-    update_desc = 'Update Object'
-    update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc, aliases=['patch'])
-    update_subparsers = update_parser.add_subparsers(metavar='', dest='subcommand_update')
-
-    wait_desc = 'Wait Object'
-    wait_parser = subparsers.add_parser('wait', description=wait_desc, help=wait_desc)
-    wait_subparsers = wait_parser.add_subparsers(metavar='', dest='subcommand_wait')
 
     agentmanifestscreate_desc = 'Create agent based installer manifests'
     agentmanifestscreate_epilog = None
@@ -836,74 +821,6 @@ def cli():
     clustercreate_parser.add_argument('cluster', metavar='CLUSTER')
     clustercreate_parser.set_defaults(func=create_cluster)
 
-    clusterdelete_desc = 'Delete Cluster'
-    clusterdelete_epilog = None
-    clusterdelete_parser = delete_subparsers.add_parser('cluster', description=clusterdelete_desc,
-                                                        help=clusterdelete_desc,
-                                                        epilog=clusterdelete_epilog, formatter_class=rawhelp,
-                                                        aliases=['deployment'])
-    clusterdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
-    clusterdelete_parser.add_argument('clusters', metavar='CLUSTERS', nargs='*')
-    clusterdelete_parser.set_defaults(func=delete_cluster)
-
-    clusterexport_desc = 'Export Clusters'
-    clusterexport_parser = argparse.ArgumentParser(add_help=False)
-    clusterexport_parser.add_argument('cluster', metavar='CLUSTER')
-    clusterexport_parser.set_defaults(func=export_cluster)
-    export_subparsers.add_parser('cluster', parents=[clusterexport_parser], description=clusterexport_desc,
-                                 help=clusterexport_desc, aliases=['clusters'])
-
-    clusterinfo_desc = 'Info Cluster'
-    clusterinfo_epilog = None
-    clusterinfo_parser = info_subparsers.add_parser('cluster', description=clusterinfo_desc, help=clusterinfo_desc,
-                                                    epilog=clusterinfo_epilog, formatter_class=rawhelp)
-    clusterinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
-                                    'separated by a comma', metavar='FIELDS')
-    clusterinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
-    clusterinfo_parser.add_argument('--full', action='store_true', help='Full output')
-    clusterinfo_parser.add_argument('-p', '--preflight', action='store_true', help='Show preflight')
-    clusterinfo_parser.add_argument('cluster', metavar='CLUSTER')
-    clusterinfo_parser.set_defaults(func=info_cluster)
-
-    validationinfo_desc = 'Info validation'
-    validationinfo_epilog = None
-    validationinfo_parser = info_subparsers.add_parser('validation', description=validationinfo_desc,
-                                                       help=validationinfo_desc, epilog=validationinfo_epilog,
-                                                       formatter_class=rawhelp, aliases=['validations'])
-    validationinfo_parser.add_argument('-a', '--all', action='store_true', help='Report successful checks too')
-    validationinfo_parser.add_argument('cluster', metavar='CLUSTER')
-    validationinfo_parser.set_defaults(func=info_validation)
-
-    clusterlist_desc = 'List Clusters'
-    clusterlist_parser = argparse.ArgumentParser(add_help=False)
-    clusterlist_parser.add_argument('-s', '--subscription', help='Filter by specified ams_subscription_id',
-                                    metavar='SUBSCRIPTION')
-    clusterlist_parser.add_argument('-o', '--org', help='Filter by specified org_id', metavar='ORG')
-    clusterlist_parser.set_defaults(func=list_cluster)
-    list_subparsers.add_parser('cluster', parents=[clusterlist_parser], description=clusterlist_desc,
-                               help=clusterlist_desc, aliases=['clusters'])
-
-    cluster_keywords_list_desc = 'List Cluster keywords'
-    cluster_keywords_list_parser = argparse.ArgumentParser(add_help=False)
-    cluster_keywords_list_parser.set_defaults(func=list_cluster_keywords)
-    list_subparsers.add_parser('cluster-keyword', parents=[cluster_keywords_list_parser],
-                               description=cluster_keywords_list_desc,
-                               help=cluster_keywords_list_desc, aliases=['cluster-keywords'])
-
-    extra_keywords_list_desc = 'List Extra keywords'
-    extra_keywords_list_parser = argparse.ArgumentParser(add_help=False)
-    extra_keywords_list_parser.set_defaults(func=list_extra_keywords)
-    list_subparsers.add_parser('extra-keyword', parents=[extra_keywords_list_parser],
-                               description=extra_keywords_list_desc,
-                               help=extra_keywords_list_desc, aliases=['extra-keywords'])
-
-    host_keywords_list_desc = 'List Host keywords'
-    host_keywords_list_parser = argparse.ArgumentParser(add_help=False)
-    host_keywords_list_parser.set_defaults(func=list_host_keywords)
-    list_subparsers.add_parser('host-keyword', parents=[host_keywords_list_parser],
-                               description=host_keywords_list_desc,
-                               help=host_keywords_list_desc, aliases=['host-keywords'])
-
     deploymentcreate_desc = 'Create Deployment e2e'
     deploymentcreate_epilog = None
     deploymentcreate_parser = create_subparsers.add_parser('deployment', description=deploymentcreate_desc,
@@ -915,6 +832,26 @@ def cli():
     deploymentcreate_parser.add_argument('cluster', metavar='CLUSTER')
     deploymentcreate_parser.set_defaults(func=create_deployment)
 
+    infraenvcreate_desc = 'Create Infraenv'
+    infraenvcreate_epilog = None
+    infraenvcreate_parser = create_subparsers.add_parser('infraenv', description=infraenvcreate_desc,
+                                                         help=infraenvcreate_desc,
+                                                         epilog=infraenvcreate_epilog, formatter_class=rawhelp)
+    infraenvcreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    infraenvcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    infraenvcreate_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvcreate_parser.set_defaults(func=create_infra_env)
+
+    isocreate_desc = 'Create iso'
+    isocreate_epilog = None
+    isocreate_parser = create_subparsers.add_parser('iso', description=isocreate_desc, help=isocreate_desc,
+                                                    epilog=isocreate_epilog, formatter_class=rawhelp)
+    isocreate_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
+    isocreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    isocreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    isocreate_parser.add_argument('infraenv', metavar='INFRAENV')
+    isocreate_parser.set_defaults(func=create_iso)
+
     manifestscreate_desc = 'Upload manifests to cluster'
     manifestscreate_epilog = None
     manifestscreate_parser = create_subparsers.add_parser('manifest', description=manifestscreate_desc,
@@ -924,6 +861,39 @@ def cli():
     manifestscreate_parser.add_argument('-o', '--openshift', action='store_true', help='Store in openshift folder')
     manifestscreate_parser.add_argument('cluster', metavar='CLUSTER')
     manifestscreate_parser.set_defaults(func=create_manifests)
+
+    delete_desc = 'Delete Object'
+    delete_parser = subparsers.add_parser('delete', description=delete_desc, help=delete_desc, aliases=['remove'])
+    delete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation', dest="yes_top")
+    delete_subparsers = delete_parser.add_subparsers(metavar='', dest='subcommand_delete')
+
+    clusterdelete_desc = 'Delete Cluster'
+    clusterdelete_epilog = None
+    clusterdelete_parser = delete_subparsers.add_parser('cluster', description=clusterdelete_desc,
+                                                        help=clusterdelete_desc,
+                                                        epilog=clusterdelete_epilog, formatter_class=rawhelp,
+                                                        aliases=['deployment'])
+    clusterdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
+    clusterdelete_parser.add_argument('clusters', metavar='CLUSTERS', nargs='*')
+    clusterdelete_parser.set_defaults(func=delete_cluster)
+
+    infraenvdelete_desc = 'Delete Infraenv'
+    infraenvdelete_epilog = None
+    infraenvdelete_parser = delete_subparsers.add_parser('infraenv', description=infraenvdelete_desc,
+                                                         help=infraenvdelete_desc,
+                                                         epilog=infraenvdelete_epilog, formatter_class=rawhelp)
+    infraenvdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
+    infraenvdelete_parser.add_argument('infraenvs', metavar='INFRAENVS', nargs='*')
+    infraenvdelete_parser.set_defaults(func=delete_infra_env)
+
+    hostdelete_desc = 'Delete host'
+    hostdelete_parser = argparse.ArgumentParser(add_help=False)
+    hostdelete_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    hostdelete_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    hostdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
+    hostdelete_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
+    hostdelete_parser.set_defaults(func=delete_host)
+    delete_subparsers.add_parser('host', parents=[hostdelete_parser], description=hostdelete_desc, help=hostdelete_desc)
 
     manifestsdelete_desc = 'Delete manifests to cluster'
     manifestsdelete_epilog = None
@@ -936,39 +906,9 @@ def cli():
     manifestsdelete_parser.add_argument('manifests', metavar='MANIFESTS', nargs='*')
     manifestsdelete_parser.set_defaults(func=delete_manifests)
 
-    clusterstart_desc = 'Start Cluster'
-    clusterstart_epilog = None
-    clusterstart_parser = start_subparsers.add_parser('cluster', description=clusterstart_desc,
-                                                      help=clusterstart_desc,
-                                                      epilog=clusterstart_epilog, formatter_class=rawhelp)
-    clusterstart_parser.add_argument('cluster', metavar='CLUSTER')
-    clusterstart_parser.set_defaults(func=start_cluster)
-
-    clusterstop_desc = 'Stop Cluster'
-    clusterstop_epilog = None
-    clusterstop_parser = stop_subparsers.add_parser('cluster', description=clusterstop_desc,
-                                                    help=clusterstop_desc,
-                                                    epilog=clusterstop_epilog, formatter_class=rawhelp)
-    clusterstop_parser.add_argument('cluster', metavar='CLUSTER')
-    clusterstop_parser.set_defaults(func=stop_cluster)
-
-    clusterupdate_desc = 'Update Cluster'
-    clusterupdate_parser = argparse.ArgumentParser(add_help=False)
-    clusterupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    clusterupdate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
-    clusterupdate_parser.add_argument('cluster', metavar='CLUSTER')
-    clusterupdate_parser.set_defaults(func=update_cluster)
-    update_subparsers.add_parser('cluster', parents=[clusterupdate_parser], description=clusterupdate_desc,
-                                 help=clusterupdate_desc)
-
-    eventslist_desc = 'List Events'
-    eventslist_parser = argparse.ArgumentParser(add_help=False)
-    eventslist_parser.add_argument('-f', '--follow', action='store_true')
-    eventslist_parser.add_argument('-r', '--raw', action='store_true')
-    eventslist_parser.add_argument('cluster', metavar='CLUSTER')
-    eventslist_parser.set_defaults(func=list_events)
-    list_subparsers.add_parser('event', parents=[eventslist_parser], description=eventslist_desc,
-                               help=eventslist_desc, aliases=['events'])
+    download_desc = 'Download Assets'
+    download_parser = subparsers.add_parser('download', description=download_desc, help=download_desc)
+    download_subparsers = download_parser.add_subparsers(metavar='', dest='subcommand_download')
 
     ignitiondiscoverydownload_desc = 'Download Discovery Ignition file'
     ignitiondiscoverydownload_parser = argparse.ArgumentParser(add_help=False)
@@ -1002,110 +942,6 @@ def cli():
                                    description=ipxescriptdownload_desc,
                                    help=ipxescriptdownload_desc)
 
-    infraenvbind_desc = 'Bind Infraenv'
-    infraenvbind_parser = argparse.ArgumentParser(add_help=False)
-    infraenvbind_parser.add_argument('-f', '--force', action='store_true', help='Force')
-    infraenvbind_parser.add_argument('infraenv', metavar='INFRAENV')
-    infraenvbind_parser.add_argument('cluster', metavar='CLUSTER')
-    infraenvbind_parser.set_defaults(func=bind_infra_env)
-    bind_subparsers.add_parser('infraenv', parents=[infraenvbind_parser], description=infraenvbind_desc,
-                               help=infraenvbind_desc)
-
-    infraenvcreate_desc = 'Create Infraenv'
-    infraenvcreate_epilog = None
-    infraenvcreate_parser = create_subparsers.add_parser('infraenv', description=infraenvcreate_desc,
-                                                         help=infraenvcreate_desc,
-                                                         epilog=infraenvcreate_epilog, formatter_class=rawhelp)
-    infraenvcreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    infraenvcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
-    infraenvcreate_parser.add_argument('infraenv', metavar='INFRAENV')
-    infraenvcreate_parser.set_defaults(func=create_infra_env)
-
-    infraenvdelete_desc = 'Delete Infraenv'
-    infraenvdelete_epilog = None
-    infraenvdelete_parser = delete_subparsers.add_parser('infraenv', description=infraenvdelete_desc,
-                                                         help=infraenvdelete_desc,
-                                                         epilog=infraenvdelete_epilog, formatter_class=rawhelp)
-    infraenvdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
-    infraenvdelete_parser.add_argument('infraenvs', metavar='INFRAENVS', nargs='*')
-    infraenvdelete_parser.set_defaults(func=delete_infra_env)
-
-    infraenvinfo_desc = 'Info Infraenv'
-    infraenvinfo_epilog = None
-    infraenvinfo_parser = info_subparsers.add_parser('infraenv', description=infraenvinfo_desc, help=infraenvinfo_desc,
-                                                     epilog=infraenvinfo_epilog, formatter_class=rawhelp)
-    infraenvinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
-                                     'separated by a comma', metavar='FIELDS')
-    infraenvinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
-    infraenvinfo_parser.add_argument('--full', action='store_true', help='Full output')
-    infraenvinfo_parser.add_argument('infraenv', metavar='INFRAENV')
-    infraenvinfo_parser.set_defaults(func=info_infra_env)
-
-    infraenvlist_desc = 'List Infraenvs'
-    infraenvlist_parser = argparse.ArgumentParser(add_help=False)
-    infraenvlist_parser.set_defaults(func=list_infra_env)
-    list_subparsers.add_parser('infraenv', parents=[infraenvlist_parser], description=infraenvlist_desc,
-                               help=infraenvlist_desc, aliases=['infraenvs'])
-
-    infraenv_keywords_list_desc = 'List Infraenv keywords'
-    infraenv_keywords_list_parser = argparse.ArgumentParser(add_help=False)
-    infraenv_keywords_list_parser.set_defaults(func=list_infraenv_keywords)
-    list_subparsers.add_parser('infraenv-keyword', parents=[infraenv_keywords_list_parser],
-                               description=infraenv_keywords_list_desc,
-                               help=infraenv_keywords_list_desc, aliases=['infraenv-keywords'])
-
-    infraenvunbind_desc = 'Unbind Infra Env'
-    infraenvunbind_parser = argparse.ArgumentParser(add_help=False)
-    infraenvunbind_parser.add_argument('infraenv', metavar='INFRAENV')
-    infraenvunbind_parser.set_defaults(func=unbind_infra_env)
-    unbind_subparsers.add_parser('infraenv', parents=[infraenvunbind_parser],
-                                 description=infraenvunbind_desc, help=infraenvunbind_desc)
-
-    infraenvstart_desc = 'Start Infraenv'
-    infraenvstart_epilog = None
-    infraenvstart_parser = start_subparsers.add_parser('infraenv', description=infraenvstart_desc,
-                                                       help=infraenvstart_desc,
-                                                       epilog=infraenvstart_epilog, formatter_class=rawhelp)
-    infraenvstart_parser.add_argument('infraenv', metavar='INFRAENV')
-    infraenvstart_parser.set_defaults(func=start_infraenv)
-
-    infraenvstop_desc = 'Stop Infraenv'
-    infraenvstop_epilog = None
-    infraenvstop_parser = stop_subparsers.add_parser('infraenv', description=infraenvstop_desc, help=infraenvstop_desc,
-                                                     epilog=infraenvstop_epilog, formatter_class=rawhelp)
-    infraenvstop_parser.add_argument('infraenv', metavar='INFRAENV')
-    infraenvstop_parser.set_defaults(func=stop_infraenv)
-
-    infraenvupdate_desc = 'Update Infraenv'
-    infraenvupdate_parser = argparse.ArgumentParser(add_help=False)
-    infraenvupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    infraenvupdate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
-    infraenvupdate_parser.add_argument('infraenv', metavar='INFRAENV')
-    infraenvupdate_parser.set_defaults(func=update_infra_env)
-    update_subparsers.add_parser('infraenv', parents=[infraenvupdate_parser], description=infraenvupdate_desc,
-                                 help=infraenvupdate_desc)
-
-    isocreate_desc = 'Create iso'
-    isocreate_epilog = None
-    isocreate_parser = create_subparsers.add_parser('iso', description=isocreate_desc, help=isocreate_desc,
-                                                    epilog=isocreate_epilog, formatter_class=rawhelp)
-    isocreate_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
-    isocreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    isocreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
-    isocreate_parser.add_argument('infraenv', metavar='INFRAENV')
-    isocreate_parser.set_defaults(func=create_iso)
-
-    isoinfo_desc = 'Get iso url'
-    isoinfo_epilog = None
-    isoinfo_parser = info_subparsers.add_parser('iso', description=isoinfo_desc, help=isoinfo_desc,
-                                                epilog=isoinfo_epilog, formatter_class=rawhelp)
-    isoinfo_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
-    isoinfo_parser.add_argument('-s', '--short', action='store_true', help='Only print iso url')
-    isoinfo_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    isoinfo_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
-    isoinfo_parser.add_argument('infraenv', metavar='INFRAENV')
-    isoinfo_parser.set_defaults(func=info_iso)
-
     initrddownload_desc = 'Download Initrd'
     initrddownload_parser = argparse.ArgumentParser(add_help=False)
     initrddownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
@@ -1113,16 +949,6 @@ def cli():
     initrddownload_parser.set_defaults(func=download_initrd)
     download_subparsers.add_parser('initrd', parents=[initrddownload_parser], description=initrddownload_desc,
                                    help=initrddownload_desc)
-
-    infraenv_help = "The infraenv associated to the cluster. Cluster name can also be used"
-    isodownload_desc = 'Download Iso'
-    isodownload_parser = argparse.ArgumentParser(add_help=False)
-    isodownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
-    isodownload_parser.add_argument('infraenv', metavar='INFRAENV', help=infraenv_help)
-    isodownload_parser.set_defaults(func=download_iso)
-    download_subparsers.add_parser('iso', parents=[isodownload_parser],
-                                   description=isodownload_desc,
-                                   help=isodownload_desc)
 
     installconfigdownload_desc = 'Download Installconfig'
     installconfigdownload_parser = argparse.ArgumentParser(add_help=False)
@@ -1133,6 +959,16 @@ def cli():
     download_subparsers.add_parser('installconfig', parents=[installconfigdownload_parser],
                                    description=installconfigdownload_desc,
                                    help=installconfigdownload_desc)
+
+    infraenv_help = "The infraenv associated to the cluster. Cluster name can also be used"
+    isodownload_desc = 'Download Iso'
+    isodownload_parser = argparse.ArgumentParser(add_help=False)
+    isodownload_parser.add_argument('-p', '--path', metavar='PATH', default='.', help='Where to download asset')
+    isodownload_parser.add_argument('infraenv', metavar='INFRAENV', help=infraenv_help)
+    isodownload_parser.set_defaults(func=download_iso)
+    download_subparsers.add_parser('iso', parents=[isodownload_parser],
+                                   description=isodownload_desc,
+                                   help=isodownload_desc)
 
     kubepassworddownload_desc = 'Download Kubeadmin-password'
     kubepassworddownload_parser = argparse.ArgumentParser(add_help=False)
@@ -1164,31 +1000,63 @@ def cli():
                                    description=staticnetworkingdownload_desc,
                                    help=staticnetworkingdownload_desc)
 
-    hostbind_desc = 'Bind Host'
-    hostbind_parser = argparse.ArgumentParser(add_help=False)
-    hostbind_parser.add_argument('hostname', metavar='HOSTNAME')
-    hostbind_parser.add_argument('cluster', metavar='CLUSTER')
-    hostbind_parser.set_defaults(func=bind_host)
-    bind_subparsers.add_parser('host', parents=[hostbind_parser], description=hostbind_desc, help=hostbind_desc)
+    export_desc = 'Export Object'
+    export_parser = subparsers.add_parser('export', description=export_desc, help=export_desc)
+    export_subparsers = export_parser.add_subparsers(metavar='', dest='subcommand_export')
 
-    hostsboot_desc = 'Boot Hosts through redfish'
-    hostsboot_epilog = None
-    hostsboot_parser = boot_subparsers.add_parser('host', description=hostsboot_desc,
-                                                  help=hostsboot_desc, epilog=hostsboot_epilog, formatter_class=rawhelp,
-                                                  aliases=['hosts'])
-    hostsboot_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    hostsboot_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
-    hostsboot_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
-    hostsboot_parser.set_defaults(func=boot_hosts)
+    clusterexport_desc = 'Export Clusters'
+    clusterexport_parser = argparse.ArgumentParser(add_help=False)
+    clusterexport_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterexport_parser.set_defaults(func=export_cluster)
+    export_subparsers.add_parser('cluster', parents=[clusterexport_parser], description=clusterexport_desc,
+                                 help=clusterexport_desc, aliases=['clusters'])
 
-    hostdelete_desc = 'Delete host'
-    hostdelete_parser = argparse.ArgumentParser(add_help=False)
-    hostdelete_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    hostdelete_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
-    hostdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
-    hostdelete_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
-    hostdelete_parser.set_defaults(func=delete_host)
-    delete_subparsers.add_parser('host', parents=[hostdelete_parser], description=hostdelete_desc, help=hostdelete_desc)
+    info_desc = 'Info Object'
+    info_parser = subparsers.add_parser('info', description=info_desc, help=info_desc)
+    info_subparsers = info_parser.add_subparsers(metavar='', dest='subcommand_info')
+
+    clusterinfo_desc = 'Info Cluster'
+    clusterinfo_epilog = None
+    clusterinfo_parser = info_subparsers.add_parser('cluster', description=clusterinfo_desc, help=clusterinfo_desc,
+                                                    epilog=clusterinfo_epilog, formatter_class=rawhelp)
+    clusterinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
+                                    'separated by a comma', metavar='FIELDS')
+    clusterinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
+    clusterinfo_parser.add_argument('--full', action='store_true', help='Full output')
+    clusterinfo_parser.add_argument('-p', '--preflight', action='store_true', help='Show preflight')
+    clusterinfo_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterinfo_parser.set_defaults(func=info_cluster)
+
+    validationinfo_desc = 'Info validation'
+    validationinfo_epilog = None
+    validationinfo_parser = info_subparsers.add_parser('validation', description=validationinfo_desc,
+                                                       help=validationinfo_desc, epilog=validationinfo_epilog,
+                                                       formatter_class=rawhelp, aliases=['validations'])
+    validationinfo_parser.add_argument('-a', '--all', action='store_true', help='Report successful checks too')
+    validationinfo_parser.add_argument('cluster', metavar='CLUSTER')
+    validationinfo_parser.set_defaults(func=info_validation)
+
+    infraenvinfo_desc = 'Info Infraenv'
+    infraenvinfo_epilog = None
+    infraenvinfo_parser = info_subparsers.add_parser('infraenv', description=infraenvinfo_desc, help=infraenvinfo_desc,
+                                                     epilog=infraenvinfo_epilog, formatter_class=rawhelp)
+    infraenvinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
+                                     'separated by a comma', metavar='FIELDS')
+    infraenvinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
+    infraenvinfo_parser.add_argument('--full', action='store_true', help='Full output')
+    infraenvinfo_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvinfo_parser.set_defaults(func=info_infra_env)
+
+    isoinfo_desc = 'Get iso url'
+    isoinfo_epilog = None
+    isoinfo_parser = info_subparsers.add_parser('iso', description=isoinfo_desc, help=isoinfo_desc,
+                                                epilog=isoinfo_epilog, formatter_class=rawhelp)
+    isoinfo_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
+    isoinfo_parser.add_argument('-s', '--short', action='store_true', help='Only print iso url')
+    isoinfo_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    isoinfo_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    isoinfo_parser.add_argument('infraenv', metavar='INFRAENV')
+    isoinfo_parser.set_defaults(func=info_iso)
 
     hostinfo_desc = 'Info Host'
     hostinfo_epilog = None
@@ -1202,11 +1070,92 @@ def cli():
     hostinfo_parser.add_argument('host', metavar='HOST')
     hostinfo_parser.set_defaults(func=info_host)
 
+    serviceinfo_desc = 'Info Service'
+    serviceinfo_epilog = None
+    serviceinfo_parser = info_subparsers.add_parser('service', description=serviceinfo_desc, help=serviceinfo_desc,
+                                                    epilog=serviceinfo_epilog, formatter_class=rawhelp)
+    serviceinfo_parser.set_defaults(func=info_service)
+
+    list_desc = 'List Object'
+    list_parser = subparsers.add_parser('list', description=list_desc, help=list_desc, aliases=['get'])
+    list_subparsers = list_parser.add_subparsers(metavar='', dest='subcommand_list')
+
+    clusterlist_desc = 'List Clusters'
+    clusterlist_parser = argparse.ArgumentParser(add_help=False)
+    clusterlist_parser.add_argument('-s', '--subscription', help='Filter by specified ams_subscription_id',
+                                    metavar='SUBSCRIPTION')
+    clusterlist_parser.add_argument('-o', '--org', help='Filter by specified org_id', metavar='ORG')
+    clusterlist_parser.set_defaults(func=list_cluster)
+    list_subparsers.add_parser('cluster', parents=[clusterlist_parser], description=clusterlist_desc,
+                               help=clusterlist_desc, aliases=['clusters'])
+
+    cluster_keywords_list_desc = 'List Cluster keywords'
+    cluster_keywords_list_parser = argparse.ArgumentParser(add_help=False)
+    cluster_keywords_list_parser.set_defaults(func=list_cluster_keywords)
+    list_subparsers.add_parser('cluster-keyword', parents=[cluster_keywords_list_parser],
+                               description=cluster_keywords_list_desc,
+                               help=cluster_keywords_list_desc, aliases=['cluster-keywords'])
+
+    eventslist_desc = 'List Events'
+    eventslist_parser = argparse.ArgumentParser(add_help=False)
+    eventslist_parser.add_argument('-f', '--follow', action='store_true')
+    eventslist_parser.add_argument('-r', '--raw', action='store_true')
+    eventslist_parser.add_argument('cluster', metavar='CLUSTER')
+    eventslist_parser.set_defaults(func=list_events)
+    list_subparsers.add_parser('event', parents=[eventslist_parser], description=eventslist_desc,
+                               help=eventslist_desc, aliases=['events'])
+
+    extra_keywords_list_desc = 'List Extra keywords'
+    extra_keywords_list_parser = argparse.ArgumentParser(add_help=False)
+    extra_keywords_list_parser.set_defaults(func=list_extra_keywords)
+    list_subparsers.add_parser('extra-keyword', parents=[extra_keywords_list_parser],
+                               description=extra_keywords_list_desc,
+                               help=extra_keywords_list_desc, aliases=['extra-keywords'])
+
     hostslist_desc = 'List Hosts'
     hostslist_parser = argparse.ArgumentParser(add_help=False)
     hostslist_parser.set_defaults(func=list_hosts)
     list_subparsers.add_parser('host', parents=[hostslist_parser], description=hostslist_desc,
                                help=hostslist_desc, aliases=['hosts'])
+
+    host_keywords_list_desc = 'List Host keywords'
+    host_keywords_list_parser = argparse.ArgumentParser(add_help=False)
+    host_keywords_list_parser.set_defaults(func=list_host_keywords)
+    list_subparsers.add_parser('host-keyword', parents=[host_keywords_list_parser],
+                               description=host_keywords_list_desc,
+                               help=host_keywords_list_desc, aliases=['host-keywords'])
+
+    infraenvlist_desc = 'List Infraenvs'
+    infraenvlist_parser = argparse.ArgumentParser(add_help=False)
+    infraenvlist_parser.set_defaults(func=list_infra_env)
+    list_subparsers.add_parser('infraenv', parents=[infraenvlist_parser], description=infraenvlist_desc,
+                               help=infraenvlist_desc, aliases=['infraenvs'])
+
+    infraenv_keywords_list_desc = 'List Infraenv keywords'
+    infraenv_keywords_list_parser = argparse.ArgumentParser(add_help=False)
+    infraenv_keywords_list_parser.set_defaults(func=list_infraenv_keywords)
+    list_subparsers.add_parser('infraenv-keyword', parents=[infraenv_keywords_list_parser],
+                               description=infraenv_keywords_list_desc,
+                               help=infraenv_keywords_list_desc, aliases=['infraenv-keywords'])
+
+    manifestslist_desc = 'List Manifests of a cluster'
+    manifestslist_parser = argparse.ArgumentParser(add_help=False)
+    manifestslist_parser.add_argument('cluster', metavar='CLUSTER')
+    manifestslist_parser.set_defaults(func=list_manifests)
+    list_subparsers.add_parser('manifest', parents=[manifestslist_parser], description=manifestslist_desc,
+                               help=manifestslist_desc, aliases=['manifests'])
+
+    start_desc = 'Start Object'
+    start_parser = subparsers.add_parser('start', description=start_desc, help=start_desc, aliases=['launch'])
+    start_subparsers = start_parser.add_subparsers(metavar='', dest='subcommand_start')
+
+    clusterstart_desc = 'Start Cluster'
+    clusterstart_epilog = None
+    clusterstart_parser = start_subparsers.add_parser('cluster', description=clusterstart_desc,
+                                                      help=clusterstart_desc,
+                                                      epilog=clusterstart_epilog, formatter_class=rawhelp)
+    clusterstart_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterstart_parser.set_defaults(func=start_cluster)
 
     hostsstart_desc = 'Start (day2) Hosts'
     hostsstart_epilog = None
@@ -1219,6 +1168,26 @@ def cli():
     hostsstart_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
     hostsstart_parser.set_defaults(func=start_hosts)
 
+    infraenvstart_desc = 'Start Infraenv'
+    infraenvstart_epilog = None
+    infraenvstart_parser = start_subparsers.add_parser('infraenv', description=infraenvstart_desc,
+                                                       help=infraenvstart_desc,
+                                                       epilog=infraenvstart_epilog, formatter_class=rawhelp)
+    infraenvstart_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvstart_parser.set_defaults(func=start_infraenv)
+
+    stop_desc = 'Stop Object'
+    stop_parser = subparsers.add_parser('stop', description=stop_desc, help=stop_desc, aliases=['reset'])
+    stop_subparsers = stop_parser.add_subparsers(metavar='', dest='subcommand_stop')
+
+    clusterstop_desc = 'Stop Cluster'
+    clusterstop_epilog = None
+    clusterstop_parser = stop_subparsers.add_parser('cluster', description=clusterstop_desc,
+                                                    help=clusterstop_desc,
+                                                    epilog=clusterstop_epilog, formatter_class=rawhelp)
+    clusterstop_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterstop_parser.set_defaults(func=stop_cluster)
+
     hostsstop_desc = 'Stop (day2) Hosts'
     hostsstop_epilog = None
     hostsstop_parser = stop_subparsers.add_parser('host', description=hostsstop_desc, help=hostsstop_desc,
@@ -1229,11 +1198,42 @@ def cli():
     hostsstop_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
     hostsstop_parser.set_defaults(func=stop_hosts)
 
+    infraenvstop_desc = 'Stop Infraenv'
+    infraenvstop_epilog = None
+    infraenvstop_parser = stop_subparsers.add_parser('infraenv', description=infraenvstop_desc, help=infraenvstop_desc,
+                                                     epilog=infraenvstop_epilog, formatter_class=rawhelp)
+    infraenvstop_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvstop_parser.set_defaults(func=stop_infraenv)
+
+    unbind_desc = 'Unbind Object'
+    unbind_parser = subparsers.add_parser('unbind', description=unbind_desc, help=unbind_desc)
+    unbind_subparsers = unbind_parser.add_subparsers(metavar='', dest='subcommand_unbind')
+
     hostunbind_desc = 'Unbind Host'
     hostunbind_parser = argparse.ArgumentParser(add_help=False)
     hostunbind_parser.add_argument('hostname', metavar='HOSTNAME')
     hostunbind_parser.set_defaults(func=unbind_host)
     unbind_subparsers.add_parser('host', parents=[hostunbind_parser], description=hostunbind_desc, help=hostunbind_desc)
+
+    infraenvunbind_desc = 'Unbind Infra Env'
+    infraenvunbind_parser = argparse.ArgumentParser(add_help=False)
+    infraenvunbind_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvunbind_parser.set_defaults(func=unbind_infra_env)
+    unbind_subparsers.add_parser('infraenv', parents=[infraenvunbind_parser],
+                                 description=infraenvunbind_desc, help=infraenvunbind_desc)
+
+    update_desc = 'Update Object'
+    update_parser = subparsers.add_parser('update', description=update_desc, help=update_desc, aliases=['patch'])
+    update_subparsers = update_parser.add_subparsers(metavar='', dest='subcommand_update')
+
+    clusterupdate_desc = 'Update Cluster'
+    clusterupdate_parser = argparse.ArgumentParser(add_help=False)
+    clusterupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    clusterupdate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    clusterupdate_parser.add_argument('cluster', metavar='CLUSTER')
+    clusterupdate_parser.set_defaults(func=update_cluster)
+    update_subparsers.add_parser('cluster', parents=[clusterupdate_parser], description=clusterupdate_desc,
+                                 help=clusterupdate_desc)
 
     hostupdate_desc = 'Update Host name and role'
     hostupdate_parser = argparse.ArgumentParser(add_help=False)
@@ -1244,20 +1244,14 @@ def cli():
     update_subparsers.add_parser('host', parents=[hostupdate_parser], description=hostupdate_desc, help=hostupdate_desc,
                                  aliases=['hosts'])
 
-    manifestslist_desc = 'List Manifests of a cluster'
-    manifestslist_parser = argparse.ArgumentParser(add_help=False)
-    manifestslist_parser.add_argument('cluster', metavar='CLUSTER')
-    manifestslist_parser.set_defaults(func=list_manifests)
-    list_subparsers.add_parser('manifest', parents=[manifestslist_parser], description=manifestslist_desc,
-                               help=manifestslist_desc, aliases=['manifests'])
-
-    isopatch_desc = 'Update Discovery Iso'
-    isopatch_parser = argparse.ArgumentParser(add_help=False)
-    isopatch_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    isopatch_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
-    isopatch_parser.add_argument('infraenv', metavar='INFRAENV')
-    isopatch_parser.set_defaults(func=update_iso)
-    update_subparsers.add_parser('iso', parents=[isopatch_parser], description=isopatch_desc, help=isopatch_desc)
+    infraenvupdate_desc = 'Update Infraenv'
+    infraenvupdate_parser = argparse.ArgumentParser(add_help=False)
+    infraenvupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    infraenvupdate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    infraenvupdate_parser.add_argument('infraenv', metavar='INFRAENV')
+    infraenvupdate_parser.set_defaults(func=update_infra_env)
+    update_subparsers.add_parser('infraenv', parents=[infraenvupdate_parser], description=infraenvupdate_desc,
+                                 help=infraenvupdate_desc)
 
     installconfigpatch_desc = 'Update Installconfig'
     installconfigpatch_parser = argparse.ArgumentParser(add_help=False)
@@ -1268,11 +1262,17 @@ def cli():
     update_subparsers.add_parser('installconfig', parents=[installconfigpatch_parser],
                                  description=installconfigpatch_desc, help=installconfigpatch_desc)
 
-    serviceinfo_desc = 'Info Service'
-    serviceinfo_epilog = None
-    serviceinfo_parser = info_subparsers.add_parser('service', description=serviceinfo_desc, help=serviceinfo_desc,
-                                                    epilog=serviceinfo_epilog, formatter_class=rawhelp)
-    serviceinfo_parser.set_defaults(func=info_service)
+    isopatch_desc = 'Update Discovery Iso'
+    isopatch_parser = argparse.ArgumentParser(add_help=False)
+    isopatch_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    isopatch_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    isopatch_parser.add_argument('infraenv', metavar='INFRAENV')
+    isopatch_parser.set_defaults(func=update_iso)
+    update_subparsers.add_parser('iso', parents=[isopatch_parser], description=isopatch_desc, help=isopatch_desc)
+
+    wait_desc = 'Wait Object'
+    wait_parser = subparsers.add_parser('wait', description=wait_desc, help=wait_desc)
+    wait_subparsers = wait_parser.add_subparsers(metavar='', dest='subcommand_wait')
 
     clusterwait_desc = 'Wait for cluster'
     clusterwait_parser = argparse.ArgumentParser(add_help=False)
