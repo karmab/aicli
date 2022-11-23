@@ -1490,6 +1490,12 @@ class AssistedClient(object):
                     new_data = {'mac': host['mac']}
                     if 'disk' in host:
                         new_data['disk'] = f"/dev/{os.path.basename(host['disk'])}"
+                    elif 'hctl' in host:
+                        new_data['hctl'] = host['hctl']
+                    elif 'serial' in host:
+                        new_data['serial'] = host['serial']
+                    elif 'wwn' in host:
+                        new_data['wwn'] = host['wwn']
                     if 'name' in host:
                         new_data['name'] = host['name']
                     param_hosts.append(new_data)
@@ -1527,13 +1533,22 @@ class AssistedClient(object):
                         if mac_address is None:
                             error(f"No mac address detected for static entry {index}")
                             sys.exit(1)
+                    for param_host in param_hosts:
+                        if param_host['mac'] == mac_address:
+                            if 'disk' in param_host:
+                                new_host['rootDeviceHints'] = {'deviceName': param_host['disk']}
+                            elif 'hctl' in param_host:
+                                new_host['rootDeviceHints'] = {'hctl': param_host['hctl']}
+                            elif 'serial' in param_host:
+                                new_host['rootDeviceHints'] = {'serialNumber': param_host['serial']}
+                            elif 'wwn' in param_host:
+                                new_host['rootDeviceHints'] = {'wwn': param_host['wwn']}
+                            break
                     hosts.append(new_host)
                     custom_host = {'name': node_name, 'bootMACAddress': mac_address}
                     custom_host['role'] = 'master' if index < masters else 'worker'
                     for param_host in param_hosts:
                         if param_host['mac'] == mac_address:
-                            if 'disk' in param_host:
-                                custom_host['rootDeviceHints'] = {'deviceName': param_host['disk']}
                             if 'name' in param_host:
                                 custom_host['name'] = param_host['name']
                             break
@@ -1625,8 +1640,18 @@ class AssistedClient(object):
                         icspdata = {'source': icsp['source'], 'mirror': icsp['mirrors'][0]}
                         f.write(registrytemplate % icspdata)
             if param_hosts:
-                custom_hosts = [{'interfaces': [{'name': 'eth0', 'macAddress': entry['mac']}],
-                                 'rootDeviceHints': {'deviceName': entry['disk']}} for entry in param_hosts]
+                custom_hosts = []
+                for entry in param_hosts:
+                    new_host = {{'interfaces': [{'name': 'eth0', 'macAddress': entry['mac']}]}}
+                    if 'disk' in entry:
+                        new_host['rootDeviceHints'] = {'deviceName': entry['disk']}
+                    if 'hctl' in entry:
+                        new_host['rootDeviceHints'] = {'hctl': entry['hctl']}
+                    if 'serial' in entry:
+                        new_host['rootDeviceHints'] = {'serialNumber': entry['serial']}
+                    if 'wwn' in entry:
+                        new_host['rootDeviceHints'] = {'wwn': entry['wwn']}
+                    custom_hosts.append(new_host)
                 with open(f"{path}/agent-config.yaml", 'w') as dest:
                     hosts_data = {'kind': 'AgentConfig'}
                     hosts_data['spec'] = {'hosts': custom_hosts}
