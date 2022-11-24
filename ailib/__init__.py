@@ -1426,8 +1426,9 @@ class AssistedClient(object):
             print("Using karmalabs.corp as DNS domain as no one was provided")
             overrides['domain'] = 'karmalabs.corp'
         static_network_config = overrides.get('static_network_config', [])
-        if not static_network_config:
-            error("static_network_config is required")
+        rendezvous_ip = overrides.get('rendezvous_ip')
+        if not static_network_config and rendezvous_ip is None:
+            error("static_network_config or rendevous_ip are required")
             sys.exit(1)
         agentdir = os.path.dirname(AssistedClient.create_cluster.__code__.co_filename) + '/agent'
         if not os.path.isdir(path):
@@ -1505,6 +1506,8 @@ class AssistedClient(object):
             pull_secret = overrides['pull_secret']
             with open(f"{path}/agent-config.yaml", 'w') as dest:
                 agent_config = {'kind': 'AgentConfig', 'apiVersion': 'v1alpha1', 'metadata': {'name': 'billi'}}
+                if rendezvous_ip is not None:
+                    agent_config['rendezvousIP'] = rendezvous_ip
                 hosts = []
                 for index, entry in enumerate(static_network_config):
                     node_name = f"{cluster}-{index}"
