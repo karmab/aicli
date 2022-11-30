@@ -63,6 +63,7 @@ def boot_hosts(overrides, hostnames=[], debug=False):
                 red.set_iso(iso_url)
             except Exception as e:
                 warning(f"Hit {e} when plugging iso to host {msg}")
+                raise e
 
 
 class AssistedClient(object):
