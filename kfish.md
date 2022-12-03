@@ -3,10 +3,10 @@ This is a side class created to interact with redfish without a need for extra l
 ## Installation
 
 ```
-pip install kfish
+pip3 install kfish
 ```
 
-Alternatively you can download the [source file](https://raw.githubusercontent.com/karmab/aicli/main/kfish/__init__.py) directly
+Alternatively you can download the [source file](https://raw.githubusercontent.com/karmab/aicli/main/ailib/kfish/__init__.py) directly
 
 ## How to use
 

@@ -8,6 +8,7 @@ setup(
     version='99.0',
     include_package_data=False,
     packages=['kfish'],
+    package_dir={'kfish': 'ailib/kfish'},
     zip_safe=False,
     description=description,
     long_description=long_description,

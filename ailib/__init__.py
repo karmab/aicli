@@ -1,6 +1,6 @@
 from assisted_service_client import ApiClient, Configuration, api, models
 from ailib.common import warning, error, info, get_token, same_uuid, match_mac, valid_uuid
-from ailib.redfish import Redfish
+from ailib.kfish import Redfish
 import base64
 from datetime import datetime
 import http.server
