@@ -180,3 +180,10 @@ def create_onprem(overrides={}):
                 else:
                     dest.write(line)
         call(f"podman play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml", shell=True)
+
+
+def delete_onprem(overrides={}):
+    if which('podman') is None:
+        error("You need podman to run this")
+        sys.exit(1)
+    call("podman pod rm -fi assisted-installer", shell=True)

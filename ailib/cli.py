@@ -10,6 +10,7 @@ from time import sleep
 from ailib import AssistedClient
 from ailib import boot_hosts as ai_boot_hosts
 from ailib.common import create_onprem as ai_create_onprem
+from ailib.common import delete_onprem as ai_delete_onprem
 
 PARAMHELP = "specify parameter or keyword for rendering (multiple can be specified)"
 
@@ -748,6 +749,13 @@ def create_onprem(args):
     ai_create_onprem(overrides)
 
 
+def delete_onprem(args):
+    info("Deleting onprem deployment")
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai_delete_onprem(overrides)
+
+
 def cli():
     """
 
@@ -921,6 +929,14 @@ def cli():
     manifestsdelete_parser.add_argument('cluster', metavar='CLUSTER')
     manifestsdelete_parser.add_argument('manifests', metavar='MANIFESTS', nargs='*')
     manifestsdelete_parser.set_defaults(func=delete_manifests)
+
+    onpremenvdelete_desc = 'Delete Infraenv'
+    onpremenvdelete_epilog = None
+    onpremenvdelete_parser = delete_subparsers.add_parser('onpremenv', description=onpremenvdelete_desc,
+                                                          help=onpremenvdelete_desc,
+                                                          epilog=onpremenvdelete_epilog, formatter_class=rawhelp)
+    onpremenvdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
+    onpremenvdelete_parser.set_defaults(func=delete_onprem)
 
     download_desc = 'Download Assets'
     download_parser = subparsers.add_parser('download', description=download_desc, help=download_desc)
