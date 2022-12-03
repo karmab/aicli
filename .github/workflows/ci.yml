@@ -2,6 +2,12 @@ name: CI
 
 on: [push, pull_request]
 
+env:
+ QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+ QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+ PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
+ PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+
 jobs:
   run-workflow:
     name: CI workflow
@@ -26,12 +32,11 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ./.github/build.sh
         shell: bash
-      - name: Push container
+      - name: Push assets
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ./.github/release.sh
         shell: bash
-        env:
-         QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
-         QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
-         PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
-         PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      - name: Push helper redfish library
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: ./.github/kfish.sh
+        shell: bash
