@@ -154,7 +154,7 @@ def get_ip():
     return result
 
 
-def create_onprem(overrides={}):
+def create_onprem(overrides={}, debug=False):
     if which('podman') is None:
         error("You need podman to run this")
         sys.exit(1)
@@ -180,11 +180,16 @@ def create_onprem(overrides={}):
                     dest.write(f"  SERVICE_BASE_URL: {SERVICE_BASE_URL}\n")
                 else:
                     dest.write(line)
+        if debug:
+            print(open(f"{tmpdir}/configmap.yml").read())
+            info(f"Running: podman play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml")
         call(f"podman play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml", shell=True)
 
 
-def delete_onprem(overrides={}):
+def delete_onprem(overrides={}, debug=False):
     if which('podman') is None:
         error("You need podman to run this")
         sys.exit(1)
+    if debug:
+        info("Running: podman pod rm -fi assisted-installer")
     call("podman pod rm -fi assisted-installer", shell=True)

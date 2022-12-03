@@ -747,14 +747,14 @@ def create_onprem(args):
     warning("This is not the supported path for interacting with AI")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
-    ai_create_onprem(overrides)
+    ai_create_onprem(overrides, debug=args.debug)
 
 
 def delete_onprem(args):
     info("Deleting onprem deployment")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
-    ai_delete_onprem(overrides)
+    ai_delete_onprem(overrides, debug=args.debug)
 
 
 def cli():
@@ -936,6 +936,8 @@ def cli():
     onpremdelete_parser = delete_subparsers.add_parser('onprem', description=onpremdelete_desc,
                                                        help=onpremdelete_desc,
                                                        epilog=onpremdelete_epilog, formatter_class=rawhelp)
+    onpremdelete_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    onpremdelete_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
     onpremdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
     onpremdelete_parser.set_defaults(func=delete_onprem)
 
