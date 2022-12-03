@@ -4,12 +4,17 @@ from urllib.request import urlopen
 from urllib.parse import urlencode
 import json
 import os
+import socket
+from shutil import which
+from subprocess import call
 import sys
-import yaml
+from tempfile import TemporaryDirectory
 from time import time
 from uuid import UUID
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import urllib.request
+import yaml
 
 # colors = {'blue': '36', 'red': '31', 'green': '32', 'yellow': '33', 'pink': '35', 'white': '37'}
 
@@ -139,3 +144,39 @@ def valid_uuid(uuid):
         return True
     except:
         return False
+
+
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    result = s.getsockname()[0]
+    s.close()
+    return result
+
+
+def create_onprem(overrides={}):
+    if which('podman') is None:
+        error("You need podman to run this")
+        sys.exit(1)
+    with TemporaryDirectory() as tmpdir:
+        with open(f"{tmpdir}/pod.yml", 'w') as p:
+            pod_url = "https://raw.githubusercontent.com/openshift/assisted-service/master/deploy/podman/pod.yml"
+            response = urllib.request.urlopen(pod_url)
+            p.write(response.read().decode('utf-8'))
+        with open(f"{tmpdir}/configmap.yml.ori", 'w') as c:
+            cm_url = "https://raw.githubusercontent.com/openshift/assisted-service/master/deploy/podman/configmap.yml"
+            response = urllib.request.urlopen(cm_url)
+            c.write(response.read().decode('utf-8'))
+        ip = overrides.get('ip') or get_ip() or '192.168.122.1'
+        info(f"Using ip {ip}")
+        IMAGE_SERVICE_BASE_URL = f'http://{ip}:8888'
+        SERVICE_BASE_URL = f'http://{ip}:8090'
+        with open(f"{tmpdir}/configmap.yml", 'wt') as dest:
+            for line in open(f"{tmpdir}/configmap.yml.ori", 'rt').readlines():
+                if 'IMAGE_SERVICE_BASE_URL' in line:
+                    dest.write(f"  IMAGE_SERVICE_BASE_URL: {IMAGE_SERVICE_BASE_URL}\n")
+                elif 'SERVICE_BASE_URL:' in line:
+                    dest.write(f"  SERVICE_BASE_URL: {SERVICE_BASE_URL}\n")
+                else:
+                    dest.write(line)
+        call(f"podman play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml", shell=True)

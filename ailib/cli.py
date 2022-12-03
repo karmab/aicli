@@ -9,6 +9,7 @@ import yaml
 from time import sleep
 from ailib import AssistedClient
 from ailib import boot_hosts as ai_boot_hosts
+from ailib.common import create_onprem as ai_create_onprem
 
 PARAMHELP = "specify parameter or keyword for rendering (multiple can be specified)"
 
@@ -740,6 +741,13 @@ def create_agent_manifests(args):
     ai.create_agent_manifests(args.cluster, overrides, path=path, ztp=args.ztp)
 
 
+def create_onprem(args):
+    info("Creating onprem deployment")
+    paramfile = choose_parameter_file(args.paramfile)
+    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    ai_create_onprem(overrides)
+
+
 def cli():
     """
 
@@ -851,6 +859,14 @@ def cli():
     isocreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
     isocreate_parser.add_argument('infraenv', metavar='INFRAENV')
     isocreate_parser.set_defaults(func=create_iso)
+
+    onpremcreate_desc = 'Create Onprem Deployment'
+    onpremcreate_epilog = None
+    onpremcreate_parser = create_subparsers.add_parser('onprem', description=onpremcreate_desc, help=onpremcreate_desc,
+                                                       epilog=onpremcreate_epilog, formatter_class=rawhelp)
+    onpremcreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    onpremcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    onpremcreate_parser.set_defaults(func=create_onprem)
 
     manifestscreate_desc = 'Upload manifests to cluster'
     manifestscreate_epilog = None
