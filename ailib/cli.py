@@ -744,6 +744,7 @@ def create_agent_manifests(args):
 
 def create_onprem(args):
     info("Creating onprem deployment")
+    warning("This is not the supported path for interacting with AI")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai_create_onprem(overrides)
@@ -930,13 +931,13 @@ def cli():
     manifestsdelete_parser.add_argument('manifests', metavar='MANIFESTS', nargs='*')
     manifestsdelete_parser.set_defaults(func=delete_manifests)
 
-    onpremenvdelete_desc = 'Delete Infraenv'
-    onpremenvdelete_epilog = None
-    onpremenvdelete_parser = delete_subparsers.add_parser('onpremenv', description=onpremenvdelete_desc,
-                                                          help=onpremenvdelete_desc,
-                                                          epilog=onpremenvdelete_epilog, formatter_class=rawhelp)
-    onpremenvdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
-    onpremenvdelete_parser.set_defaults(func=delete_onprem)
+    onpremdelete_desc = 'Delete Onprem'
+    onpremdelete_epilog = None
+    onpremdelete_parser = delete_subparsers.add_parser('onprem', description=onpremdelete_desc,
+                                                       help=onpremdelete_desc,
+                                                       epilog=onpremdelete_epilog, formatter_class=rawhelp)
+    onpremdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
+    onpremdelete_parser.set_defaults(func=delete_onprem)
 
     download_desc = 'Download Assets'
     download_parser = subparsers.add_parser('download', description=download_desc, help=download_desc)

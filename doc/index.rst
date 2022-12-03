@@ -94,6 +94,27 @@ You can use the flag ca, cert and key to provide ssl ca content, an ssl cert and
 
 Alternatively, set the env variable AI_CA, AI_CERT and AI_KEY
 
+Creating an onprem environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can run the following command to deploy AI locally using podman:
+
+::
+
+   aicli create onprem
+
+The ip to use for the configuration is detected automatically using a socket connection to 8.8.8.8
+
+If this is blocked, you can use pass ``-P ip=$your_ip`` instead
+
+When no longer needed, the onprem deployment can be deleted using:
+
+::
+
+   aicli delete onprem
+
+Note that deploying AI this way is not the recommended approach for production/supported usage.
+
 Basic usage
 -----------
 
@@ -194,7 +215,7 @@ Custom kernel arguments
 
 You can specify kernel arguments that only apply to the discovery ISO by using the keyword ``kernel_arguments``.
 
-The data can be provided either as a string (say \`a=xxx b=yyy’) in which case the arguments are considered to be appended or as a dict such as
+The data can be provided either as a string (say ``a=xxx b=yyy``) in which case the arguments are considered to be appended or as a dict such as
 
 ::
 
