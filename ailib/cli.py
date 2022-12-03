@@ -743,8 +743,8 @@ def create_agent_manifests(args):
 
 
 def create_onprem(args):
-    info("Creating onprem deployment")
     warning("This is not the supported path for interacting with AI")
+    info("Creating onprem deployment")
     paramfile = choose_parameter_file(args.paramfile)
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai_create_onprem(overrides, debug=args.debug)

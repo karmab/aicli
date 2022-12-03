@@ -107,6 +107,8 @@ The ip to use for the configuration is detected automatically using a socket con
 
 If this is blocked, you can use pass ``-P ip=$your_ip`` instead
 
+You can also provide ``-P keep=true`` to keep both configmap.yml and pod.yml so you can tweak them yourself
+
 When no longer needed, the onprem deployment can be deleted using:
 
 ::

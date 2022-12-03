@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 import json
 import os
 import socket
-from shutil import which
+from shutil import copy2, which
 from subprocess import call
 import sys
 from tempfile import TemporaryDirectory
@@ -180,10 +180,14 @@ def create_onprem(overrides={}, debug=False):
                     dest.write(f"  SERVICE_BASE_URL: {SERVICE_BASE_URL}\n")
                 else:
                     dest.write(line)
-        if debug:
-            print(open(f"{tmpdir}/configmap.yml").read())
-            info(f"Running: podman play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml")
-        call(f"podman play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml", shell=True)
+        if overrides.get('keep', False):
+            copy2(f"{tmpdir}/configmap.yml", '.')
+            copy2(f"{tmpdir}/pod.yml", '.')
+        else:
+            if debug:
+                print(open(f"{tmpdir}/configmap.yml").read())
+                info(f"Running: podman play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml")
+            call(f"podman play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml", shell=True)
 
 
 def delete_onprem(overrides={}, debug=False):
