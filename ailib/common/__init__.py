@@ -164,7 +164,8 @@ def create_onprem(overrides={}):
             response = urllib.request.urlopen(pod_url)
             p.write(response.read().decode('utf-8'))
         with open(f"{tmpdir}/configmap.yml.ori", 'w') as c:
-            cm_url = "https://raw.githubusercontent.com/openshift/assisted-service/master/deploy/podman/configmap.yml"
+            cm_name = 'okd-configmap' if overrides.get('okd', False) else 'configmap'
+            cm_url = f"https://raw.githubusercontent.com/openshift/assisted-service/master/deploy/podman/{cm_name}.yml"
             response = urllib.request.urlopen(cm_url)
             c.write(response.read().decode('utf-8'))
         ip = overrides.get('ip') or get_ip() or '192.168.122.1'
