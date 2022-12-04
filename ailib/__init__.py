@@ -1360,7 +1360,10 @@ class AssistedClient(object):
             self.download_iso(cluster, download_iso_path)
         else:
             iso_url = self.info_iso(infraenv, overrides, minimal=minimal)
-            warning(f"Retrieve iso from {iso_url} and plug it to your nodes:")
+            if 'iso_url' not in overrides:
+                overrides['iso_url'] = iso_url
+            if 'hosts' not in overrides:
+                warning(f"Retrieve iso from {iso_url} and plug it to your nodes:")
         download_iso_cmd = overrides.get('download_iso_cmd')
         if download_iso_cmd is not None:
             call(download_iso_cmd, shell=True)
