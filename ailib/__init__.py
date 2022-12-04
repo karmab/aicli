@@ -35,7 +35,7 @@ def boot_hosts(overrides, hostnames=[], debug=False):
     if iso_url is None:
         warning("Missing iso_url in your parameters")
         return
-    elif not iso_url.endswith('.iso'):
+    elif not iso_url.endswith('.iso') and 'image_token=' not in iso_url:
         cluster = overrides.get('cluster')
         if cluster is None:
             warning("Missing cluster name in your parameters to append it to iso_url")
