@@ -123,10 +123,6 @@ def confirm(message):
     return
 
 
-def same_uuid(id1, id2):
-    return id1.split('-')[3:] == id2.split('-')[3:]
-
-
 def match_mac(host, mac):
     if ':' not in mac or 'inventory' not in host:
         return False
