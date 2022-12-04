@@ -1,0 +1,46 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aicli-infra
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aicli-controller
+  namespace: aicli-infra
+  labels:
+    app: aicli-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aicli-controller
+  template:
+    metadata:
+      labels:
+        app: aicli-controller
+    spec:
+      containers:
+      - name: aicli-controller
+        image: quay.io/karmab/aicli-controller:latest
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "true"
+        - name: URL
+          value: "https://api.openshift.com"
+        - name: OFFLINETOKEN
+          valueFrom:
+            secretKeyRef:
+              name: offline-token
+              key: offline-token
+        - name: PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: public-key
+              key: public-key
+        - name: PULL_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: pull-secret
+              key: pull-secret
