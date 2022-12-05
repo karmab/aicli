@@ -22,8 +22,6 @@ def create_deployment(meta, spec, status, namespace, logger, **kwargs):
     name = meta.get('name')
     pprint(f"Handling create on deployment {name}")
     overrides = dict(spec)
-    if 'cluster' not in overrides:
-        overrides['cluster'] = name
     overrides['pull_secret'] = os.environ.get('PULL_SECRET').strip()
     if overrides['pull_secret'] is None:
         error('Missing pull secret')
@@ -35,10 +33,13 @@ def create_deployment(meta, spec, status, namespace, logger, **kwargs):
     url = os.environ.get('URL', 'https://api.openshift.com')
     OFFLINETOKEN = os.environ.get('OFFLINETOKEN').strip()
     ai = AssistedClient(url, offlinetoken=OFFLINETOKEN)
-    ai.create_deployment(name, overrides, force=True)
-    kubeconfig = open(f"kubeconfig.{name}").read()
-    kubeconfig = base64.b64encode(kubeconfig.encode()).decode("UTF-8")
-    return {'result': 'success', 'kubeconfig': kubeconfig}
+    result = ai.create_deployment(name, overrides, force=True)
+    if result == {'result': 'success'}:
+        kubeconfig = open(f"kubeconfig.{name}").read()
+        kubeconfig = base64.b64encode(kubeconfig.encode()).decode("UTF-8")
+        return {'result': 'success', 'kubeconfig': kubeconfig}
+    else:
+        return {'result': 'failure'}
 
 
 @kopf.on.delete(DOMAIN, VERSION, 'aiclideployment')

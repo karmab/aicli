@@ -30,17 +30,17 @@ SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub
 def boot_hosts(overrides, hostnames=[], debug=False):
     if 'hosts' not in overrides:
         warning("No hosts to boot found in your parameter file")
-        return
+        return 1
     iso_url = overrides['iso_url']
     if iso_url is None:
         warning("Missing iso_url in your parameters")
-        return
+        return 1
     elif not iso_url.endswith('.iso') and 'image_token=' not in iso_url:
-        cluster = overrides.get('cluster') or overrides.get('name')
+        cluster = overrides.get('cluster')
         if cluster is None:
             warning("Missing cluster name in your parameters to append it to iso_url")
             return 1
-        iso_url += f"{cluster}.iso"
+        iso_url += f"/{cluster}.iso"
     hosts = overrides['hosts']
     for host in hosts:
         if hostnames and host.get('name', '') not in hostnames:
@@ -64,6 +64,7 @@ def boot_hosts(overrides, hostnames=[], debug=False):
             except Exception as e:
                 warning(f"Hit {e} when plugging iso to host {msg}")
                 raise e
+    return 0
 
 
 class AssistedClient(object):
@@ -1358,7 +1359,7 @@ class AssistedClient(object):
         if 'iso_url' in overrides:
             download_iso_path = overrides.get('download_iso_path')
             if download_iso_path is None:
-                download_iso_path = 'var/www/html'
+                download_iso_path = '/var/www/html'
                 warning(f"Using {download_iso_path} to store iso")
             self.download_iso(cluster, download_iso_path)
         else:
@@ -1371,7 +1372,11 @@ class AssistedClient(object):
         if download_iso_cmd is not None:
             call(download_iso_cmd, shell=True)
         if 'hosts' in overrides:
-            boot_hosts(overrides)
+            boot_overrides = overrides.copy()
+            boot_overrides['cluster'] = cluster
+            boot_result = boot_hosts(boot_overrides)
+            if boot_result != 0:
+                return {'result': 'failure', 'reason': 'Issue when booting hosts'}
         if 'hosts_number' in overrides:
             hosts_number = overrides.get('hosts_number')
         elif 'hosts' in overrides and isinstance(overrides['hosts'], list):
@@ -1391,6 +1396,7 @@ class AssistedClient(object):
         self.wait_cluster(cluster)
         info(f"Downloading Kubeconfig for Cluster {cluster} in current directory")
         self.download_kubeconfig(cluster, '.')
+        return {'result': 'success'}
 
     def create_agent_manifests(self, cluster, overrides={}, path='.', ztp=False):
         disconnected_url = None
