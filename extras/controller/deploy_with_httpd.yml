@@ -27,9 +27,16 @@ spec:
       labels:
         app: aicli-controller
     spec:
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
       containers:
       - name: controller
         image: quay.io/karmab/aicli-controller:latest
+        volumeMounts:
+        - name: webdata
+          mountPath: /data
         env:
         - name: PYTHONUNBUFFERED
           value: "true"
@@ -50,3 +57,51 @@ spec:
             secretKeyRef:
               name: pull-secret
               key: pull-secret
+      - name: web
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "200Mi"
+        image: registry.redhat.io/rhel8/httpd-24
+        volumeMounts:
+        - name: webdata
+          mountPath: /var/www/html
+        ports:
+        - containerPort: 8080
+        securityContext:
+         runAsUser: 0
+      volumes:
+      - name: webdata
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    app: aicli-controller
+spec:
+  type: NodePort
+  selector:
+    app: aicli-controller
+  ports:
+  - name: web
+    protocol: TCP
+    port: 80
+    targetPort: 8080
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: aicli-controller
+  name: web
+spec:
+  port:
+    targetPort: web
+  to:
+    kind: Service
+    name: web
+    weight: 100
+  wildcardPolicy: None
+---

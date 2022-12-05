@@ -6,21 +6,30 @@ This is a controller leveraging aicli and using aiclideployments to run full dep
 - valid offline token
 - valid pull secret
 - valid public key
+- in order to deploy clusters with baremetal hosts, you will need the redfish BMC information. Additionally, if the BMC of your nodes needs an iso url finished in .iso, you will need to deploy a side httpd container
 
 ## Deploying
 
 Prepare the proper secrets
 
 ```
-kubectl create secret generic offline-token --from-file=offline-token=$HOME/.aicli/offlinetoken.txt
-kubectl create secret generic pull-secret --from-file=pull-secret=openshift_pull.json
-kubectl create secret generic public-key --from-file=public-key=$HOME/.ssh/id_rsa.pub
+oc create ns aicli-infra
+oc create -n aicli-infra secret generic offline-token --from-file=offline-token=$HOME/.aicli/offlinetoken.txt
+oc create -n aicli-infra secret generic pull-secret --from-file=pull-secret=openshift_pull.json
+oc create -n aicli-infra secret generic public-key --from-file=public-key=$HOME/.ssh/id_rsa.pub
 ```
 
-Then deploy the controller:
+Then deploy the controller with a side httpd container:
 
 ```
-kubectl create -f https://raw.githubusercontent.com/karmab/aicli/master/extras/controller/deploy.yml
+oc adm policy add-scc-to-user anyuid system:serviceaccount:aicli-infra:default
+oc create -f https://raw.githubusercontent.com/karmab/aicli/master/extras/controller/deploy_with_httpd.yml
+```
+
+or the same without httpd:
+
+```
+oc create -f https://raw.githubusercontent.com/karmab/aicli/master/extras/controller/deploy.yml
 ```
 
 ## How to use
@@ -46,3 +55,12 @@ spec:
   - name: ci-ai-master-2
     bmc_url: http://192.168.122.1:8000/redfish/v1/Systems/21111111-1111-1111-1111-111111111183
 ```
+
+If you need to use the httpd side container, add the following variables to the spec
+
+```
+iso_url: https://web-aicli-infra.apps.relocate.karmalabs.corp/biloute.iso
+download_iso_path: /var/www/html
+```
+
+where you can get the base url using `oc get route -n aicli-infra web -o jsonpath='{.spec.host}'`

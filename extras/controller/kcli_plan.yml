@@ -1,0 +1,20 @@
+parameters:
+ cluster: biloute
+ nodes: 3
+ network: default
+ memory: 20480
+ numcpus: 16
+ disk_size: 200
+
+{% for num in range(0,nodes) %}
+{{ cluster }}-node-{{ num }}:
+ memory: {{ memory }}
+ numcpus: {{ numcpus }}
+ uuid: 41111111-1111-1111-1111-11111111118{{ num + 1 }}
+ uefi: true
+ start: false
+ disks:
+ - {{ disk_size }}
+ nets:
+ - name: {{ network }}
+{% endfor %}
