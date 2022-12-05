@@ -22,16 +22,16 @@ def create_deployment(meta, spec, status, namespace, logger, **kwargs):
     name = meta.get('name')
     pprint(f"Handling create on deployment {name}")
     overrides = dict(spec)
-    overrides['pull_secret'] = os.environ.get('PULL_SECRET')
+    overrides['pull_secret'] = os.environ.get('PULL_SECRET').strip()
     if overrides['pull_secret'] is None:
         error('Missing pull secret')
         return {'result': 'Missing pull secret'}
-    overrides['ssh_public_key'] = os.environ.get('PUBLIC_KEY')
+    overrides['ssh_public_key'] = os.environ.get('PUBLIC_KEY').strip()
     if overrides['ssh_public_key'] is None:
-        error('Missing pull public key')
+        error('Missing public key')
         return {'result': 'Missing public key'}
     url = os.environ.get('URL', 'https://api.openshift.com')
-    OFFLINETOKEN = os.environ.get('OFFLINETOKEN')
+    OFFLINETOKEN = os.environ.get('OFFLINETOKEN').strip()
     ai = AssistedClient(url, offlinetoken=OFFLINETOKEN)
     ai.create_deployment(name, overrides, force=True)
     kubeconfig = open(f"kubeconfig.{name}").read()

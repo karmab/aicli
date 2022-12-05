@@ -36,7 +36,7 @@ spec:
         image: quay.io/karmab/aicli-controller:latest
         volumeMounts:
         - name: webdata
-          mountPath: /data
+          mountPath: /var/www/html
         env:
         - name: PYTHONUNBUFFERED
           value: "true"
