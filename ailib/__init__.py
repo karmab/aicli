@@ -36,7 +36,7 @@ def boot_hosts(overrides, hostnames=[], debug=False):
         warning("Missing iso_url in your parameters")
         return
     elif not iso_url.endswith('.iso') and 'image_token=' not in iso_url:
-        cluster = overrides.get('cluster')
+        cluster = overrides.get('cluster') or overrides.get('name')
         if cluster is None:
             warning("Missing cluster name in your parameters to append it to iso_url")
             return 1
@@ -1355,15 +1355,18 @@ class AssistedClient(object):
         overrides['cluster'] = cluster
         self.create_infra_env(infraenv, overrides)
         del overrides['cluster']
-        download_iso_path = overrides.get('download_iso_path')
-        if download_iso_path is not None:
+        if 'iso_url' in overrides:
+            download_iso_path = overrides.get('download_iso_path')
+            if download_iso_path is None:
+                download_iso_path = 'var/www/html'
+                warning(f"Using {download_iso_path} to store iso")
             self.download_iso(cluster, download_iso_path)
         else:
             iso_url = self.info_iso(infraenv, overrides, minimal=minimal)
-            if 'iso_url' not in overrides:
-                overrides['iso_url'] = iso_url
             if 'hosts' not in overrides:
                 warning(f"Retrieve iso from {iso_url} and plug it to your nodes:")
+            else:
+                overrides['iso_url'] = iso_url
         download_iso_cmd = overrides.get('download_iso_cmd')
         if download_iso_cmd is not None:
             call(download_iso_cmd, shell=True)

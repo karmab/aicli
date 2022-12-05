@@ -56,11 +56,10 @@ spec:
     bmc_url: http://192.168.122.1:8000/redfish/v1/Systems/21111111-1111-1111-1111-111111111183
 ```
 
-If you need to use the httpd side container, add the following variables to the spec
+If you need to use the httpd side container, add the following variable to the spec:
 
 ```
-iso_url: https://web-aicli-infra.apps.relocate.karmalabs.corp/biloute.iso
-download_iso_path: /var/www/html
+iso_url: http://web-aicli-infra.apps.relocate.karmalabs.corp
 ```
 
-where you can get the base url using `oc get route -n aicli-infra web -o jsonpath='{.spec.host}'`
+This url can be gathered using `oc get route -n aicli-infra web -o jsonpath='{.spec.host}'`

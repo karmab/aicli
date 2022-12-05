@@ -22,6 +22,8 @@ def create_deployment(meta, spec, status, namespace, logger, **kwargs):
     name = meta.get('name')
     pprint(f"Handling create on deployment {name}")
     overrides = dict(spec)
+    if 'cluster' not in overrides:
+        overrides['cluster'] = name
     overrides['pull_secret'] = os.environ.get('PULL_SECRET').strip()
     if overrides['pull_secret'] is None:
         error('Missing pull secret')
