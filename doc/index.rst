@@ -56,7 +56,7 @@ Container mode
 
 ::
 
-   alias aicli='podman run --net host -it --rm -e AI_OFFLINETOKEN=$AI_OFFLINETOKEN -v $HOME/.aicli:/root/.aicli -v $PWD:/workdir quay.io/karmab/aicli'
+   alias aicli='podman run --security-opt label=disable --net host -it --rm -e AI_OFFLINETOKEN=$AI_OFFLINETOKEN -v $HOME/.aicli:/root/.aicli -v $PWD:/workdir quay.io/karmab/aicli'
 
 Where AI_OFFLINETOKEN is an environment variable pointing to your saas offline token
 
