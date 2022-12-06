@@ -582,24 +582,8 @@ def update_host(args):
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    host_param_overrides = {}
     hostnames = args.hostname
-    if 'hosts' in overrides:
-        host_param_overrides = overrides['hosts']
-        if not hostnames:
-            hostnames = [h.get('mac') or h.get('id') or h.get('name') for h in host_param_overrides if 'mac' in h or
-                         'id' in h or 'name' in h]
-    if not hostnames:
-        warning("No hosts provided to update")
-        return 1
-    for hostname in hostnames:
-        info(f"Updating Host {hostname}")
-        host_overrides = overrides.copy()
-        for entry in host_param_overrides:
-            if entry.get('mac', '') == hostname or entry.get('id', '') == hostname or entry.get('name', '') == hostname:
-                host_overrides.update(entry)
-                break
-        ai.update_host(hostname, host_overrides)
+    ai.update_hosts(hostnames, overrides)
 
 
 def wait_hosts(args):

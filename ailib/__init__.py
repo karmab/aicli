@@ -794,6 +794,26 @@ class AssistedClient(object):
                 break
         return hostinfo
 
+    def update_hosts(self, hostnames=[], overrides={}):
+        host_param_overrides = {}
+        if 'hosts' in overrides:
+            host_param_overrides = overrides['hosts']
+            if not hostnames:
+                hostnames = [h.get('mac') or h.get('id') or h.get('name') for h in host_param_overrides if
+                             'mac' in h or 'id' in h or 'name' in h]
+        if not hostnames:
+            warning("No hosts provided to update")
+            return
+        for hostname in hostnames:
+            info(f"Updating Host {hostname}")
+            host_overrides = overrides.copy()
+            for entry in host_param_overrides:
+                if entry.get('mac', '') == hostname or entry.get('id', '') == hostname or\
+                   entry.get('name', '') == hostname:
+                    host_overrides.update(entry)
+                    break
+            self.update_host(hostname, host_overrides)
+
     def update_host(self, hostname, overrides):
         infra_envs = {}
         if 'infraenv' in overrides:
@@ -1405,6 +1425,11 @@ class AssistedClient(object):
         for index, host in enumerate(bad_hostnames):
             role = 'master' if index < 3 else 'worker'
             self.update_host(host, {'name': f"{cluster}-{role}-{index}"})
+
+        if 'hosts' in overrides:
+            hostnames = [h['name'] for h in overrides['hosts'] if 'name' in h]
+            if hostnames:
+                self.update_hosts(hostnames, overrides)
         self.update_cluster(cluster, overrides)
         self.wait_cluster(cluster, 'ready')
         self.start_cluster(cluster)
