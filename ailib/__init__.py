@@ -13,6 +13,7 @@ import socket
 import socketserver
 from subprocess import call
 import sys
+from tempfile import TemporaryDirectory
 from time import sleep
 from uuid import uuid1
 import urllib
@@ -1102,6 +1103,18 @@ class AssistedClient(object):
 
     def upload_manifests(self, name, directory, openshift=False):
         cluster_id = self.get_cluster_id(name)
+        cleanup = False
+        if isinstance(directory, list):
+            cleanup = True
+            tmpdir = TemporaryDirectory()
+            for manifest in directory:
+                _fic, content = list(manifest.keys())[0], list(manifest.values())[0]
+                if not _fic.endswith('.yml') and not _fic.endswith('.yaml'):
+                    warning(f"skipping file {_fic}")
+                    continue
+                with open(f'{tmpdir.name}/{_fic}', 'w') as f:
+                    f.write(content)
+            directory = tmpdir.name
         if not os.path.exists(directory):
             error(f"Directory {directory} not found")
             sys.exit(1)
@@ -1123,6 +1136,8 @@ class AssistedClient(object):
             manifest_info = {'file_name': _fic, 'content': content, 'folder': folder}
             create_manifest_params = models.CreateManifestParams(**manifest_info)
             manifests_api.v2_create_cluster_manifest(cluster_id, create_manifest_params)
+        if cleanup:
+            tmpdir.cleanup()
 
     def delete_manifests(self, name, directory, manifests=[]):
         cluster_id = self.get_cluster_id(name)
