@@ -1,0 +1,27 @@
+{
+    "ignition": {
+        "config": {},
+        "version": "3.1.0"
+    },
+    "storage": {
+        "files": [
+            {
+                "contents": {
+                    "source": "data:text/plain;charset=utf-8;base64,%(data)s",
+                    "verification": {}
+                },
+                "mode": 448,
+                "path": "/usr/local/bin/hack.sh"
+            }
+        ]
+    },
+    "systemd": {
+        "units": [
+            {
+                "contents": "[Unit]\nWants=network-online.target\nAfter=network-online.target\n[Service]\nType=oneshot\nExecStart=/usr/local/bin/hack.sh\n[Install]\nWantedBy=multi-user.target\n",
+                "enabled": true,
+                "name": "hack.service"
+            }
+        ]
+    }
+}

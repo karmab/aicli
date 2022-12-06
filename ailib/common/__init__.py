@@ -1,5 +1,6 @@
 from ast import literal_eval
-from base64 import b64decode
+from base64 import b64decode, b64encode
+from ipaddress import ip_network, ip_address
 from urllib.request import urlopen
 from urllib.parse import urlencode
 import json
@@ -193,3 +194,46 @@ def delete_onprem(overrides={}, debug=False):
     if debug:
         info("Running: podman pod rm -fi assisted-installer")
     call("podman pod rm -fi assisted-installer", shell=True)
+
+
+def get_relocatable_data(baremetal_cidr='192.168.7.0/24', overrides={}):
+    sno = overrides.get('high_availability_mode', 'XXX') == "None" or overrides.get('sno', False)
+    basedir = f'{os.path.dirname(get_overrides.__code__.co_filename)}/relocatable'
+    data = {}
+    network = ip_network(baremetal_cidr)
+    api_vip = overrides.get('api_vip') or overrides.get('api_ip')
+    ingress_vip = overrides.get('ingress_vip') or overrides.get('ingress_ip')
+    if not sno and (api_vip is None or (api_vip is not None and not ip_address(api_vip) in network)):
+        new_api_vip = str(network[-3])
+        warning(f"Current api vip doesnt belong to {baremetal_cidr}, which is needed for relocation")
+        warning(f"Setting api vip to {new_api_vip} instead")
+        data['api_ip'] = new_api_vip
+    if not sno and (ingress_vip is None or (ingress_vip is not None and not ip_address(ingress_vip) in network)):
+        new_ingress_vip = str(network[-4])
+        warning(f"Current ingress vip doesnt belong to {baremetal_cidr}, which is needed for relocation")
+        warning(f"Setting ingress vip to {new_ingress_vip} instead")
+        data['ingress_ip'] = new_ingress_vip
+    template = open(f"{basedir}/hack.sh").read()
+    netmask = network.prefixlen
+    first = str(network[1]).split('.')
+    prefix, num = '.'.join(first[:-1]), first[-1]
+    hack_data = template % {'netmask': netmask, 'prefix': prefix, 'num': num}
+    hack_data = str(b64encode(hack_data.encode('utf-8')), 'utf-8')
+    hack_template = open(f"{basedir}/hack.ign").read()
+    ignition_config_override = json.dumps(yaml.safe_load(hack_template % {'data': hack_data}))
+    data['ignition_config_override'] = ignition_config_override
+    mcs = []
+    hint_template = open(f"{basedir}/10-node-ip-hint.yaml").read()
+    hint_data = f"KUBELET_NODEIP_HINT={network}"
+    hint_data = str(b64encode(hint_data.encode('utf-8')), 'utf-8')
+    mc_hint = hint_template % {'role': 'master', 'data': hint_data}
+    mcs.append({'10-node-ip-hint-master.yaml': mc_hint})
+    mc_hint = hint_template % {'role': 'worker', 'data': hint_data}
+    mcs.append({'10-node-ip-hint-worker.yaml': mc_hint})
+    relocate_template = open(f"{basedir}/relocate-ip.yaml").read()
+    mc_relocate = relocate_template % {'role': 'master'}
+    mcs.append({'relocate-ip-master.yaml': mc_relocate})
+    mc_relocate = relocate_template % {'role': 'worker'}
+    mcs.append({'relocate-ip-worker.yaml': mc_relocate})
+    data['manifests'] = mcs
+    return data

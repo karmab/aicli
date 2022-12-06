@@ -804,9 +804,10 @@ class AssistedClient(object):
         if not hostnames:
             warning("No hosts provided to update")
             return
-        for hostname in hostnames:
+        for index, hostname in enumerate(hostnames):
             info(f"Updating Host {hostname}")
             host_overrides = overrides.copy()
+            host_overrides['index'] = index
             for entry in host_param_overrides:
                 if entry.get('mac', '') == hostname or entry.get('id', '') == hostname or\
                    entry.get('name', '') == hostname:
@@ -871,6 +872,16 @@ class AssistedClient(object):
                         host_ignition_params = models.HostIgnitionParams(config=ignition_data)
                         self.client.v2_update_host_ignition(infra_env_id, host_id, host_ignition_params)
                         ignition_updated = True
+                if 'relocatable' in overrides and overrides['relocatable'] and 'extra_args' not in overrides:
+                    baremetal_cidr = overrides.get('baremetal_cidr', '192.168.7.0/24')
+                    network = ip_network(baremetal_cidr)
+                    mask = network.prefixlen
+                    count = overrides.get('index')
+                    ip = str(network[10 + count]) if count is not None else overrides.get('ip')
+                    if ip is None:
+                        warning("Cant set extra_args needed for relocation. Set ip")
+                    else:
+                        overrides['extra_args'] = f'--append-karg relocateip={ip} --append-karg relocatenetmask={mask}'
                 if 'extra_args' in overrides:
                     extra_args = overrides['extra_args'].replace('-karg ', '-karg=')
                     extra_args = sum([entry.split('=', 1) for entry in extra_args.split(" ")], [])
@@ -1381,7 +1392,7 @@ class AssistedClient(object):
         return ['sno', 'pull_secret', 'domain', 'tpm', 'minimal', 'static_network_config', 'proxy', 'disconnected_url',
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_masters', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
-                'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels']
+                'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels', 'relocatable']
 
     def create_deployment(self, cluster, overrides, force=False):
         self.create_cluster(cluster, overrides.copy(), force=force)
