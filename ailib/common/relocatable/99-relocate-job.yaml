@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: relocate
+  namespace: relocate
+  labels:
+    app: relocate
+spec:
+  backoffLimit: 12
+  template:
+   spec:
+    serviceAccountName: relocate
+    restartPolicy: OnFailure
+    initContainers:
+    - name: wait-for-cluster-version
+      image: quay.io/karmab/kubectl:latest
+      command:
+      - "/bin/sh"
+      - "-c"
+      - |
+        #!/bin/sh
+        CLUSTER_VERSION=$(kubectl get clusterversion version -o jsonpath='{.status.history[0].state}')
+        [ "$CLUSTER_VERSION" == "Completed" ] && exit 0
+    containers:
+    - name: install-metallb
+      image: quay.io/karmab/curl:latest
+      command:
+      - "/bin/sh"
+      - "-c"
+      - |
+        #!/bin/sh
+        curl -s -L https://github.com/karmab/tasty/releases/download/v0.6.0/tasty-linux-amd64 > /usr/bin/tasty
+        chmod u+x /usr/bin/tasty
+        tasty install metallb-operator -w
+    - name: relocate-job
+      image: quay.io/karmab/openshift-relocatable:latest
+      command:
+      - "/bin/bash"
+      - "/root/deploy.sh"
+      env:
+      - name: REGISTRY
+        value: "true"
+      - name: API_PUBLIC_IP
+        value: "%(api_vip)s"
+      - name: INGRESS_PUBLIC_IP
+        value: "%(ingress_vip)s"
