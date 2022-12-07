@@ -1141,7 +1141,7 @@ class AssistedClient(object):
             for manifest in directory:
                 _fic, content = list(manifest.keys())[0], list(manifest.values())[0]
                 if not _fic.endswith('.yml') and not _fic.endswith('.yaml'):
-                    warning(f"skipping file {_fic}")
+                    warning(f"Skipping file {_fic}")
                     continue
                 with open(f'{tmpdir.name}/{_fic}', 'w') as f:
                     f.write(content)
@@ -1159,9 +1159,9 @@ class AssistedClient(object):
             sys.exit(0)
         for _fic in _fics:
             if not _fic.endswith('.yml') and not _fic.endswith('.yaml'):
-                warning(f"skipping file {_fic}")
+                warning(f"Skipping file {_fic}")
                 continue
-            info(f"uploading file {_fic}")
+            info(f"Uploading file {_fic}")
             content = base64.b64encode(open(f"{directory}/{_fic}").read().encode()).decode("UTF-8")
             folder = 'manifests' if not openshift else 'openshift'
             manifest_info = {'file_name': _fic, 'content': content, 'folder': folder}
