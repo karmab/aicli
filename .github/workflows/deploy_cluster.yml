@@ -53,7 +53,6 @@ jobs:
          continue-on-error: true
          run: |
            kcli delete plan --yes $CLUSTER || true
-           [ -f /var/www/html/$CLUSTER.iso ] && rm -rf /var/www/html/$CLUSTER.iso
            aicli delete cluster $CLUSTER || true
 
     deploy-kcli-plan:
