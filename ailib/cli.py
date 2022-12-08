@@ -69,7 +69,7 @@ def create_cluster(args):
     overrides = get_overrides(paramfile=paramfile, param=args.param)
     if overrides.get('relocatable', False):
         baremetal_cidr = overrides.get('baremetal_cidr', '192.168.7.0/24')
-        overrides.update(get_relocatable_data(baremetal_cidr))
+        overrides.update(get_relocatable_data(baremetal_cidr, overrides))
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     ai.create_cluster(args.cluster, overrides.copy(), force=args.force)

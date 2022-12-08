@@ -877,10 +877,12 @@ class AssistedClient(object):
                     network = ip_network(baremetal_cidr)
                     mask = network.prefixlen
                     count = overrides.get('index')
-                    ip = str(network[10 + count]) if count is not None else overrides.get('ip')
+                    ip_count = str(network[10 + count]) if count is not None else None
+                    ip = overrides.get('ip') or ip_count
                     if ip is None:
                         warning("Cant set extra_args needed for relocation. Set ip")
                     else:
+                        warning(f"Setting relocation ip of {host_id} to {ip}")
                         overrides['extra_args'] = f'--append-karg relocateip={ip} --append-karg relocatenetmask={mask}'
                 if 'extra_args' in overrides:
                     extra_args = overrides['extra_args'].replace('-karg ', '-karg=')
@@ -1392,7 +1394,8 @@ class AssistedClient(object):
         return ['sno', 'pull_secret', 'domain', 'tpm', 'minimal', 'static_network_config', 'proxy', 'disconnected_url',
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_masters', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
-                'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels', 'relocatable']
+                'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels', 'relocatable',
+                'relocatable_switch']
 
     def create_deployment(self, cluster, overrides, force=False):
         self.create_cluster(cluster, overrides.copy(), force=force)

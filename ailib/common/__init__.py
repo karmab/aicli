@@ -200,19 +200,30 @@ def get_relocatable_data(baremetal_cidr='192.168.7.0/24', overrides={}):
     sno = overrides.get('high_availability_mode', 'XXX') == "None" or overrides.get('sno', False)
     basedir = f'{os.path.dirname(get_overrides.__code__.co_filename)}/relocatable'
     data = {}
+    mcs = []
     network = ip_network(baremetal_cidr)
     api_vip = overrides.get('api_vip') or overrides.get('api_ip')
     ingress_vip = overrides.get('ingress_vip') or overrides.get('ingress_ip')
+    new_api_vip, new_ingress_vip = None, None
     if not sno and (api_vip is None or (api_vip is not None and not ip_address(api_vip) in network)):
         new_api_vip = str(network[-3])
-        warning(f"Current api vip doesnt belong to {baremetal_cidr}, which is needed for relocation")
-        warning(f"Setting api vip to {new_api_vip} instead")
+        warning(f"Current api vip doesnt belong to {baremetal_cidr}, Setting it to {new_api_vip} instead")
         data['api_ip'] = new_api_vip
     if not sno and (ingress_vip is None or (ingress_vip is not None and not ip_address(ingress_vip) in network)):
         new_ingress_vip = str(network[-4])
-        warning(f"Current ingress vip doesnt belong to {baremetal_cidr}, which is needed for relocation")
-        warning(f"Setting ingress vip to {new_ingress_vip} instead")
+        warning(f"Current ingress vip doesnt belong to {baremetal_cidr}, Setting it to {new_ingress_vip} instead")
         data['ingress_ip'] = new_ingress_vip
+    if overrides.get('relocatable_switch', False) and new_api_vip is not None and new_ingress_vip is not None:
+        info("Setting relocation switch")
+        namespace_data = open(f"{basedir}/00-relocate-namespace.yaml").read()
+        mcs.append({'00-relocate-namespace.yaml': namespace_data})
+        sa_data = open(f"{basedir}/97-relocate-sa.yaml").read()
+        mcs.append({'97-relocate-sa.yaml': sa_data})
+        binding_data = open(f"{basedir}/98-relocate-binding.yaml").read()
+        mcs.append({'98-relocate-binding.yaml': binding_data})
+        job_template = open(f"{basedir}/99-relocate-job.yaml").read()
+        job_data = job_template % {'api_vip': api_vip, 'ingress_vip': ingress_vip}
+        mcs.append({'99-relocate-job.yaml': job_data})
     template = open(f"{basedir}/hack.sh").read()
     netmask = network.prefixlen
     first = str(network[1]).split('.')
@@ -222,7 +233,6 @@ def get_relocatable_data(baremetal_cidr='192.168.7.0/24', overrides={}):
     hack_template = open(f"{basedir}/hack.ign").read()
     ignition_config_override = json.dumps(yaml.safe_load(hack_template % {'data': hack_data}))
     data['ignition_config_override'] = ignition_config_override
-    mcs = []
     hint_template = open(f"{basedir}/10-node-ip-hint.yaml").read()
     hint_data = f"KUBELET_NODEIP_HINT={network}"
     hint_data = str(b64encode(hint_data.encode('utf-8')), 'utf-8')
@@ -230,10 +240,10 @@ def get_relocatable_data(baremetal_cidr='192.168.7.0/24', overrides={}):
     mcs.append({'10-node-ip-hint-master.yaml': mc_hint})
     mc_hint = hint_template % {'role': 'worker', 'data': hint_data}
     mcs.append({'10-node-ip-hint-worker.yaml': mc_hint})
-    relocate_template = open(f"{basedir}/relocate-ip.yaml").read()
+    relocate_template = open(f"{basedir}/10-relocate-ip.yaml").read()
     mc_relocate = relocate_template % {'role': 'master'}
-    mcs.append({'relocate-ip-master.yaml': mc_relocate})
+    mcs.append({'10-relocate-ip-master.yaml': mc_relocate})
     mc_relocate = relocate_template % {'role': 'worker'}
-    mcs.append({'relocate-ip-worker.yaml': mc_relocate})
+    mcs.append({'10-relocate-ip-worker.yaml': mc_relocate})
     data['manifests'] = mcs
     return data
