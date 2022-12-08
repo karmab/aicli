@@ -1,5 +1,5 @@
 from assisted_service_client import ApiClient, Configuration, api, models
-from ailib.common import warning, error, info, get_token, match_mac, valid_uuid
+from ailib.common import warning, error, info, get_token, match_mac, valid_uuid, get_relocate_data
 from ailib.kfish import Redfish
 import base64
 from datetime import datetime
@@ -484,6 +484,9 @@ class AssistedClient(object):
             sys.exit(1)
 
     def create_cluster(self, name, overrides={}, force=False):
+        if overrides.get('relocate', False):
+            relocate_cidr = overrides.get('relocate_cidr', '192.168.7.0/24')
+            overrides.update(get_relocate_data(relocate_cidr, overrides))
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
         if existing_ids:
             if force:
@@ -872,7 +875,7 @@ class AssistedClient(object):
                         host_ignition_params = models.HostIgnitionParams(config=ignition_data)
                         self.client.v2_update_host_ignition(infra_env_id, host_id, host_ignition_params)
                         ignition_updated = True
-                if 'relocatable' in overrides and overrides['relocatable'] and 'extra_args' not in overrides:
+                if 'relocate' in overrides and overrides['relocate'] and 'extra_args' not in overrides:
                     baremetal_cidr = overrides.get('baremetal_cidr', '192.168.7.0/24')
                     network = ip_network(baremetal_cidr)
                     mask = network.prefixlen
@@ -1394,8 +1397,8 @@ class AssistedClient(object):
         return ['sno', 'pull_secret', 'domain', 'tpm', 'minimal', 'static_network_config', 'proxy', 'disconnected_url',
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_masters', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
-                'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels', 'relocatable',
-                'relocatable_switch']
+                'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels', 'relocate',
+                'relocate_switch', 'relocate_registry']
 
     def create_deployment(self, cluster, overrides, force=False):
         self.create_cluster(cluster, overrides.copy(), force=force)

@@ -196,24 +196,26 @@ def delete_onprem(overrides={}, debug=False):
     call("podman pod rm -fi assisted-installer", shell=True)
 
 
-def get_relocatable_data(baremetal_cidr='192.168.7.0/24', overrides={}):
+def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
     sno = overrides.get('high_availability_mode', 'XXX') == "None" or overrides.get('sno', False)
-    basedir = f'{os.path.dirname(get_overrides.__code__.co_filename)}/relocatable'
+    basedir = f'{os.path.dirname(get_overrides.__code__.co_filename)}/relocate'
     data = {}
     mcs = []
-    network = ip_network(baremetal_cidr)
+    network = ip_network(relocate_cidr)
     api_vip = overrides.get('api_vip') or overrides.get('api_ip')
     ingress_vip = overrides.get('ingress_vip') or overrides.get('ingress_ip')
     new_api_vip, new_ingress_vip = None, None
-    if not sno and (api_vip is None or (api_vip is not None and not ip_address(api_vip) in network)):
+    if api_vip is None or (api_vip is not None and not ip_address(api_vip) in network):
         new_api_vip = str(network[-3])
-        warning(f"Current api vip doesnt belong to {baremetal_cidr}, Setting it to {new_api_vip} instead")
-        data['api_ip'] = new_api_vip
-    if not sno and (ingress_vip is None or (ingress_vip is not None and not ip_address(ingress_vip) in network)):
+        if not sno:
+            warning(f"Current api vip doesnt belong to {relocate_cidr}, Setting it to {new_api_vip} instead")
+            data['api_ip'] = new_api_vip
+    if ingress_vip is None or (ingress_vip is not None and not ip_address(ingress_vip) in network):
         new_ingress_vip = str(network[-4])
-        warning(f"Current ingress vip doesnt belong to {baremetal_cidr}, Setting it to {new_ingress_vip} instead")
-        data['ingress_ip'] = new_ingress_vip
-    if overrides.get('relocatable_switch', False) and new_api_vip is not None and new_ingress_vip is not None:
+        if not sno:
+            warning(f"Current ingress vip doesnt belong to {relocate_cidr}, Setting it to {new_ingress_vip} instead")
+            data['ingress_ip'] = new_ingress_vip
+    if overrides.get('relocate_switch', False) and new_api_vip is not None and new_ingress_vip is not None:
         info("Setting relocation switch")
         namespace_data = open(f"{basedir}/00-relocate-namespace.yaml").read()
         mcs.append({'00-relocate-namespace.yaml': namespace_data})
@@ -222,7 +224,23 @@ def get_relocatable_data(baremetal_cidr='192.168.7.0/24', overrides={}):
         binding_data = open(f"{basedir}/98-relocate-binding.yaml").read()
         mcs.append({'98-relocate-binding.yaml': binding_data})
         job_template = open(f"{basedir}/99-relocate-job.yaml").read()
-        job_data = job_template % {'api_vip': api_vip, 'ingress_vip': ingress_vip}
+        registry = overrides.get('relocate_registry', False)
+        olm_operators = overrides.get('olm_operators', [])
+        if registry:
+            waitcommand = 'kubectl get sc ocs-storagecluster-ceph-rbd'
+            waitcommand = f'until [ "$({waitcommand})" != "" ] ; do sleep 5 ; done'
+            waitcommand += '; kubectl patch storageclass ocs-storagecluster-ceph-rbd '
+            waitcommand += '-p \'{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}\''
+            storage_operator = 'lvm' if sno else 'odf'
+            if storage_operator not in olm_operators:
+                warning(f"Enabling {storage_operator} for relocate registry")
+                olm_operators.append(storage_operator)
+                data['olm_operators'] = olm_operators
+        else:
+            waitcommand = "kubectl get clusterversion version -o jsonpath='{.status.history[0].state}'"
+            waitcommand = f'until [ "$({waitcommand})" == "Completed" ] ; do sleep 10 ; done'
+        job_data = job_template % {'api_vip': api_vip, 'ingress_vip': ingress_vip, 'registry': str(registry).lower(),
+                                   'waitcommand': waitcommand}
         mcs.append({'99-relocate-job.yaml': job_data})
     template = open(f"{basedir}/hack.sh").read()
     netmask = network.prefixlen

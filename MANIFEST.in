@@ -1,4 +1,4 @@
 # recursive-include ailib *
 include ailib/common/registries.conf.templ
 include ailib/agent/*
-include ailib/common/relocatable/*
+include ailib/common/relocate/*
