@@ -209,11 +209,13 @@ def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
         new_api_vip = str(network[-3])
         if not sno:
             warning(f"Current api vip doesnt belong to {relocate_cidr}, Setting it to {new_api_vip} instead")
-            data['api_ip'] = new_api_vip
+            _type = 'api_ip' if 'api_ip' in overrides else 'api_vip'
+            data[_type] = new_api_vip
     if ingress_vip is None or (ingress_vip is not None and not ip_address(ingress_vip) in network):
         new_ingress_vip = str(network[-4])
         if not sno:
             warning(f"Current ingress vip doesnt belong to {relocate_cidr}, Setting it to {new_ingress_vip} instead")
+            _type = 'ingress_ip' if 'ingress_ip' in overrides else 'ingress_vip'
             data['ingress_ip'] = new_ingress_vip
     if overrides.get('relocate_switch', False) and new_api_vip is not None and new_ingress_vip is not None:
         info("Setting relocation switch")
@@ -252,7 +254,7 @@ def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
     ignition_config_override = json.dumps(yaml.safe_load(hack_template % {'data': hack_data}))
     data['ignition_config_override'] = ignition_config_override
     hint_template = open(f"{basedir}/10-node-ip-hint.yaml").read()
-    hint_data = f"KUBELET_NODEIP_HINT={network}"
+    hint_data = f"KUBELET_NODEIP_HINT={str(network.network_address)}"
     hint_data = str(b64encode(hint_data.encode('utf-8')), 'utf-8')
     mc_hint = hint_template % {'role': 'master', 'data': hint_data}
     mcs.append({'10-node-ip-hint-master.yaml': mc_hint})

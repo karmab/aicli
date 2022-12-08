@@ -1402,7 +1402,6 @@ class AssistedClient(object):
 
     def create_deployment(self, cluster, overrides, force=False):
         self.create_cluster(cluster, overrides.copy(), force=force)
-        cluster_id = self.get_cluster_id(cluster)
         infraenv = f"{cluster}_infra-env"
         minimal = overrides.get('minimal', False)
         overrides['cluster'] = cluster
@@ -1437,14 +1436,15 @@ class AssistedClient(object):
             hosts_number = 3
         info(f"Setting hosts_number to {hosts_number}")
         self.wait_hosts(infraenv, hosts_number, filter_installed=True)
-        bad_hostnames = [h['id'] for h in self.list_hosts() if h['cluster_id'] == cluster_id and
-                         h['requested_hostname'].startswith('localhost') or h['requested_hostname'] == h['id']]
-        for index, host in enumerate(bad_hostnames):
-            role = 'master' if index < 3 else 'worker'
-            self.update_host(host, {'name': f"{cluster}-{role}-{index}"})
-
         if 'hosts' in overrides:
             self.update_hosts([], overrides)
+        else:
+            cluster_id = self.get_cluster_id(cluster)
+            bad_hostnames = [h['id'] for h in self.list_hosts() if h['cluster_id'] == cluster_id and
+                             h['requested_hostname'].startswith('localhost') or h['requested_hostname'] == h['id']]
+            for index, host in enumerate(bad_hostnames):
+                role = 'master' if index < 3 else 'worker'
+                self.update_host(host, {'name': f"{cluster}-{role}-{index}"})
         self.update_cluster(cluster, overrides)
         self.wait_cluster(cluster, 'ready')
         self.start_cluster(cluster)
