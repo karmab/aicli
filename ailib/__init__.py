@@ -534,6 +534,9 @@ class AssistedClient(object):
 
     def delete_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
+        info_cluster = self.info_cluster(cluster_id)
+        if info_cluster.to_dict()['status'] == 'installing':
+            self.client.v2_reset_cluster(cluster_id=cluster_id)
         self.client.v2_deregister_cluster(cluster_id=cluster_id)
         day2_matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == f'{name}-day2']
         if day2_matching_ids:
