@@ -1444,9 +1444,7 @@ class AssistedClient(object):
             self.update_host(host, {'name': f"{cluster}-{role}-{index}"})
 
         if 'hosts' in overrides:
-            hostnames = [h['name'] for h in overrides['hosts'] if 'name' in h]
-            if hostnames:
-                self.update_hosts(hostnames, overrides)
+            self.update_hosts([], overrides)
         self.update_cluster(cluster, overrides)
         self.wait_cluster(cluster, 'ready')
         self.start_cluster(cluster)
