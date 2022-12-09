@@ -1,5 +1,5 @@
 from assisted_service_client import ApiClient, Configuration, api, models
-from ailib.common import warning, error, info, get_token, match_mac, valid_uuid, get_relocate_data
+from ailib.common import warning, error, info, get_token, match_mac, valid_uuid
 from ailib.kfish import Redfish
 import base64
 from datetime import datetime
@@ -484,9 +484,6 @@ class AssistedClient(object):
             sys.exit(1)
 
     def create_cluster(self, name, overrides={}, force=False):
-        if overrides.get('relocate', False):
-            relocate_cidr = overrides.get('relocate_cidr', '192.168.7.0/24')
-            overrides.update(get_relocate_data(relocate_cidr, overrides))
         existing_ids = [x['id'] for x in self.list_clusters() if x['name'] == name]
         if existing_ids:
             if force:

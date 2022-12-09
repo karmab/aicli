@@ -88,6 +88,9 @@ def get_overrides(paramfile=None, param=[]):
                             v = v.strip()
                             value[index] = v
                 overrides[key] = value
+    if overrides.get('relocate', False):
+        relocate_cidr = overrides.get('relocate_cidr', '192.168.7.0/24')
+        overrides.update(get_relocate_data(relocate_cidr, overrides))
     return overrides
 
 
