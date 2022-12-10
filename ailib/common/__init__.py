@@ -220,7 +220,7 @@ def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
             warning(f"Current ingress vip doesnt belong to {relocate_cidr}, Setting it to {new_ingress_vip} instead")
             _type = 'ingress_ip' if 'ingress_ip' in overrides else 'ingress_vip'
             data['ingress_ip'] = new_ingress_vip
-    if overrides.get('relocate_switch', False) and new_api_vip is not None and new_ingress_vip is not None:
+    if overrides.get('relocate_switch', True) and new_api_vip is not None and new_ingress_vip is not None:
         info("Setting relocation switch")
         namespace_data = open(f"{basedir}/00-relocate-namespace.yaml").read()
         mcs.append({'00-relocate-namespace.yaml': namespace_data})
@@ -229,7 +229,7 @@ def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
         binding_data = open(f"{basedir}/98-relocate-binding.yaml").read()
         mcs.append({'98-relocate-binding.yaml': binding_data})
         job_template = open(f"{basedir}/99-relocate-job.yaml").read()
-        registry = overrides.get('relocate_registry', False)
+        registry = overrides.get('relocate_registry', True)
         olm_operators = overrides.get('olm_operators', [])
         if registry:
             waitcommand = 'kubectl get sc ocs-storagecluster-ceph-rbd'
