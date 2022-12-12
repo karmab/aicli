@@ -941,7 +941,7 @@ class AssistedClient(object):
                 elif not bind_updated and not extra_args_updated and not ignition_updated:
                     warning("Nothing updated for this host")
 
-    def wait_hosts(self, name, number=3, filter_installed=False):
+    def wait_hosts(self, name, number=3, filter_installed=False, require_inventory=False):
         client = self.client
         infra_env_id = self.get_infra_env_id(name)
         infra_env = client.get_infra_env(infra_env_id=infra_env_id)
@@ -950,9 +950,11 @@ class AssistedClient(object):
             number = 1
         while True:
             try:
-                current_hosts = [host for host in client.v2_list_hosts(infra_env_id=infra_env_id)]
+                current_hosts = client.v2_list_hosts(infra_env_id=infra_env_id)
+                if require_inventory:
+                    current_hosts = [h for h in current_hosts if 'inventory' in h]
                 if filter_installed:
-                    current_hosts = [host for host in current_hosts if host['status'] != 'installed']
+                    current_hosts = [h for h in current_hosts if h['status'] != 'installed']
                 if len(current_hosts) >= number:
                     return
                 else:
@@ -1435,7 +1437,7 @@ class AssistedClient(object):
         else:
             hosts_number = 3
         info(f"Setting hosts_number to {hosts_number}")
-        self.wait_hosts(infraenv, hosts_number, filter_installed=True)
+        self.wait_hosts(infraenv, hosts_number, filter_installed=True, require_inventory=True)
         if 'hosts' in overrides:
             self.update_hosts([], overrides)
         else:
