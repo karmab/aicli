@@ -8,7 +8,7 @@ from ipaddress import ip_network
 import json
 import os
 import re
-from shutil import copyfileobj, which
+from shutil import copyfileobj, which, move
 import socket
 import socketserver
 from subprocess import call
@@ -122,8 +122,8 @@ class AssistedClient(object):
                         error("use -e AI_OFFLINETOKEN=$AI_OFFLINETOKEN to expose it in container mode")
                     sys.exit(1)
             elif os.path.exists(offlinetokenpath) and open(offlinetokenpath).read().strip() != offlinetoken:
-                error("Removing old offlinetoken file")
-                os.remove(offlinetokenpath)
+                error(f"Moving wrong offlinetoken file to {offlinetokenpath}.old")
+                move(offlinetokenpath, "{offlinetokenpath}.old")
                 if os.path.exists(tokenpath):
                     os.remove(tokenpath)
             if not os.path.exists(offlinetokenpath):
