@@ -45,6 +45,7 @@ jobs:
        - name: Install kcli
          run: |
            curl https://raw.githubusercontent.com/karmab/kcli/master/install.sh | bash
+           kcli create sushy-service
        - name: Install aicli
          run: |
            pip3 install -U assisted-service-client
@@ -60,8 +61,8 @@ jobs:
       runs-on: libvirt
       steps:
       - name: Deploy kcli plan
-        run: |
-          kcli create plan -f .github -P nodes=$NODES $EXTRAPARAMS $CLUSTER
+        run: kcli -C local create vm -P uefi=true -P start=false -P memory=20480 -P numcpus=16 -P disks=[200] -P nets=[default] $CLUSTER-node -P plan=$CLUSTER $EXTRAPARAMS --count=$NODES
+
 
     deploy-ai-cluster:
       needs: deploy-kcli-plan
