@@ -43,8 +43,10 @@ def boot_hosts(overrides, hostnames=[], debug=False):
             return 1
         iso_url += f"/{cluster}.iso"
     hosts = overrides['hosts']
-    for host in hosts:
-        if hostnames and host.get('name', '') not in hostnames:
+    for index, host in enumerate(hosts):
+        hostname = host.get('name', '')
+        if hostnames and hostname not in hostnames:
+            warning(f"host {hostname} not in {hostnames}. Skipping")
             continue
         bmc_url = host.get('bmc_url')
         bmc_user = host.get('bmc_user') or overrides.get('bmc_user')
@@ -65,6 +67,8 @@ def boot_hosts(overrides, hostnames=[], debug=False):
             except Exception as e:
                 warning(f"Hit {e} when plugging iso to host {msg}")
                 raise e
+        else:
+            warning(f"Skipping entry {index} because either bmc_url, bmc_user or bmc_password is not set")
     return 0
 
 
