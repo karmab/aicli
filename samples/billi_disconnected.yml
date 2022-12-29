@@ -1,5 +1,5 @@
 # set OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE to something like 192-168-128-116.sslip.io:5000/ocp4:4.11.0-rc.6-x86_64
-masters: 3
+ctlplanes: 3
 workers: 0
 api_ip: 192.168.128.253
 ingress_ip: 192.168.128.252

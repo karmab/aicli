@@ -1023,7 +1023,7 @@ class AssistedClient(object):
                 sno_disk = f'/dev/{sno_disk}'
             installconfig['BootstrapInPlace'] = {'InstallationDisk': sno_disk}
         if 'tpm' in overrides and overrides['tpm']:
-            if overrides.get('tpm_masters', False):
+            if overrides.get('tpm_ctlplanes', False):
                 enable_on = 'masters'
             elif overrides.get('tpm_workers', False):
                 enable_on = 'masters'
@@ -1031,7 +1031,7 @@ class AssistedClient(object):
                 enable_on = 'all'
             installconfig['disk_encryption'] = {"enable_on": enable_on, "mode": "tpmv2"}
         if 'tang_servers' in overrides and isinstance(overrides['tang_servers'], list):
-            if overrides.get('tpm_masters', False):
+            if overrides.get('tpm_ctlplanes', False):
                 enable_on = 'masters'
             elif overrides.get('tpm_workers', False):
                 enable_on = 'masters'
@@ -1401,7 +1401,7 @@ class AssistedClient(object):
 
     def get_extra_keywords(self):
         return ['sno', 'pull_secret', 'domain', 'tpm', 'minimal', 'static_network_config', 'proxy', 'disconnected_url',
-                'disconnected_ca', 'network_type', 'sno_disk', 'tpm_masters', 'tpm_workers', 'tang_servers', 'api_ip',
+                'disconnected_ca', 'network_type', 'sno_disk', 'tpm_ctlplanes', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
                 'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels', 'relocate',
                 'relocate_switch', 'relocate_registry']
@@ -1461,7 +1461,8 @@ class AssistedClient(object):
 
     def create_agent_manifests(self, cluster, overrides={}, path='.', ztp=False):
         disconnected_url = None
-        if overrides.get('masters', 3) == 1 and overrides.get('workers', 0) == 0:
+        ctlplanes = overrides.get('ctlplanes') or overrides.get('masters', 3)
+        if ctlplanes == 1 and overrides.get('workers', 0) == 0:
             overrides['sno'] = True
         if overrides.get('release_image') is not None:
             release_image = overrides['release_image']
@@ -1508,14 +1509,13 @@ class AssistedClient(object):
         if not os.path.isdir(path):
             os.mkdir(path)
         if not sno:
-            if overrides.get('masters') is None:
-                masters = 3
-                warning("Forcing masters to 3")
-            else:
-                masters = overrides['masters']
+            ctlplanes = overrides.get('ctlplanes') or overrides.get('masters')
+            if ctlplanes is None:
+                warning("Forcing ctlplanes to 3")
+                ctlplanes = 3
             if overrides.get('workers') is None:
-                workers = 0
                 warning("Forcing workers to 0")
+                workers = 0
             else:
                 workers = overrides['workers']
             if overrides.get('api_vip') is None:
@@ -1529,7 +1529,7 @@ class AssistedClient(object):
             else:
                 ingress_vip = overrides['ingress_vip']
         else:
-            masters = 1
+            ctlplanes = 1
             workers = 0
             api_vip = None
             ingress_vip = None
@@ -1623,7 +1623,7 @@ class AssistedClient(object):
                             break
                     hosts.append(new_host)
                     custom_host = {'name': node_name, 'bootMACAddress': mac_address}
-                    custom_host['role'] = 'master' if index < masters else 'worker'
+                    custom_host['role'] = 'master' if index < ctlplanes else 'worker'
                     for param_host in param_hosts:
                         if param_host['mac'] == mac_address:
                             if 'name' in param_host:
@@ -1641,7 +1641,7 @@ class AssistedClient(object):
                                       'compute': [{'architecture': 'amd64', 'hyperthreading': 'Enabled',
                                                    'name': 'worker', 'replicas': workers}],
                                       'controlPlane': {'architecture': 'amd64', 'hyperthreading':
-                                                       'Enabled', 'name': 'master', 'replicas': masters},
+                                                       'Enabled', 'name': 'master', 'replicas': ctlplanes},
                                       'metadata': {'name': cluster},
                                       'networking': {'clusterNetwork': cluster_networks,
                                                      'networkType': network_type, 'serviceNetwork': service_networks},
@@ -1666,7 +1666,7 @@ class AssistedClient(object):
                                                {'networkType': network_type, 'clusterNetwork': cluster_networks,
                                                 'serviceNetwork': service_networks},
                                                'provisionRequirements': {}, 'sshPublicKey': ssh_public_key}}
-                agent_install_data['spec']['provisionRequirements']['controlPlaneAgents'] = masters
+                agent_install_data['spec']['provisionRequirements']['controlPlaneAgents'] = ctlplanes
                 agent_install_data['spec']['provisionRequirements']['workerAgents'] = workers
                 if api_vip is not None:
                     agent_install_data['spec']['apiVips'] = [api_vip]

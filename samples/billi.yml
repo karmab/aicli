@@ -1,5 +1,5 @@
 release_image: "registry.ci.openshift.org/ocp/release:4.11"
-masters: 3
+ctlplanes: 3
 workers: 0
 api_ip: 192.168.128.253
 ingress_ip: 192.168.128.252

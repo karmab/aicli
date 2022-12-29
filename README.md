@@ -3,7 +3,6 @@
 
 # aicli repository
 
-[![Build Status](https://travis-ci.org/karmab/kcli.svg?branch=master)](https://travis-ci.org/karmab/kcli)
 ![CI](https://github.com/karmab/aicli/actions/workflows/ci.yml/badge.svg)
 [![Pypi](http://img.shields.io/pypi/v/aicli.svg)](https://pypi.python.org/pypi/aicli/)
 [![Copr](https://copr.fedorainfracloud.org/coprs/karmab/aicli/package/aicli/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/karmab/kcli/package/aicli)

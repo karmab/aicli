@@ -23,13 +23,13 @@ Then deploy the controller with a side httpd container:
 
 ```
 oc adm policy add-scc-to-user anyuid system:serviceaccount:aicli-infra:default
-oc create -f https://raw.githubusercontent.com/karmab/aicli/master/extras/controller/deploy_with_httpd.yml
+oc create -f https://raw.githubusercontent.com/karmab/aicli/main/extras/controller/deploy_with_httpd.yml
 ```
 
 or the same without httpd:
 
 ```
-oc create -f https://raw.githubusercontent.com/karmab/aicli/master/extras/controller/deploy.yml
+oc create -f https://raw.githubusercontent.com/karmab/aicli/main/extras/controller/deploy.yml
 ```
 
 ## How to use
@@ -48,11 +48,11 @@ spec:
   bmc_user: admin
   bmc_password: password
   hosts:
-  - name: ci-ai-master-0
+  - name: ci-ai-ctlplane-0
     bmc_url: http://192.168.122.1:8000/redfish/v1/Systems/21111111-1111-1111-1111-111111111181
-  - name: ci-ai-master-1
+  - name: ci-ai-ctlplane-1
     bmc_url: http://192.168.122.1:8000/redfish/v1/Systems/21111111-1111-1111-1111-111111111182
-  - name: ci-ai-master-2
+  - name: ci-ai-ctlplane-2
     bmc_url: http://192.168.122.1:8000/redfish/v1/Systems/21111111-1111-1111-1111-111111111183
 ```
 

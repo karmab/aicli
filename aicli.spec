@@ -31,7 +31,7 @@ This is a python client on top of the generated assisted-installer python librar
 %build
 sed -i "s/install_requires=INSTALL/install_requires=[]/" setup.py
 sed -i '/INSTALL/d' setup.py
-#GIT_VERSION="$(curl -s https://github.com/karmab/aicli/commits/master | grep 'https://github.com/karmab/aicli/commits/master?' | sed 's@.*=\(.......\).*+.*@\1@') $(date +%Y/%m/%d)"
+#GIT_VERSION="$(curl -s https://github.com/karmab/aicli/commits/main | grep 'https://github.com/karmab/aicli/commits/main?' | sed 's@.*=\(.......\).*+.*@\1@') $(date +%Y/%m/%d)"
 #echo $GIT_VERSION > aicli/version/git
 %{__python} setup.py build
 

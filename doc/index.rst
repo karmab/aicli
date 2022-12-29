@@ -563,11 +563,11 @@ The parameter file could be similar to the following one
    bmc_user: admin
    bmc_password: password
    hosts:
-   - name: ci-ai-master-0
+   - name: ci-ai-ctlplane-0
      bmc_url: http://192.168.122.1:8000/redfish/v1/Systems/11111111-1111-1111-1111-111111111181
-   - name: ci-ai-master-1
+   - name: ci-ai-ctlplane-1
      bmc_url: http://192.168.122.1:8000/redfish/v1/Systems/11111111-1111-1111-1111-111111111182
-   - name: ci-ai-master-2
+   - name: ci-ai-ctlplane-2
      bmc_url: http://192.168.122.1:8000/redfish/v1/Systems/11111111-1111-1111-1111-111111111183
 
 Note that in this case, we are providing bmc information for our hosts so that they get booted with the discovery iso automatically.

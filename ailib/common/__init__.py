@@ -260,12 +260,12 @@ def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
     hint_data = f"KUBELET_NODEIP_HINT={str(network.network_address)}"
     hint_data = str(b64encode(hint_data.encode('utf-8')), 'utf-8')
     mc_hint = hint_template % {'role': 'master', 'data': hint_data}
-    mcs.append({'10-node-ip-hint-master.yaml': mc_hint})
+    mcs.append({'10-node-ip-hint-ctlplane.yaml': mc_hint})
     mc_hint = hint_template % {'role': 'worker', 'data': hint_data}
     mcs.append({'10-node-ip-hint-worker.yaml': mc_hint})
     relocate_template = open(f"{basedir}/10-relocate-ip.yaml").read()
     mc_relocate = relocate_template % {'role': 'master'}
-    mcs.append({'10-relocate-ip-master.yaml': mc_relocate})
+    mcs.append({'10-relocate-ip-ctlplane.yaml': mc_relocate})
     mc_relocate = relocate_template % {'role': 'worker'}
     mcs.append({'10-relocate-ip-worker.yaml': mc_relocate})
     data['manifests'] = mcs

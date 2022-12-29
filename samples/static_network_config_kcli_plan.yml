@@ -1,6 +1,6 @@
 parameters:
   cluster: static
-  masters: 3
+  ctlplanes: 3
   workers: 0
   network: static
   cidr: 192.168.128.0/24
@@ -10,8 +10,8 @@ parameters:
   dhcp: false
   cidr: {{ cidr }}
 
-{% for num in range(0,masters) %}
-{{ cluster }}-master-{{ num }}:
+{% for num in range(0,ctlplanes) %}
+{{ cluster }}-ctlplane-{{ num }}:
  iso: {{ cluster }}.iso
  memory: 20480
  user: core
@@ -31,5 +31,5 @@ parameters:
  disks: [200]
  nets:
  - name: {{ network }}
-   mac: de:ad:bb:ef:00:{{ "%02.d" | format(21 + num + masters) }}
+   mac: de:ad:bb:ef:00:{{ "%02.d" | format(21 + num + ctlplanes) }}
 {% endfor %}

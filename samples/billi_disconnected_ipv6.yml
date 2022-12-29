@@ -1,4 +1,4 @@
-masters: 3
+ctlplanes: 3
 workers: 0
 api_ip: 2620:52:0:1303::2
 ingress_ip: 2620:52:0:1303::3

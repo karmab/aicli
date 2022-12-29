@@ -1,4 +1,4 @@
-masters: 3
+ctlplanes: 3
 workers: 0
 api_ip: 192.168.134.253
 ingress_ip: 192.168.134.252
