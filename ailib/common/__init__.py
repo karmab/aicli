@@ -220,6 +220,8 @@ def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
             warning(f"Current ingress vip doesnt belong to {relocate_cidr}, Setting it to {new_ingress_vip} instead")
             _type = 'ingress_ip' if 'ingress_ip' in overrides else 'ingress_vip'
             data['ingress_ip'] = new_ingress_vip
+    if sno:
+        overrides['machine_networks'] = [relocate_cidr]
     if overrides.get('relocate_switch', True) and new_api_vip is not None and new_ingress_vip is not None:
         info("Setting relocation switch")
         namespace_data = open(f"{basedir}/00-relocate-namespace.yaml").read()
@@ -247,7 +249,8 @@ def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
         job_data = job_template % {'api_vip': api_vip, 'ingress_vip': ingress_vip, 'registry': str(registry).lower(),
                                    'waitcommand': waitcommand}
         mcs.append({'99-relocate-job.yaml': job_data})
-    template = open(f"{basedir}/hack.sh").read()
+    hack_file = 'hack_sno.sh' if sno else "hack.sh"
+    template = open(f"{basedir}/{hack_file}").read()
     netmask = network.prefixlen
     first = str(network[1]).split('.')
     prefix, num = '.'.join(first[:-1]), first[-1]
