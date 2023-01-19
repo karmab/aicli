@@ -234,9 +234,10 @@ def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
         registry = overrides.get('relocate_registry', True)
         olm_operators = overrides.get('olm_operators', [])
         if registry:
-            waitcommand = 'kubectl get sc ocs-storagecluster-ceph-rbd'
+            sc = 'odf-lvm-vg1' if sno else 'ocs-storagecluster-ceph-rbd'
+            waitcommand = f'kubectl get sc {sc}'
             waitcommand = f'until [ "$({waitcommand})" != "" ] ; do sleep 5 ; done'
-            waitcommand += '; kubectl patch storageclass ocs-storagecluster-ceph-rbd '
+            waitcommand += f'; kubectl patch storageclass {sc} '
             waitcommand += '-p \'{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}\''
             storage_operator = 'lvm' if sno else 'odf'
             if storage_operator not in olm_operators:
