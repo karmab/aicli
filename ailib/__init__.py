@@ -228,6 +228,12 @@ class AssistedClient(object):
             if overrides['sno']:
                 overrides['high_availability_mode'] = "None"
                 overrides['user_managed_networking'] = True
+                if 'api_vip' in overrides:
+                    warning("Removing api_vip since SNO is set")
+                    del overrides['api_vip']
+                if 'ingress_vip' in overrides:
+                    warning("Removing ingress_vip since SNO is set")
+                    del overrides['ingress_vip']
         if 'high_availability_mode' in overrides and overrides['high_availability_mode'] is None:
             overrides['high_availability_mode'] = "None"
         if 'olm_operators' in overrides:
