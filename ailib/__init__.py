@@ -69,6 +69,9 @@ def boot_hosts(overrides, hostnames=[], debug=False):
                 raise e
         else:
             warning(f"Skipping entry {index} because either bmc_url, bmc_user or bmc_password is not set")
+        if 'sno' in overrides and overrides['sno']:
+            info("Not booting more hosts since you asked for an SNO")
+            break
     return 0
 
 
