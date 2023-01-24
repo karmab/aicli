@@ -245,7 +245,45 @@ A flag allows you to have them stored in the openshift folder.
 
 You can then use `aicli list manifests mycluster` to confirm they were properly uploaded, or use `aicli delete manifests` for deletion
 
-Such manifests can be specified directly in your parameter file so that they get injected at cluster creation. For this, include the keyword manifests and point it to the directory where your manifests are stored.
+Manifests from a given directory can be specified directly in your parameter file so that they get injected at cluster creation. For this, include the keyword `manifests` and point it to the directory where your manifests are stored.
+
+You can alternatively provide a list of entries below manifests such as
+
+```
+manifests:
+- 10-xxx-ip.yaml: |
+    apiVersion: machineconfiguration.openshift.io/v1
+    kind: MachineConfig
+    metadata:
+      name: xxx-master
+      labels:
+        machineconfiguration.openshift.io/role: master
+    spec:
+      config:
+        ignition:
+          version: 2.2.0
+        storage:
+          files:
+            - contents:
+                source: data:text/plain;charset=utf-8;base64,IyEvYmluL3NoCgpOSUM9YnItZXgKSVA9JChhd2sgLUYgJ3JlbG9jYXRlaXA9JyAne3N1YigvIC4qJC8sICIiLCAkMik7IHByaW50ICQyfScgL3Byb2MvY21kbGluZSkKTkVUTUFTSz0kKGF3ayAtRiAncmVsb2NhdGVuZXRtYXNrPScgJ3tzdWIoLyAuKiQvLCAiIiwgJDIpOyBwcmludCAkMn0nIC9wcm9jL2NtZGxpbmUpCgpncmVwIC1xICRJUCAvZXRjL05ldHdvcmtNYW5hZ2VyL3N5c3RlbS1jb25uZWN0aW9ucy8qICYmIGV4aXQgMAoKY29ubmVjdGlvbj0kKG5tY2xpIC10IC1mIE5BTUUsREVWSUNFIGMgcyAtYSB8IGdyZXAgJE5JQyB8IGdyZXAgLXYgb3ZzLXBvcnQgfCBncmVwIC12IG92cy1pZiB8IGN1dCAtZDogLWYxKQpubWNsaSBjb25uZWN0aW9uIG1vZGlmeSAiJGNvbm5lY3Rpb24iICtpcHY0LmFkZHJlc3NlcyAkSVAvJE5FVE1BU0sgaXB2NC5tZXRob2QgYXV0bwppcCBhZGRyIGFkZCAkSVAvJE5FVE1BU0sgZGV2ICROSUMK
+                verification: {}
+              filesystem: root
+              mode: 448
+              path: /usr/local/bin/xxx.sh
+        systemd:
+          units:
+          - name: xxx.service
+            enabled: true
+            contents: |
+              [Unit]
+              After=network.target ovs-configuration.service
+              Before=network-online.target kubelet.service crio.service
+              [Service]
+              Type=oneshot
+              ExecStart=/usr/local/bin/xxx.sh
+              [Install]
+              WantedBy=multi-user.target
+```
 
 ### Gather iso
 
