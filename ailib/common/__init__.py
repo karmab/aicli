@@ -230,6 +230,8 @@ def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
         mcs.append({'97-relocate-sa.yaml': sa_data})
         binding_data = open(f"{basedir}/98-relocate-binding.yaml").read()
         mcs.append({'98-relocate-binding.yaml': binding_data})
+        ovn_data = open(f"{basedir}/99-ovn.yaml").read()
+        mcs.append({'99-ovn.yaml': ovn_data})
         job_template = open(f"{basedir}/99-relocate-job.yaml").read()
         registry = overrides.get('relocate_registry', True)
         olm_operators = overrides.get('olm_operators', [])
