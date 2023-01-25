@@ -1413,7 +1413,7 @@ class AssistedClient(object):
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_ctlplanes', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
                 'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels', 'relocate',
-                'relocate_switch', 'relocate_registry']
+                'relocate_switch', 'relocate_registry', 'relocate_cidr']
 
     def create_deployment(self, cluster, overrides, force=False):
         self.create_cluster(cluster, overrides.copy(), force=force)
