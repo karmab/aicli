@@ -23,7 +23,7 @@ spec:
         contents: |
           [Unit]
           After=network.target ovs-configuration.service
-          Before=network-online.target kubelet.service crio.service
+          Before=network-online.target ovs-configuration.service
           [Service]
           Type=oneshot
           ExecStart=/usr/local/bin/relocate-ip.sh
