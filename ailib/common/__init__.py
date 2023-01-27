@@ -263,13 +263,6 @@ def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
     hack_template = open(f"{basedir}/hack.ign").read()
     ignition_config_override = json.dumps(yaml.safe_load(hack_template % {'data': hack_data}))
     data['ignition_config_override'] = ignition_config_override
-    hint_template = open(f"{basedir}/10-node-ip-hint.yaml").read()
-    hint_data = f"KUBELET_NODEIP_HINT={str(network.network_address)}"
-    hint_data = str(b64encode(hint_data.encode('utf-8')), 'utf-8')
-    mc_hint = hint_template % {'role': 'master', 'data': hint_data}
-    mcs.append({'10-node-ip-hint-ctlplane.yaml': mc_hint})
-    mc_hint = hint_template % {'role': 'worker', 'data': hint_data}
-    mcs.append({'10-node-ip-hint-worker.yaml': mc_hint})
     relocate_script = open(f"{basedir}/relocate-ip.sh").read()
     relocate_script_data = str(b64encode(relocate_script.encode('utf-8')), 'utf-8')
     relocate_template = open(f"{basedir}/10-relocate-ip.yaml").read()
