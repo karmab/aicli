@@ -1,6 +1,6 @@
 #!/bin/sh
 
-NIC=$(ip r | grep default | head -1 | grep -oP '(?<=dev )[^ ]*')
+NIC=br-ex
 IP=$(awk -F 'relocateip=' '{sub(/ .*$/, "", $2); print $2}' /proc/cmdline)
 NETMASK=$(awk -F 'relocatenetmask=' '{sub(/ .*$/, "", $2); print $2}' /proc/cmdline)
 
