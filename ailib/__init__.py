@@ -538,9 +538,10 @@ class AssistedClient(object):
         if self.debug:
             print(new_cluster_params)
         cluster_params = models.ClusterCreateParams(**new_cluster_params)
-        self.client.v2_register_cluster(new_cluster_params=cluster_params)
+        result = self.client.v2_register_cluster(new_cluster_params=cluster_params)
         if extra_overrides:
             self.update_cluster(name, extra_overrides)
+        info(f"Using version {result.openshift_version}")
 
     def delete_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
