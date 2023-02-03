@@ -955,7 +955,7 @@ class AssistedClient(object):
                 elif not bind_updated and not extra_args_updated and not ignition_updated:
                     warning("Nothing updated for this host")
 
-    def wait_hosts(self, name, number=3, filter_installed=False, require_inventory=False):
+    def wait_hosts(self, name, number=3, filter_installed=False, require_inventory=False, verbose=True):
         client = self.client
         infra_env_id = self.get_infra_env_id(name)
         infra_env = client.get_infra_env(infra_env_id=infra_env_id)
@@ -972,14 +972,15 @@ class AssistedClient(object):
                 if len(current_hosts) >= number:
                     return
                 else:
-                    info(f"Waiting 5s for hosts to reach expected number {number}")
+                    if verbose:
+                        info(f"Waiting 5s for hosts to reach expected number {number}")
                     sleep(5)
                     self.refresh_token(self.token, self.offlinetoken)
             except KeyboardInterrupt:
                 info("Leaving as per your request")
                 sys.exit(0)
 
-    def wait_cluster(self, name, status='installed'):
+    def wait_cluster(self, name, status='installed', verbose=True):
         cluster_id = self.get_cluster_id(name)
         while True:
             try:
@@ -991,7 +992,8 @@ class AssistedClient(object):
                 if reached:
                     return
                 else:
-                    info(f"Waiting 5s for cluster {name} to reach state {status}")
+                    if verbose:
+                        info(f"Waiting 5s for cluster {name} to reach state {status}")
                     sleep(5)
                     self.refresh_token(self.token, self.offlinetoken)
             except KeyboardInterrupt:
@@ -1339,7 +1341,7 @@ class AssistedClient(object):
             infra_env_update_params = models.InfraEnvUpdateParams(**infra_env_update_params)
             self.client.update_infra_env(infra_env_id=infra_env_id, infra_env_update_params=infra_env_update_params)
 
-    def bind_infra_env(self, name, cluster, force=False):
+    def bind_infra_env(self, name, cluster, force=False, verbose=True):
         infra_env_id = self.get_infra_env_id(name)
         cluster_id = self.get_cluster_id(cluster)
         for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
@@ -1363,7 +1365,8 @@ class AssistedClient(object):
                         if currentstatus == 'known-unbound':
                             break
                         else:
-                            info(f"Waiting 5s for host {host_name} to get unbound")
+                            if verbose:
+                                info(f"Waiting 5s for host {host_name} to get unbound")
                             sleep(5)
             info(f"Binding Host {host_name} to Cluster {cluster}")
             bind_host_params = {'cluster_id': cluster_id}
