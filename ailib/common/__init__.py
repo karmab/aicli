@@ -30,7 +30,9 @@ def warning(text):
     print(f'\033[0;{color}m{text}\033[0;0m')
 
 
-def info(text):
+def info(text, quiet=False):
+    if quiet:
+        return
     color = "36"
     print(f'\033[0;{color}m{text}\033[0;0m')
 

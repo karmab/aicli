@@ -77,7 +77,8 @@ def boot_hosts(overrides, hostnames=[], debug=False):
 
 class AssistedClient(object):
     def __init__(self, url='https://api.openshift.com', token=None, offlinetoken=None, debug=False,
-                 ca=None, cert=None, key=None):
+                 ca=None, cert=None, key=None, quiet=False):
+        self.quiet = quiet
         self.url = url
         self.config = Configuration()
         self.config.host = self.url + "/api/assisted-install"
@@ -972,7 +973,7 @@ class AssistedClient(object):
                 if len(current_hosts) >= number:
                     return
                 else:
-                    info(f"Waiting 5s for hosts to reach expected number {number}")
+                    info(f"Waiting 5s for hosts to reach expected number {number}", quiet=self.quiet)
                     sleep(5)
                     self.refresh_token(self.token, self.offlinetoken)
             except KeyboardInterrupt:
@@ -991,7 +992,7 @@ class AssistedClient(object):
                 if reached:
                     return
                 else:
-                    info(f"Waiting 5s for cluster {name} to reach state {status}")
+                    info(f"Waiting 5s for cluster {name} to reach state {status}", quiet=self.quiet)
                     sleep(5)
                     self.refresh_token(self.token, self.offlinetoken)
             except KeyboardInterrupt:
@@ -1363,7 +1364,7 @@ class AssistedClient(object):
                         if currentstatus == 'known-unbound':
                             break
                         else:
-                            info(f"Waiting 5s for host {host_name} to get unbound")
+                            info(f"Waiting 5s for host {host_name} to get unbound", quiet=self.quiet)
                             sleep(5)
             info(f"Binding Host {host_name} to Cluster {cluster}")
             bind_host_params = {'cluster_id': cluster_id}
