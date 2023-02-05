@@ -1,4 +1,4 @@
-FROM alpine:3.10
+FROM alpine:3.17
 
 MAINTAINER Karim Boumedhel <karimboumedhel@gmail.com>
 
@@ -10,7 +10,7 @@ LABEL name="karmab/aicli" \
       summary="Assisted installer cli" \
       description="Assisted installer wrapper"
 
-RUN apk add --update --no-cache python3-dev openssl
+RUN apk add --update --no-cache python3-dev openssl py3-pip
 
 # Group the pip installation
 RUN mkdir /root/aicli
