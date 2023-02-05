@@ -189,7 +189,8 @@ def create_onprem(overrides={}, debug=False):
             if debug:
                 print(open(f"{tmpdir}/configmap.yml").read())
                 info(f"Running: podman play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml")
-            call(f"podman play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml", shell=True)
+            storage = '--storage-driver vfs' if 'KUBERNETES_SERVICE_PORT' in os.environ else ''
+            call(f"podman {storage} play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml", shell=True)
 
 
 def delete_onprem(overrides={}, debug=False):

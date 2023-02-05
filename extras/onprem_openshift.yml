@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: aicli-onprem
+  namespace: default
+  labels:
+    app: aicli-onprem
+spec:
+  restartPolicy: Never
+  containers:
+  - name: onprem
+    securityContext:
+      privileged: true
+    image: quay.io/karmab/aicli:latest
+    command: ["/bin/sh"]
+    args: ["-c", "apk update ; apk add podman ; aicli create onprem ; while true; do sleep 10; done"]
+    env:
+    - name: AI_URL
+      value: "http://127.0.0.1:8090"
