@@ -554,6 +554,13 @@ def download_ipxe_script(args):
     ai.download_ipxe_script(args.infraenv, args.path, local=local, serve=args.serve)
 
 
+def download_manifests(args):
+    info(f"Downloading Manifests for cluster {args.cluster} in {args.path}")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
+                        ca=args.ca, cert=args.cert, key=args.key)
+    ai.download_manifests(args.cluster, args.path)
+
+
 def download_static_networking_config(args):
     info(f"Downloading Static networking config for infraenv {args.infraenv} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
@@ -1008,6 +1015,14 @@ def cli():
     download_subparsers.add_parser('kubeconfig', parents=[kubeconfigdownload_parser],
                                    description=kubeconfigdownload_desc,
                                    help=kubeconfigdownload_desc)
+
+    manifestsdownload_desc = 'Download Manifests'
+    manifestsdownload_parser = argparse.ArgumentParser(add_help=False)
+    manifestsdownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
+    manifestsdownload_parser.add_argument('cluster', metavar='CLUSTER')
+    manifestsdownload_parser.set_defaults(func=download_manifests)
+    download_subparsers.add_parser('manifests', parents=[manifestsdownload_parser], description=manifestsdownload_desc,
+                                   help=manifestsdownload_desc)
 
     staticnetworkingdownload_desc = 'Download Static network config'
     staticnetworkingdownload_parser = argparse.ArgumentParser(add_help=False)

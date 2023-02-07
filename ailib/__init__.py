@@ -1228,6 +1228,20 @@ class AssistedClient(object):
             results.append({'file_name': manifest['file_name'], 'folder': manifest['folder']})
         return results
 
+    def download_manifests(self, name, path='.'):
+        cluster_id = self.get_cluster_id(name)
+        manifests_api = api.ManifestsApi(api_client=self.api)
+        manifests = manifests_api.v2_list_cluster_manifests(cluster_id)
+        for manifest in manifests:
+            folder = manifest['folder']
+            file_name = manifest['file_name']
+            info(f"Downloading {file_name}")
+            response = manifests_api.v2_download_cluster_manifest(cluster_id, file_name, folder=folder,
+                                                                  _preload_content=False)
+            file_path = f"{path}/{file_name}"
+            with open(file_path, "wb") as f:
+                copyfileobj(response, f)
+
     def update_installconfig(self, name, overrides={}):
         cluster_id = self.get_cluster_id(name)
         installconfig = {}
