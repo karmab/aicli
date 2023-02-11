@@ -70,4 +70,5 @@ jobs:
       steps:
       - name: Deploy ai cluster
         run: |
-          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $EXTRAPARAMS $CLUSTER --force
+          if [ "$NODES" == "1" ] ; then SNO=true ; else SNO=false ; fi
+          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $EXTRAPARAMS -P sno=$SNO $CLUSTER --force
