@@ -1,0 +1,22 @@
+parameters:
+  cluster: ci-ai
+  nodes: 3
+  cidr: 192.168.129.0/24
+
+{{ cluster }}:
+  type: network
+  cidr: {{ cidr }}
+  dhcp_start: 192.168.129.2
+  dhcp_end: 192.168.129.251
+
+{% for num in range(nodes) %}
+{{ cluster }}-node-{{ num }}:
+ memory: 20480
+ numcpus: 16
+ cluster: {{ cluster }}
+ user: core
+ uefi: true
+ start: false
+ disks: [200]
+ nets: [{{ cluster }}]
+{% endfor %}

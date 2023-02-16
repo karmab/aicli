@@ -1,6 +1,6 @@
 base_dns_domain: karmalabs.corp
-api_vip: 192.168.122.251
-ingress_vip: 192.168.122.250
+api_vip: 192.168.129.251
+ingress_vip: 192.168.129.250
 bmc_user: admin
 bmc_password: password
 hosts:

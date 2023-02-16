@@ -19,6 +19,10 @@ on:
         description: 'paramfile'
         required: false
         default: .github/aicli_parameters.yml
+      PLANFILE:
+        description: 'planfile'
+        required: false
+        default: .github/kcli_plan.yml
       EXTRAPARAMS:
         description: 'Extra params'
         default: ''
@@ -30,6 +34,7 @@ env:
  NODES: ${{github.event.inputs.NODES}}
  PULLSECRET: ${{github.event.inputs.PULLSECRET}}
  PARAMFILE: ${{github.event.inputs.PARAMFILE}}
+ PLANFILE: ${{github.event.inputs.PLANFILE}}
  EXTRAPARAMS: ${{github.event.inputs.EXTRAPARAMS}}
  AI_OFFLINETOKEN: ${{ secrets.AI_OFFLINETOKEN }}
 # CLUSTER: ai-ci
@@ -61,8 +66,7 @@ jobs:
       runs-on: libvirt
       steps:
       - name: Deploy kcli plan
-        run: kcli -C local create vm -P uefi=true -P start=false -P memory=20480 -P numcpus=16 -P disks=[200] -P nets=[default] $CLUSTER-node -P plan=$CLUSTER $EXTRAPARAMS --count=$NODES
-
+        run: kcli -C local create plan -f $PLANFILE -P NODES=$NODES
 
     deploy-ai-cluster:
       needs: deploy-kcli-plan
