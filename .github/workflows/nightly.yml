@@ -38,7 +38,7 @@ jobs:
       runs-on: libvirt
       steps:
       - name: Deploy kcli plan
-        run: kcli -C local create plan -f $PLANFILE -P NODES=$NODES
+        run: kcli -C local create plan -f $PLANFILE -P NODES=$NODES $CLUSTER
 
     deploy-ai-cluster:
       needs: deploy-kcli-plan
