@@ -1,6 +1,6 @@
 import argparse
 from argparse import RawDescriptionHelpFormatter as rawhelp
-from ailib.common import get_overrides, info, error, warning, confirm
+from ailib.common import get_overrides, info, error, warning, confirm, container_mode
 import json
 from prettytable import PrettyTable
 import os
@@ -13,6 +13,25 @@ from ailib.common import create_onprem as ai_create_onprem
 from ailib.common import delete_onprem as ai_delete_onprem
 
 PARAMHELP = "specify parameter or keyword for rendering (multiple can be specified)"
+
+
+def handle_parameters(parameters, paramfiles):
+    if paramfiles is None:
+        paramfiles = []
+    overrides = {}
+    if container_mode():
+        if paramfiles:
+            paramfiles = [f"/workdir/{paramfile}" for paramfile in paramfiles]
+        elif os.path.exists("/workdir/aicli_parameters.yml"):
+            paramfiles = ["/workdir/aicli_parameters.yml"]
+            info("Using default parameter file aicli_parameters.yml")
+    elif not paramfiles and os.path.exists("aicli_parameters.yml"):
+        paramfiles = ["aicli_parameters.yml"]
+        info("Using default parameter file aicli_parameters.yml")
+    for paramfile in paramfiles:
+        overrides.update(get_overrides(paramfile=paramfile))
+    overrides.update(get_overrides(param=parameters))
+    return overrides
 
 
 def _list_output(_list, output):
@@ -50,23 +69,9 @@ def get_subparser(parser, subcommand):
                 return subparser
 
 
-def choose_parameter_file(paramfile):
-    if os.path.exists("/i_am_a_container"):
-        if paramfile is not None and not os.path.isabs(paramfile):
-            paramfile = f"/workdir/{paramfile}"
-        elif os.path.exists("/workdir/aicli_parameters.yml"):
-            paramfile = "/workdir/aicli_parameters.yml"
-            info("Using default parameter file aicli_parameters.yml")
-    elif paramfile is None and os.path.exists("aicli_parameters.yml"):
-        paramfile = "aicli_parameters.yml"
-        info("Using default parameter file aicli_parameters.yml")
-    return paramfile
-
-
 def create_cluster(args):
     info(f"Creating cluster {args.cluster}")
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     ai.create_cluster(args.cluster, overrides.copy(), force=args.force)
@@ -174,8 +179,7 @@ def list_cluster(args):
 
 def update_cluster(args):
     info(f"Updating Cluster {args.cluster}")
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     ai.update_cluster(args.cluster, overrides)
@@ -199,8 +203,7 @@ def stop_cluster(args):
 
 def create_deployment(args):
     info(f"Creating deployment {args.cluster}")
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     ai.create_deployment(args.cluster, overrides, force=args.force)
@@ -233,8 +236,7 @@ def delete_host(args):
     yes_top = args.yes_top
     if not yes and not yes_top:
         confirm("Are you sure?")
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     for hostname in args.hostnames:
@@ -334,8 +336,7 @@ def list_hosts(args):
 
 
 def boot_hosts(args):
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     hostnames = args.hostnames
     ai_boot_hosts(overrides, hostnames=hostnames, debug=args.debug)
 
@@ -356,8 +357,7 @@ def stop_hosts(args):
 
 def create_infra_env(args):
     info(f"Creating infraenv {args.infraenv}")
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     ai.create_infra_env(args.infraenv, overrides)
@@ -457,8 +457,7 @@ def unbind_infra_env(args):
 
 def update_infra_env(args):
     info(f"Updating infraenv {args.infraenv}")
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     ai.update_infra_env(args.infraenv, overrides)
@@ -467,9 +466,8 @@ def update_infra_env(args):
 def create_iso(args):
     warning("This api call is deprecated")
     info(f"Getting Iso url for infraenv {args.infraenv}")
-    paramfile = choose_parameter_file(args.paramfile)
     minimal = args.minimal
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     ai.update_infra_env(args.infraenv, overrides)
@@ -480,9 +478,8 @@ def create_iso(args):
 def info_iso(args):
     if not args.short:
         info(f"Getting Iso url for infraenv {args.infraenv}")
-    paramfile = choose_parameter_file(args.paramfile)
     minimal = args.minimal
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     iso_url = ai.info_iso(args.infraenv, overrides, minimal=minimal)
@@ -585,8 +582,7 @@ def unbind_host(args):
 
 
 def update_host(args):
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     hostnames = args.hostname
@@ -622,8 +618,7 @@ def list_manifests(args):
 
 def update_installconfig(args):
     info(f"Updating installconfig in {args.cluster}")
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     ai.update_installconfig(args.cluster, overrides)
@@ -631,8 +626,7 @@ def update_installconfig(args):
 
 def update_iso(args):
     info(f"Updating iso in {args.infraenv}")
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     ai.update_iso(args.infraenv, overrides)
@@ -726,8 +720,7 @@ def create_agent_manifests(args):
     path = args.path or args.cluster
     manifests = 'ztp like agent manifests' if args.ztp else 'agent manifests'
     info(f"Creating {manifests} for {args.cluster} in path")
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     ai.create_agent_manifests(args.cluster, overrides, path=path, ztp=args.ztp)
@@ -736,15 +729,13 @@ def create_agent_manifests(args):
 def create_onprem(args):
     warning("This is not the supported path for interacting with AI")
     info("Creating onprem deployment")
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai_create_onprem(overrides, debug=args.debug)
 
 
 def delete_onprem(args):
     info("Deleting onprem deployment")
-    paramfile = choose_parameter_file(args.paramfile)
-    overrides = get_overrides(paramfile=paramfile, param=args.param)
+    overrides = handle_parameters(args.param, args.paramfile)
     ai_delete_onprem(overrides, debug=args.debug)
 
 
@@ -796,7 +787,7 @@ def cli():
                                                   help=hostsboot_desc, epilog=hostsboot_epilog, formatter_class=rawhelp,
                                                   aliases=['hosts'])
     hostsboot_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    hostsboot_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    hostsboot_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE', action='append')
     hostsboot_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
     hostsboot_parser.set_defaults(func=boot_hosts)
 
@@ -812,7 +803,8 @@ def cli():
                                                                epilog=agentmanifestscreate_epilog,
                                                                formatter_class=rawhelp)
     agentmanifestscreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    agentmanifestscreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    agentmanifestscreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
+                                             action='append')
     agentmanifestscreate_parser.add_argument('--path', metavar='PATH', help='Where to store generated assets')
     agentmanifestscreate_parser.add_argument('-z', '--ztp', action='store_true', help='Generate ZTP like manifests')
     agentmanifestscreate_parser.add_argument('cluster', metavar='CLUSTER')
@@ -825,7 +817,8 @@ def cli():
                                                         epilog=clustercreate_epilog, formatter_class=rawhelp)
     clustercreate_parser.add_argument('-f', '--force', action='store_true', help='Delete existing cluster if needed')
     clustercreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    clustercreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    clustercreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
+                                      action='append')
     clustercreate_parser.add_argument('cluster', metavar='CLUSTER')
     clustercreate_parser.set_defaults(func=create_cluster)
 
@@ -836,7 +829,8 @@ def cli():
                                                            epilog=deploymentcreate_epilog, formatter_class=rawhelp)
     deploymentcreate_parser.add_argument('-f', '--force', action='store_true', help='Delete existing cluster if needed')
     deploymentcreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    deploymentcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    deploymentcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
+                                         action='append')
     deploymentcreate_parser.add_argument('cluster', metavar='CLUSTER')
     deploymentcreate_parser.set_defaults(func=create_deployment)
 
@@ -846,7 +840,8 @@ def cli():
                                                          help=infraenvcreate_desc,
                                                          epilog=infraenvcreate_epilog, formatter_class=rawhelp)
     infraenvcreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    infraenvcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    infraenvcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
+                                       action='append')
     infraenvcreate_parser.add_argument('infraenv', metavar='INFRAENV')
     infraenvcreate_parser.set_defaults(func=create_infra_env)
 
@@ -856,7 +851,7 @@ def cli():
                                                     epilog=isocreate_epilog, formatter_class=rawhelp)
     isocreate_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
     isocreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    isocreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    isocreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE', action='append')
     isocreate_parser.add_argument('infraenv', metavar='INFRAENV')
     isocreate_parser.set_defaults(func=create_iso)
 
@@ -865,7 +860,8 @@ def cli():
     onpremcreate_parser = create_subparsers.add_parser('onprem', description=onpremcreate_desc, help=onpremcreate_desc,
                                                        epilog=onpremcreate_epilog, formatter_class=rawhelp)
     onpremcreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    onpremcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    onpremcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
+                                     action='append')
     onpremcreate_parser.set_defaults(func=create_onprem)
 
     manifestscreate_desc = 'Upload manifests to cluster'
@@ -905,7 +901,7 @@ def cli():
     hostdelete_desc = 'Delete host'
     hostdelete_parser = argparse.ArgumentParser(add_help=False)
     hostdelete_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    hostdelete_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    hostdelete_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE', action='append')
     hostdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
     hostdelete_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
     hostdelete_parser.set_defaults(func=delete_host)
@@ -928,7 +924,8 @@ def cli():
                                                        help=onpremdelete_desc,
                                                        epilog=onpremdelete_epilog, formatter_class=rawhelp)
     onpremdelete_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    onpremdelete_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    onpremdelete_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
+                                     action='append')
     onpremdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
     onpremdelete_parser.set_defaults(func=delete_onprem)
 
@@ -1088,7 +1085,7 @@ def cli():
     isoinfo_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
     isoinfo_parser.add_argument('-s', '--short', action='store_true', help='Only print iso url')
     isoinfo_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    isoinfo_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    isoinfo_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE', action='append')
     isoinfo_parser.add_argument('infraenv', metavar='INFRAENV')
     isoinfo_parser.set_defaults(func=info_iso)
 
@@ -1198,7 +1195,7 @@ def cli():
                                                     epilog=hostsstart_epilog, formatter_class=rawhelp,
                                                     aliases=['hosts'])
     hostsstart_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    hostsstart_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    hostsstart_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE', action='append')
     hostsstart_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
     hostsstart_parser.set_defaults(func=start_hosts)
 
@@ -1228,7 +1225,7 @@ def cli():
                                                   epilog=hostsstop_epilog, formatter_class=rawhelp,
                                                   aliases=['hosts'])
     hostsstop_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    hostsstop_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    hostsstop_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE', action='append')
     hostsstop_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
     hostsstop_parser.set_defaults(func=stop_hosts)
 
@@ -1263,7 +1260,8 @@ def cli():
     clusterupdate_desc = 'Update Cluster'
     clusterupdate_parser = argparse.ArgumentParser(add_help=False)
     clusterupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    clusterupdate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    clusterupdate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
+                                      action='append')
     clusterupdate_parser.add_argument('cluster', metavar='CLUSTER')
     clusterupdate_parser.set_defaults(func=update_cluster)
     update_subparsers.add_parser('cluster', parents=[clusterupdate_parser], description=clusterupdate_desc,
@@ -1272,7 +1270,7 @@ def cli():
     hostupdate_desc = 'Update Host name and role'
     hostupdate_parser = argparse.ArgumentParser(add_help=False)
     hostupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    hostupdate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    hostupdate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE', action='append')
     hostupdate_parser.add_argument('hostname', metavar='HOSTNAME', nargs='*')
     hostupdate_parser.set_defaults(func=update_host)
     update_subparsers.add_parser('host', parents=[hostupdate_parser], description=hostupdate_desc, help=hostupdate_desc,
@@ -1281,7 +1279,8 @@ def cli():
     infraenvupdate_desc = 'Update Infraenv'
     infraenvupdate_parser = argparse.ArgumentParser(add_help=False)
     infraenvupdate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    infraenvupdate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    infraenvupdate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
+                                       action='append')
     infraenvupdate_parser.add_argument('infraenv', metavar='INFRAENV')
     infraenvupdate_parser.set_defaults(func=update_infra_env)
     update_subparsers.add_parser('infraenv', parents=[infraenvupdate_parser], description=infraenvupdate_desc,
@@ -1290,7 +1289,8 @@ def cli():
     installconfigpatch_desc = 'Update Installconfig'
     installconfigpatch_parser = argparse.ArgumentParser(add_help=False)
     installconfigpatch_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    installconfigpatch_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    installconfigpatch_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
+                                           action='append')
     installconfigpatch_parser.add_argument('cluster', metavar='CLUSTER')
     installconfigpatch_parser.set_defaults(func=update_installconfig)
     update_subparsers.add_parser('installconfig', parents=[installconfigpatch_parser],
@@ -1299,7 +1299,7 @@ def cli():
     isopatch_desc = 'Update Discovery Iso'
     isopatch_parser = argparse.ArgumentParser(add_help=False)
     isopatch_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    isopatch_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE')
+    isopatch_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE', action='append')
     isopatch_parser.add_argument('infraenv', metavar='INFRAENV')
     isopatch_parser.set_defaults(func=update_iso)
     update_subparsers.add_parser('iso', parents=[isopatch_parser], description=isopatch_desc, help=isopatch_desc)

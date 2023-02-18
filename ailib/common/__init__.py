@@ -275,3 +275,7 @@ def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
     mcs.append({'10-relocate-ip-worker.yaml': mc_relocate})
     data['manifests'] = mcs
     return data
+
+
+def container_mode():
+    return True if os.path.exists("/i_am_a_container") and os.path.exists('/workdir') else False
