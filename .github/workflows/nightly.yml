@@ -43,6 +43,7 @@ jobs:
     deploy-ai-cluster:
       needs: deploy-kcli-plan
       runs-on: libvirt
+      timeout-minutes: 70
       steps:
       - name: Deploy ai cluster
         run: |
