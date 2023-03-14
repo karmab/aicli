@@ -169,9 +169,9 @@ To create a sno cluster
 
 Within the extra parameters, the most common ones to use are listed below:
 
-===================== ============================================================
+===================== =============================================================
 Parameter             Meaning
-===================== ============================================================
+===================== =============================================================
 api_ip                Api ip
 ingress_ip            Ingress ip
 domain                Ingress ip
@@ -182,8 +182,9 @@ network_type          Which sdn to use
 sno                   Whether to deploy a SNO
 sno_disk              Which disk to use for SNO install
 hosts                 An array of hosts to automatically update data from
-pull_secret           The path to your pull_secret (openshift_pull.json by default
-===================== ============================================================
+pull_secret           The path to your pull_secret (openshift_pull.json by default)
+ignore_validations    Whether to ignore all validations
+===================== =============================================================
 
 Note: there are DNS requirements associated to the name of the cluster and the domain for an install to be available without /etc/hosts hacks
 
@@ -311,6 +312,11 @@ You can alternatively provide a list of entries below manifests such as
                  ExecStart=/usr/local/bin/xxx.sh
                  [Install]
                  WantedBy=multi-user.target
+
+Ignoring validations
+~~~~~~~~~~~~~~~~~~~~
+
+For testing purposes, validations can be disabled when creating cluster by setting parameter ``ignore_validations`` to ``true``
 
 Gather iso
 ~~~~~~~~~~
