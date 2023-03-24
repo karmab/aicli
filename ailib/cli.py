@@ -83,13 +83,15 @@ def create_cluster(args):
 
 
 def delete_cluster(args):
+    allclusters = args.all
     yes = args.yes
     yes_top = args.yes_top
     if not yes and not yes_top:
         confirm("Are you sure?")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    for cluster in args.clusters:
+    clusters = [clu['name'] for clu in ai.list_clusters()] if allclusters else args.clusters
+    for cluster in clusters:
         info(f"Deleting cluster {cluster}")
         ai.delete_cluster(cluster)
         for infra_env in ai.list_infra_envs():
@@ -885,6 +887,7 @@ def cli():
                                                         help=clusterdelete_desc,
                                                         epilog=clusterdelete_epilog, formatter_class=rawhelp,
                                                         aliases=['deployment'])
+    clusterdelete_parser.add_argument('-a', '--all', action='store_true', help='Delete all clusters')
     clusterdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
     clusterdelete_parser.add_argument('clusters', metavar='CLUSTERS', nargs='*')
     clusterdelete_parser.set_defaults(func=delete_cluster)
