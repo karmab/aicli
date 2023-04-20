@@ -1762,3 +1762,21 @@ class AssistedClient(object):
                     hosts_data = {'kind': 'AgentConfig'}
                     hosts_data['spec'] = {'hosts': custom_hosts}
                     dest.write(yaml.safe_dump(hosts_data))
+
+    def create_fake_host(self, name, cluster, secret_key, overrides={}):
+        infra_env_id = self.get_infra_env_id(cluster)
+        agent_version = 'registry.redhat.io/rhai-tech-preview/assisted-installer-agent-rhel8:v1.0.0-248'
+        host_id = str(uuid1())
+        info(f"Using uuid {host_id}")
+        new_host_params = {"host_id": host_id, "discovery_agent_version": agent_version}
+        new_host_params = models.HostCreateParams(**new_host_params)
+        self.client.api_client.default_headers['X-Secret-Key'] = secret_key
+        self.client.v2_register_host(infra_env_id=infra_env_id, new_host_params=new_host_params)
+        # instructions = self.client.v2_get_next_steps(infra_env_id, host_id).to_dict()['instructions'][0]
+        # step_id = instructions['step_id']
+        # output = '{"hostname": "%s"}' % name
+        # step_type = models.StepType()
+        # step_type.discriminator = 'inventory'
+        # reply = models.StepReply({'step_id': step_id, 'output': output, 'step_type': step_type})
+        # extra_args = {"discovery_agent_version": agent_version, 'reply': reply}
+        # self.client.v2_post_step_reply(infra_env_id, host_id, **extra_args)

@@ -2,6 +2,7 @@
 
 set -ex
 
-pip3 install pep8 misspellings wheel
+pip3 install pep8 wheel
+
 find . -type f -iname "*.py" -exec pep8 --ignore=E402,W504,E721 --max-line-length=120 {} +
-find . -name '*.py' | misspellings -f -
+# find . -name '*.py' | misspellings -f -

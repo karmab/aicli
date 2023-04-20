@@ -4,6 +4,7 @@ from ailib.common import get_overrides, info, error, warning, confirm, container
 import json
 from prettytable import PrettyTable
 import os
+import re
 import sys
 import yaml
 from time import sleep
@@ -355,6 +356,29 @@ def stop_hosts(args):
                         ca=args.ca, cert=args.cert, key=args.key)
     hostnames = args.hostnames
     ai.stop_hosts(hostnames=hostnames)
+
+
+def create_fake_hosts(args):
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
+                        ca=args.ca, cert=args.cert, key=args.key)
+    overrides = handle_parameters(args.param, args.paramfile)
+    if 'pull_secret' not in overrides:
+        warning("Using openshift_pull.json as pull_secret file")
+        overrides['pull_secret'] = "openshift_pull.json"
+    pull_secret = os.path.expanduser(overrides['pull_secret'])
+    if os.path.exists(pull_secret):
+        pull_secret = re.sub(r"\s", "", open(pull_secret).read())
+    elif '{' not in pull_secret:
+        error(f"Couldn't parse pull secret file {pull_secret}")
+        sys.exit(1)
+    pull_secret_data = json.loads(pull_secret)
+    secret_key = pull_secret_data['auths']['cloud.openshift.com']['auth']
+    count = args.count
+    cluster = args.cluster
+    for num in range(0, count):
+        hostname = f"{cluster}-node-{num}"
+        info(f"Creating fake host {hostname}")
+        ai.create_fake_host(hostname, cluster, secret_key)
 
 
 def create_infra_env(args):
@@ -835,6 +859,19 @@ def cli():
                                          action='append')
     deploymentcreate_parser.add_argument('cluster', metavar='CLUSTER')
     deploymentcreate_parser.set_defaults(func=create_deployment)
+
+    fakehostscreate_desc = 'Create Fake Hosts'
+    fakehostscreate_epilog = None
+    fakehostscreate_parser = create_subparsers.add_parser('fakehost', description=fakehostscreate_desc,
+                                                          help=fakehostscreate_desc,
+                                                          epilog=fakehostscreate_epilog, formatter_class=rawhelp,
+                                                          aliases=['fakehosts', 'fake-host', 'fake-hosts'])
+    fakehostscreate_parser.add_argument('-c', '--count', help='How many hosts to create', type=int, default=1)
+    fakehostscreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    fakehostscreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
+                                        action='append')
+    fakehostscreate_parser.add_argument('cluster', metavar='CLUSTER')
+    fakehostscreate_parser.set_defaults(func=create_fake_hosts)
 
     infraenvcreate_desc = 'Create Infraenv'
     infraenvcreate_epilog = None
