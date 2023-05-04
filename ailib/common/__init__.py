@@ -251,8 +251,10 @@ def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
                 olm_operators.append(storage_operator)
                 data['olm_operators'] = olm_operators
         else:
-            waitcommand = "kubectl get clusterversion version -o jsonpath='{.status.history[0].state}'"
-            waitcommand = f'until [ "$({waitcommand})" == "Completed" ] ; do sleep 10 ; done'
+            waitcommand = "WAITCOMMAND=$(kubectl get clusterversion version -o jsonpath='{.status.history[0].state}') ;"
+            waitcommand = ' until [ "$WAITCOMMAND" == "Completed" ] ; do sleep 10 ; '
+            waitcommand += "WAITCOMMAND=$(kubectl get clusterversion version -o jsonpath='{.status.history[0].state}')"
+            waitcommand += " ; done"
         job_data = job_template % {'api_vip': api_vip, 'ingress_vip': ingress_vip, 'registry': str(registry).lower(),
                                    'waitcommand': waitcommand}
         mcs.append({'99-relocate-job.yaml': job_data})
