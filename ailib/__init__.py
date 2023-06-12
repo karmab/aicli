@@ -1467,6 +1467,8 @@ class AssistedClient(object):
             hosts_number = overrides.get('hosts_number')
         elif 'hosts' in overrides and isinstance(overrides['hosts'], list):
             hosts_number = len(overrides.get('hosts'))
+        elif 'sno' in overrides and overrides['sno']:
+            hosts_number = 1
         else:
             hosts_number = 3
         info(f"Setting hosts_number to {hosts_number}")
