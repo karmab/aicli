@@ -48,10 +48,11 @@ def boot_hosts(overrides, hostnames=[], debug=False):
         if hostnames and hostname not in hostnames:
             warning(f"host {hostname} not in {hostnames}. Skipping")
             continue
-        bmc_url = host.get('bmc_url')
-        bmc_user = host.get('bmc_user') or overrides.get('bmc_user')
-        bmc_password = host.get('bmc_password') or overrides.get('bmc_password')
-        bmc_model = host.get('bmc_model') or overrides.get('bmc_model', 'dell')
+        bmc_url = host.get('bmc_url') or host.get('url')
+        bmc_user = host.get('bmc_user') or host.get('user') or overrides.get('bmc_user')
+        bmc_password = host.get('bmc_password') or host.get('password') or overrides.get('bmc_password')
+        bmc_model = host.get('bmc_model') or host.get('model') or overrides.get('model') or overrides.get('bmc_model')
+        bmc_model = bmc_model or 'dell'
         bmc_reset = host.get('reset') or host.get('bmc_reset') or overrides.get('bmc_reset', False)
         if bmc_url is not None and 'redfish/v1/Systems/' in bmc_url and valid_uuid(os.path.basename(bmc_url)):
             bmc_user, bmc_password = 'fake', 'fake'
