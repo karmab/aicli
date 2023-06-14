@@ -1448,6 +1448,8 @@ class AssistedClient(object):
             if download_iso_path is None:
                 download_iso_path = '/var/www/html'
                 warning(f"Using {download_iso_path} to store iso")
+            else:
+                info(f"Using {download_iso_path} to store iso")
             self.download_iso(cluster, download_iso_path)
         else:
             iso_url = self.info_iso(infraenv, overrides, minimal=minimal)
