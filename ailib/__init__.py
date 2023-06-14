@@ -1436,7 +1436,7 @@ class AssistedClient(object):
                 'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels', 'relocate',
                 'relocate_switch', 'relocate_registry', 'relocate_cidr', 'download_iso_path', 'ignore_validations']
 
-    def create_deployment(self, cluster, overrides, force=False):
+    def create_deployment(self, cluster, overrides, force=False, debug=False):
         self.create_cluster(cluster, overrides.copy(), force=force)
         infraenv = f"{cluster}_infra-env"
         minimal = overrides.get('minimal', False)
@@ -1461,7 +1461,7 @@ class AssistedClient(object):
         if 'hosts' in overrides:
             boot_overrides = overrides.copy()
             boot_overrides['cluster'] = cluster
-            boot_result = boot_hosts(boot_overrides)
+            boot_result = boot_hosts(boot_overrides, debug=debug)
             if boot_result != 0:
                 return {'result': 'failure', 'reason': 'Issue when booting hosts'}
         if 'hosts_number' in overrides:
