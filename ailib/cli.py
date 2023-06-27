@@ -16,6 +16,15 @@ from ailib.common import delete_onprem as ai_delete_onprem
 PARAMHELP = "specify parameter or keyword for rendering (multiple can be specified)"
 
 
+def container_path(path):
+    if os.path.exists('/i_am_a_container'):
+        if path == '.':
+            return '/workdir'
+        elif not os.path.isabs(path):
+            return f'/workdir/{path}'
+    return path
+
+
 def handle_parameters(parameters, paramfiles):
     if paramfiles is None:
         paramfiles = []
@@ -513,6 +522,7 @@ def info_iso(args):
 
 
 def download_iso(args):
+    args.path = container_path(args.path)
     info(f"Downloading Iso for infraenv {args.infraenv} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
@@ -522,6 +532,7 @@ def download_iso(args):
 def download_kubeadminpassword(args):
     stdout = args.stdout
     if not stdout:
+        args.path = container_path(args.path)
         dest = f"{args.path}/kubeadmin-password.{args.cluster}"
         info(f"Downloading KubeAdminPassword for Cluster {args.cluster} in {dest}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
@@ -532,6 +543,7 @@ def download_kubeadminpassword(args):
 def download_kubeconfig(args):
     stdout = args.stdout
     if not stdout:
+        args.path = container_path(args.path)
         info(f"Downloading Kubeconfig for Cluster {args.cluster} in {args.path}/kubeconfig.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
@@ -539,6 +551,7 @@ def download_kubeconfig(args):
 
 
 def download_initrd(args):
+    args.path = container_path(args.path)
     info(f"Downloading Initrd Config for infraenv {args.infraenv} in {args.path}/initrd.{args.infraenv}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
@@ -548,6 +561,7 @@ def download_initrd(args):
 def download_installconfig(args):
     stdout = args.stdout
     if not stdout:
+        args.path = container_path(args.path)
         info(f"Downloading Install Config for Cluster {args.cluster} in {args.path}/install-config.yaml.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
@@ -556,6 +570,7 @@ def download_installconfig(args):
 
 def download_ignition(args):
     role = args.role
+    args.path = container_path(args.path)
     info(f"Downloading {role} ignition for Cluster {args.cluster} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
@@ -563,6 +578,7 @@ def download_ignition(args):
 
 
 def download_discovery_ignition(args):
+    args.path = container_path(args.path)
     info(f"Downloading Discovery ignition for infraenv {args.infraenv} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
@@ -570,6 +586,7 @@ def download_discovery_ignition(args):
 
 
 def download_ipxe_script(args):
+    args.path = container_path(args.path)
     info(f"Downloading Ipxe script for infraenv {args.infraenv} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
@@ -578,6 +595,7 @@ def download_ipxe_script(args):
 
 
 def download_manifests(args):
+    args.path = container_path(args.path)
     info(f"Downloading Manifests for cluster {args.cluster} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
@@ -585,6 +603,7 @@ def download_manifests(args):
 
 
 def download_static_networking_config(args):
+    args.path = container_path(args.path)
     info(f"Downloading Static networking config for infraenv {args.infraenv} in {args.path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
