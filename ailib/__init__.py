@@ -965,6 +965,7 @@ class AssistedClient(object):
         if cluster_id is not None and client.v2_get_cluster(cluster_id=cluster_id).high_availability_mode == 'None':
             number = 1
         while True:
+            counter = 0
             try:
                 current_hosts = client.v2_list_hosts(infra_env_id=infra_env_id)
                 if require_inventory:
@@ -974,8 +975,10 @@ class AssistedClient(object):
                 if len(current_hosts) >= number:
                     return
                 else:
-                    info(f"Waiting 5s for hosts to reach expected number {number}", quiet=self.quiet)
+                    if counter % 30 == 0:
+                        info(f"Waiting 30s for hosts to reach expected number {number}", quiet=self.quiet)
                     sleep(5)
+                    counter += 5
                     self.refresh_token(self.token, self.offlinetoken)
             except KeyboardInterrupt:
                 info("Leaving as per your request")
@@ -984,6 +987,7 @@ class AssistedClient(object):
     def wait_cluster(self, name, status='installed'):
         cluster_id = self.get_cluster_id(name)
         while True:
+            counter = 0
             try:
                 cluster_info = self.client.v2_get_cluster(cluster_id=cluster_id).to_dict()
                 if status == 'ready':
@@ -993,8 +997,10 @@ class AssistedClient(object):
                 if reached:
                     return
                 else:
-                    info(f"Waiting 5s for cluster {name} to reach state {status}", quiet=self.quiet)
+                    if counter % 60 == 0:
+                        info(f"Waiting 1mn for cluster {name} to reach state {status}", quiet=self.quiet)
                     sleep(5)
+                    counter += 5
                     self.refresh_token(self.token, self.offlinetoken)
             except KeyboardInterrupt:
                 info("Leaving as per your request")
