@@ -11,7 +11,6 @@ from subprocess import call
 import sys
 from tempfile import TemporaryDirectory
 from time import time
-from uuid import UUID
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import urllib.request
@@ -138,14 +137,6 @@ def match_mac(host, mac):
             found = True
             break
     return found
-
-
-def valid_uuid(uuid):
-    try:
-        UUID(uuid)
-        return True
-    except:
-        return False
 
 
 def get_ip():
