@@ -760,7 +760,7 @@ class AssistedClient(object):
         infra_env_id = self.get_infra_env_id(name)
         response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="static-network-config",
                                                            _preload_content=False)
-        with open(f"{path}/static-network-config.{name}", "wb") as f:
+        with open(f"{path}/static-network-config.{name}.tar", "wb") as f:
             copyfileobj(response, f)
 
     def list_clusters(self):
