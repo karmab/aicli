@@ -498,6 +498,17 @@ def update_infra_env(args):
     ai.update_infra_env(args.infraenv, overrides)
 
 
+def info_static_network_config(args):
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
+                        ca=args.ca, cert=args.cert, key=args.key)
+    static_network_config = ai.info_infra_env(args.infraenv).to_dict()['static_network_config']
+    if static_network_config is not None:
+        static_network_config = eval(static_network_config)
+        for index, entry in enumerate(static_network_config):
+            static_network_config[index]['network_yaml'] = yaml.safe_load(entry['network_yaml'])
+        print(yaml.safe_dump(static_network_config))
+
+
 def create_iso(args):
     warning("This api call is deprecated")
     info(f"Getting Iso url for infraenv {args.infraenv}")
@@ -1166,6 +1177,14 @@ def cli():
     serviceinfo_parser = info_subparsers.add_parser('service', description=serviceinfo_desc, help=serviceinfo_desc,
                                                     epilog=serviceinfo_epilog, formatter_class=rawhelp)
     serviceinfo_parser.set_defaults(func=info_service)
+
+    staticinfo_desc = 'Info Static Network Config'
+    staticinfo_epilog = None
+    staticinfo_parser = info_subparsers.add_parser('static-network-config', description=staticinfo_desc,
+                                                   help=staticinfo_desc, epilog=staticinfo_epilog,
+                                                   formatter_class=rawhelp)
+    staticinfo_parser.add_argument('infraenv', metavar='INFRAENV')
+    staticinfo_parser.set_defaults(func=info_static_network_config)
 
     list_desc = 'List Object'
     list_parser = subparsers.add_parser('list', description=list_desc, help=list_desc, aliases=['get'])
