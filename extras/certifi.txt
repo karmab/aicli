@@ -1,0 +1,9 @@
+dnf -y install python3-pip git podman
+pip3 install copr-cli
+git clone https://github.com/certifi/python-certifi
+cd python-certifi
+curl https://raw.githubusercontent.com/karmab/aicli/main/python3-certifi.spec > python3-certifi.spec
+podman run --security-opt label=disable -v $PWD:/workdir -v /tmp/results:/tmp/results quay.io/karmab/rpkg --path /workdir srpm --outdir /tmp/results --spec /workdir/python3-certifi.spec
+mkdir $HOME/.config
+put coprs cred in .config/copr
+copr-cli build --nowait aicli /tmp/results/python3-certifi-*.src.rpm

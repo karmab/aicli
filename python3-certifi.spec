@@ -1,11 +1,11 @@
 #
-# spec file for package certifi
+# spec file for package python3-certifi
 #
 # Copyright (c) 2022 Karim Boumedhel
 #
 
-Name:           certifi
-Version:        2022.9.24
+Name:           python3-certifi
+Version:        2023.8.08
 Release:        0%{?dist}
 Url:            https://github.com/certifi/python-certifi
 Summary:        Certifi
