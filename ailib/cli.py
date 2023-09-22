@@ -728,6 +728,20 @@ def list_events(args):
             print(eventstable)
 
 
+def list_all_keywords(args):
+    info("List all keywords")
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
+                        ca=args.ca, cert=args.cert, key=args.key)
+    cluster_keywords = ai.get_cluster_keywords()
+    infra_keywords = ai.get_infraenv_keywords()
+    host_keywords = ai.get_host_keywords()
+    extra_keywords = ai.get_extra_keywords()
+    keywordstable = PrettyTable(["Keyword"])
+    for keyword in sorted(cluster_keywords + infra_keywords + host_keywords + extra_keywords):
+        keywordstable.add_row([keyword])
+    print(keywordstable)
+
+
 def list_infraenv_keywords(args):
     info("List infraenv keywords")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
@@ -1198,6 +1212,13 @@ def cli():
     clusterlist_parser.set_defaults(func=list_cluster)
     list_subparsers.add_parser('cluster', parents=[clusterlist_parser], description=clusterlist_desc,
                                help=clusterlist_desc, aliases=['clusters'])
+
+    all_keywords_list_desc = 'List all keywords'
+    all_keywords_list_parser = argparse.ArgumentParser(add_help=False)
+    all_keywords_list_parser.set_defaults(func=list_all_keywords)
+    list_subparsers.add_parser('all-keyword', parents=[all_keywords_list_parser],
+                               description=all_keywords_list_desc,
+                               help=all_keywords_list_desc, aliases=['all-keywords', 'keyword', 'keywords'])
 
     cluster_keywords_list_desc = 'List Cluster keywords'
     cluster_keywords_list_parser = argparse.ArgumentParser(add_help=False)
