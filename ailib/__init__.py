@@ -1091,17 +1091,20 @@ class AssistedClient(object):
             if cluster_update_params:
                 cluster_update_params = models.V2ClusterUpdateParams(**cluster_update_params)
                 self.client.v2_update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
+        if 'mtu' in overrides:
+            mtu = overrides['mtu']
+            mtu_manifest = {'apiVersion': 'operator.openshift.io/v1', 'kind': 'Network',
+                            'metadata': {'name': 'cluster'}, 'spec': {'defaultNetwork':
+                                                                      {'type': 'OVNKubernetes', 'ovnKubernetesConfig':
+                                                                       {'mtu': mtu}}}}
+            mtu_manifest = {'99-ovn.yaml': yaml.dump(mtu_manifest)}
+            self.upload_manifests(name, directory=[mtu_manifest], openshift=True)
         if 'manifests' in overrides:
             self.upload_manifests(name, directory=overrides['manifests'], openshift=False)
         if 'openshift_manifests' in overrides:
             self.upload_manifests(name, directory=overrides['openshift_manifests'], openshift=True)
-        if 'openshift_manifests' in overrides:
-            self.upload_manifests(name, directory=overrides['openshift_manifests'], openshift=True)
-        if 'openshift_manifests' in overrides:
-            self.upload_manifests(name, directory=overrides['openshift_manifests'], openshift=True)
         if 'ignore_validations' in overrides and overrides['ignore_validations']:
             ignored_validations = models.IgnoredValidations(cluster_validation_ids='all')
-            print(ignored_validations)
             self.client.v2_set_ignored_validations(cluster_id=cluster_id, ignored_validations=ignored_validations)
         if 'day2' in overrides and isinstance(overrides['day2'], bool) and overrides['day2']\
            and info_cluster.status == "installed":
@@ -1430,7 +1433,8 @@ class AssistedClient(object):
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_ctlplanes', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
                 'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels', 'relocate',
-                'relocate_switch', 'relocate_registry', 'relocate_cidr', 'download_iso_path', 'ignore_validations']
+                'relocate_switch', 'relocate_registry', 'relocate_cidr', 'download_iso_path', 'ignore_validations',
+                'mtu']
 
     def create_deployment(self, cluster, overrides, force=False, debug=False):
         self.create_cluster(cluster, overrides.copy(), force=force)
