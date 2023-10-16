@@ -320,11 +320,24 @@ class AssistedClient(object):
                 warning(f"Ignition File {discovery_ignition_path} not found. Ignoring")
             else:
                 overrides['ignition_config_override'] = open(discovery_ignition_path).read()
+        def normalize_proxy(proxy):
+            if proxy and not proxy.startswith('http'):
+                return f'http://{proxy}'
+            return proxy
+
         if 'proxy' in overrides and isinstance(overrides['proxy'], str):
-            proxy = overrides['proxy']
-            if not proxy.startswith('http'):
-                proxy = f'http://{proxy}'
+            proxy = normalize_proxy(overrides['proxy'])
             overrides['proxy'] = {'http_proxy': proxy, 'https_proxy': proxy}
+        if 'http_proxy' in overrides and isinstance(overrides['http_proxy'], str):
+            overrides['http_proxy'] = normalize_proxy(overrides['http_proxy'])
+            if 'https_proxy' not in overrides:
+                overrides['https_proxy'] = overrides['http_proxy']
+
+        if 'https_proxy' in overrides and isinstance(overrides['https_proxy'], str):
+            overrides['https_proxy'] = normalize_proxy(overrides['https_proxy'])
+            if 'http_proxy' not in overrides:
+                overrides['http_proxy'] = overrides['https_proxy']
+            overrides['proxy'] = {'http_proxy': overrides['http_proxy'], 'https_proxy': overrides['https_proxy']}
             if 'noproxy' in overrides:
                 overrides['proxy']['no_proxy'] = overrides['noproxy']
         if 'kernel_arguments' in overrides:
