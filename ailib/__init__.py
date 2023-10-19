@@ -105,7 +105,7 @@ class AssistedClient(object):
         self.saas = True if url in ['https://api.openshift.com', 'https://api.stage.openshift.com',
                                     'https://api.integration.openshift.com'] else False
         proxies = urllib.request.getproxies()
-        if self.saas and proxies:
+        if proxies:
             proxy = proxies.get('https') or proxies.get('http')
             if 'http' not in proxy:
                 proxy = "http://" + proxy
