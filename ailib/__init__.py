@@ -28,6 +28,10 @@ default_infraenv_params = {"openshift_version": "4.13", "image_type": "full-iso"
 SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub']
 
 
+def normalize_proxy(proxy):
+    return f'http://{proxy}' if not proxy.startswith('http') else proxy
+
+
 def boot_hosts(overrides, hostnames=[], debug=False):
     if 'hosts' not in overrides:
         warning("No hosts to boot found in your parameter file")
@@ -320,11 +324,17 @@ class AssistedClient(object):
                 warning(f"Ignition File {discovery_ignition_path} not found. Ignoring")
             else:
                 overrides['ignition_config_override'] = open(discovery_ignition_path).read()
+        proxy, http_proxy, https_proxy = None, None, None
         if 'proxy' in overrides and isinstance(overrides['proxy'], str):
-            proxy = overrides['proxy']
-            if not proxy.startswith('http'):
-                proxy = f'http://{proxy}'
-            overrides['proxy'] = {'http_proxy': proxy, 'https_proxy': proxy}
+            proxy = normalize_proxy(overrides['proxy'])
+        if 'http_proxy' in overrides and isinstance(overrides['http_proxy'], str):
+            http_proxy = normalize_proxy(overrides['http_proxy'])
+        if 'https_proxy' in overrides and isinstance(overrides['https_proxy'], str):
+            https_proxy = normalize_proxy(overrides['https_proxy'])
+        if proxy is not None or http_proxy is not None or https_proxy is not None:
+            http_proxy = proxy or https_proxy or http_proxy
+            https_proxy = proxy or http_proxy or https_proxy
+            overrides['proxy'] = {'http_proxy': http_proxy, 'https_proxy': https_proxy}
             if 'noproxy' in overrides:
                 overrides['proxy']['no_proxy'] = overrides['noproxy']
         if 'kernel_arguments' in overrides:
