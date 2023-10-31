@@ -21,10 +21,10 @@ from urllib.request import urlretrieve
 import yaml
 
 
-default_cluster_params = {"openshift_version": "4.13", "base_dns_domain": "karmalabs.corp",
+default_cluster_params = {"openshift_version": "4.14", "base_dns_domain": "karmalabs.corp",
                           "vip_dhcp_allocation": False}
-default_cluster_params = {"openshift_version": "4.13", "vip_dhcp_allocation": False}
-default_infraenv_params = {"openshift_version": "4.13", "image_type": "full-iso"}
+default_cluster_params = {"openshift_version": "4.14", "vip_dhcp_allocation": False}
+default_infraenv_params = {"openshift_version": "4.14", "image_type": "full-iso"}
 SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub']
 
 
