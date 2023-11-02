@@ -254,6 +254,14 @@ class AssistedClient(object):
             tags.append('aicli')
         if tags:
             overrides['tags'] = ','.join(sorted(tags))
+        if 'platform' in overrides and isinstance(overrides['platform'], str):
+            platform = overrides['platform']
+            valid_platforms = ['baremetal', 'nutanix', 'vsphere', 'none', 'oci']
+            if platform not in valid_platforms:
+                error(f"Invalid platform. Should belong in {valid_platforms}")
+                sys.exit(1)
+            platform = {"type": platform}
+            overrides['platform'] = platform
 
     def set_default_infraenv_values(self, overrides):
         if 'cluster' in overrides:
@@ -1092,6 +1100,14 @@ class AssistedClient(object):
             overrides['service_networks'] = self.set_service_networks(cluster_id, overrides['service_networks'])
         if 'cluster_networks' in overrides:
             overrides['cluster_networks'] = self.set_cluster_networks(cluster_id, overrides['cluster_networks'])
+        if 'platform' in overrides and isinstance(overrides['platform'], str):
+            platform = overrides['platform']
+            valid_platforms = ['baremetal', 'nutanix', 'vsphere', 'none', 'oci']
+            if platform not in valid_platforms:
+                error(f"Invalid platform. Should belong in {valid_platforms}")
+                sys.exit(1)
+            platform = {"type": platform}
+            overrides['platform'] = platform
         if overrides:
             cluster_update_params = overrides.copy()
             allowed_parameters = self._allowed_parameters(models.V2ClusterUpdateParams)
@@ -1444,7 +1460,7 @@ class AssistedClient(object):
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
                 'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels', 'relocate',
                 'relocate_switch', 'relocate_registry', 'relocate_cidr', 'download_iso_path', 'ignore_validations',
-                'mtu']
+                'mtu', 'platform']
 
     def create_deployment(self, cluster, overrides, force=False, debug=False):
         self.create_cluster(cluster, overrides.copy(), force=force)
