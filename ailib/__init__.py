@@ -639,6 +639,8 @@ class AssistedClient(object):
 
     def _expired_iso(self, iso_url):
         search = re.search(r".*&image_token=(.*)&type=.*", iso_url)
+        if search is None:
+            search = re.search(r".*/bytoken/(.*?)/.*", iso_url)
         if search is not None:
             encoded_token = search.group(1)
             token = str(base64.urlsafe_b64decode(encoded_token + '==='))
