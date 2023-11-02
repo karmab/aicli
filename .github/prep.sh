@@ -1,1 +1,1 @@
-pip3 install copr-cli
+pip3 install copr-cli setuptools
