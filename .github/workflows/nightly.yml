@@ -32,6 +32,7 @@ jobs:
          continue-on-error: true
          run: |
            kcli delete plan --yes $CLUSTER || true
+           kcli delete iso --yes full.iso || true
 
     deploy-kcli-plan:
       needs: requirements

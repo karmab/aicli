@@ -60,6 +60,7 @@ jobs:
          run: |
            kcli -C local delete plan --yes $CLUSTER || true
            aicli delete cluster $CLUSTER || true
+           kcli delete iso --yes full.iso || true
 
     deploy-kcli-plan:
       needs: requirements
