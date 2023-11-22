@@ -17,6 +17,7 @@ from tempfile import TemporaryDirectory
 from time import sleep
 from uuid import uuid1
 import urllib
+from urllib.parse import urlparse
 from urllib.request import urlretrieve
 import yaml
 
@@ -109,8 +110,9 @@ class AssistedClient(object):
         self.saas = True if url in ['https://api.openshift.com', 'https://api.stage.openshift.com',
                                     'https://api.integration.openshift.com'] else False
         proxies = urllib.request.getproxies()
-        if proxies:
-            proxy = proxies.get('https') or proxies.get('http')
+        proxy = proxies.get('https') or proxies.get('http')
+        no_proxy = proxies.get('no', 'xxx')
+        if proxy is not None and urlparse(url).hostname not in no_proxy:
             if 'http' not in proxy:
                 proxy = "http://" + proxy
                 warning(f"Detected proxy env var without scheme, updating proxy to {proxy}")
