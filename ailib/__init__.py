@@ -112,7 +112,8 @@ class AssistedClient(object):
         proxies = urllib.request.getproxies()
         proxy = proxies.get('https') or proxies.get('http')
         no_proxy = proxies.get('no', 'xxx')
-        if proxy is not None and urlparse(url).hostname not in no_proxy:
+        hostname = urlparse(url).hostname or url.split(':')[0]
+        if proxy is not None and hostname not in no_proxy:
             if 'http' not in proxy:
                 proxy = "http://" + proxy
                 warning(f"Detected proxy env var without scheme, updating proxy to {proxy}")
