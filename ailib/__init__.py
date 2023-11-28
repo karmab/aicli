@@ -201,12 +201,29 @@ class AssistedClient(object):
                 overrides['openshift_version'] = str(overrides['openshift_version'])
             if overrides['openshift_version'] == 4.1:
                 overrides['openshift_version'] = '4.10'
+        api_ip = overrides.get('api_vip') or overrides.get('api_ip')
         if 'api_ip' in overrides:
-            overrides['api_vip'] = overrides['api_ip']
             del overrides['api_ip']
+        if 'api_vip' in overrides:
+            del overrides['api_vip']
+        if api_ip is not None:
+            overrides['api_vip'] = api_ip
+            if not overrides.get('api_vips', []):
+                overrides['api_vips'] = [{'ip': api_ip}]
+        ingress_ip = overrides.get('ingress_vip') or overrides.get('ingress_ip')
         if 'ingress_ip' in overrides:
-            overrides['ingress_vip'] = overrides['ingress_ip']
             del overrides['ingress_ip']
+        if 'ingress_vip' in overrides:
+            del overrides['ingress_vip']
+        if ingress_ip is not None:
+            overrides['ingress_vip'] = ingress_ip
+            if not overrides.get('ingress_vips', []):
+                overrides['ingress_vips'] = [{'ip': ingress_ip}]
+        api_vips = overrides.get('api_vips', [])
+        ingress_vips = overrides.get('ingress_vips', [])
+        if (api_vips and not ingress_vips) or (ingress_vips and not api_vips):
+            error("It's mandatory to define both api and ingress ips")
+            sys.exit(1)
         if not existing:
             if 'pull_secret' not in overrides:
                 warning("Using openshift_pull.json as pull_secret file")
