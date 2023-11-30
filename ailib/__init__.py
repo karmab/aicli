@@ -196,6 +196,7 @@ class AssistedClient(object):
         return pubpath
 
     def set_default_values(self, overrides, existing=False):
+        legacy = overrides.get('legacy', True)
         if 'openshift_version' in overrides:
             if isinstance(overrides['openshift_version'], float):
                 overrides['openshift_version'] = str(overrides['openshift_version'])
@@ -207,7 +208,8 @@ class AssistedClient(object):
         if 'api_vip' in overrides:
             del overrides['api_vip']
         if api_ip is not None:
-            overrides['api_vip'] = api_ip
+            if legacy:
+                overrides['api_vip'] = api_ip
             if not overrides.get('api_vips', []):
                 overrides['api_vips'] = [{'ip': api_ip}]
         ingress_ip = overrides.get('ingress_vip') or overrides.get('ingress_ip')
@@ -216,7 +218,8 @@ class AssistedClient(object):
         if 'ingress_vip' in overrides:
             del overrides['ingress_vip']
         if ingress_ip is not None:
-            overrides['ingress_vip'] = ingress_ip
+            if legacy:
+                overrides['ingress_vip'] = ingress_ip
             if not overrides.get('ingress_vips', []):
                 overrides['ingress_vips'] = [{'ip': ingress_ip}]
         api_vips = overrides.get('api_vips', [])
@@ -559,8 +562,7 @@ class AssistedClient(object):
             if parameter == 'network_type' and overrides[parameter] not in ['OpenShiftSDN', 'OVNKubernetes']:
                 new_cluster_params['network_type'] = 'OVNKubernetes'
                 extra_overrides[parameter] = overrides[parameter]
-                continue
-            if parameter in update_parameters:
+            elif parameter in update_parameters:
                 extra_overrides[parameter] = overrides[parameter]
             elif parameter in allowed_parameters:
                 new_cluster_params[parameter] = overrides[parameter]
@@ -1039,18 +1041,39 @@ class AssistedClient(object):
     def update_cluster(self, name, overrides):
         cluster_id = self.get_cluster_id(name)
         info_cluster = self.info_cluster(name)
-        if 'api_ip' in overrides:
-            overrides['api_vip'] = overrides['api_ip']
-        if 'ingress_ip' in overrides:
-            overrides['ingress_vip'] = overrides['ingress_ip']
+        api_vip = overrides.get('api_vip') or overrides.get('api_ip')
         if 'api_vip' in overrides:
-            api_vip = info_cluster.api_vip
-            if api_vip is not None and overrides['api_vip'] == api_vip:
-                del overrides['api_vip']
+            del overrides['api_vip']
+        if 'api_ip' in overrides:
+            del overrides['api_ip']
+        ingress_vip = overrides.get('ingress_vip') or overrides.get('ingress_ip')
         if 'ingress_vip' in overrides:
-            ingress_vip = info_cluster.ingress_vip
-            if ingress_vip is not None and overrides['ingress_vip'] == ingress_vip:
-                del overrides['ingress_vip']
+            del overrides['ingress_vip']
+        if 'ingress_ip' in overrides:
+            del overrides['ingress_ip']
+        if api_vip is not None:
+            api_vips = info_cluster.api_vips or []
+            if api_vip not in [x['ip'] for x in api_vips]:
+                api_vips.append({'ip': api_vip})
+                overrides['api_vips'] = api_vips
+                if hasattr(info_cluster, 'api_vip'):
+                    overrides['api_vip'] = api_vip
+            else:
+                api_vip = None
+        if ingress_vip is not None:
+            ingress_vips = info_cluster.ingress_vips or []
+            if ingress_vip not in [x['ip'] for x in ingress_vips]:
+                ingress_vips.append({'ip': ingress_vip})
+                overrides['ingress_vips'] = ingress_vips
+                if hasattr(info_cluster, 'ingress_vip'):
+                    overrides['ingress_vip'] = ingress_vip
+            else:
+                ingress_vip = None
+        api_vips = overrides.get('api_vips', [])
+        ingress_vips = overrides.get('ingress_vips', [])
+        if (api_vips and not ingress_vips) or (ingress_vips and not api_vips):
+            error("It's mandatory to define both api and ingress ips")
+            sys.exit(1)
         if 'pull_secret' in overrides:
             pull_secret = os.path.expanduser(overrides['pull_secret'])
             if os.path.exists(pull_secret):

@@ -815,16 +815,16 @@ def cli():
     """
     # PARAMETERS_HELP = 'specify parameter or keyword for rendering (multiple can be specified)'
     parser = argparse.ArgumentParser(description='Assisted installer assistant')
-    parser.add_argument('-d', '--debug', action='store_true')
-    parser.add_argument('-o', '--output', choices=['json', 'name', 'yaml'], help='Format of the output')
-    parser.add_argument('--staging', action='store_true', default=bool(os.environ.get('AI_STAGING', "")))
-    parser.add_argument('--integration', action='store_true', default=bool(os.environ.get('AI_INTEGRATION', "")))
-    parser.add_argument('-U', '--url', default=os.environ.get('AI_URL'))
-    parser.add_argument('--token', default=os.environ.get('AI_TOKEN'))
-    parser.add_argument('--offlinetoken', default=os.environ.get('AI_OFFLINETOKEN'))
     parser.add_argument('--ca', default=os.environ.get('AI_CA'))
     parser.add_argument('--cert', default=os.environ.get('AI_CERT'))
-    parser.add_argument('--key', default=os.environ.get('AI_KEY'))
+    parser.add_argument('-d', '--debug', action='store_true')
+    parser.add_argument('-i', '--integration', action='store_true', default=bool(os.environ.get('AI_INTEGRATION', "")))
+    parser.add_argument('-k', '--key', default=os.environ.get('AI_KEY'))
+    parser.add_argument('--offlinetoken', default=os.environ.get('AI_OFFLINETOKEN'))
+    parser.add_argument('-o', '--output', choices=['json', 'name', 'yaml'], help='Format of the output')
+    parser.add_argument('-s', '--staging', action='store_true', default=bool(os.environ.get('AI_STAGING', "")))
+    parser.add_argument('-t', '--token', default=os.environ.get('AI_TOKEN'))
+    parser.add_argument('-u', '-U', '--url', default=os.environ.get('AI_URL'))
     subparsers = parser.add_subparsers(metavar='', title='Available Commands')
 
     bind_desc = 'Bind Object'
