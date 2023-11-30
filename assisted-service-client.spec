@@ -29,6 +29,7 @@ assisted-installer python library
 {{{ git_dir_setup_macro }}}
 
 %build
+git checkout v2.27.0
 curl https://repo1.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.8/swagger-codegen-cli-2.4.8.jar > swagger-codegen-cli.jar
 curl https://raw.githubusercontent.com/openshift/assisted-service/master/swagger.yaml > swagger.yaml
 sed -i '/pattern:/d' swagger.yaml
