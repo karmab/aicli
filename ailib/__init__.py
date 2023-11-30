@@ -195,41 +195,41 @@ class AssistedClient(object):
                 break
         return pubpath
 
-    def set_default_values(self, overrides, existing=False):
-        legacy = overrides.get('legacy', True)
+    def set_default_values(self, overrides, existing=False, quiet=False):
         if 'openshift_version' in overrides:
             if isinstance(overrides['openshift_version'], float):
                 overrides['openshift_version'] = str(overrides['openshift_version'])
             if overrides['openshift_version'] == 4.1:
                 overrides['openshift_version'] = '4.10'
+        service_networks = overrides.get('service_networks', [])
+        dual = len(service_networks) > 1 and ':' in service_networks[1]
         api_ip = overrides.get('api_vip') or overrides.get('api_ip')
-        if 'api_ip' in overrides:
-            del overrides['api_ip']
-        if 'api_vip' in overrides:
-            del overrides['api_vip']
         if api_ip is not None:
-            if legacy:
-                overrides['api_vip'] = api_ip
-            if not overrides.get('api_vips', []):
-                overrides['api_vips'] = [{'ip': api_ip}]
+            if not dual:
+                if 'api_ip' in overrides:
+                    del overrides['api_ip']
+                if 'api_vip' in overrides:
+                    del overrides['api_vip']
+                warning("Ignoring api_ip at creation time", quiet=quiet or existing)
         ingress_ip = overrides.get('ingress_vip') or overrides.get('ingress_ip')
-        if 'ingress_ip' in overrides:
-            del overrides['ingress_ip']
-        if 'ingress_vip' in overrides:
-            del overrides['ingress_vip']
         if ingress_ip is not None:
-            if legacy:
-                overrides['ingress_vip'] = ingress_ip
-            if not overrides.get('ingress_vips', []):
-                overrides['ingress_vips'] = [{'ip': ingress_ip}]
+            if not dual:
+                if 'ingress_ip' in overrides:
+                    del overrides['ingress_ip']
+                if 'ingress_vip' in overrides:
+                    del overrides['ingress_vip']
+                warning("Ignoring ingress_ip at creation time", quiet=quiet or existing)
         api_vips = overrides.get('api_vips', [])
+        if not dual and api_vips:
+            warning("Ignoring api_vips at creation time", quiet=quiet or existing)
+            del overrides['api_vips']
         ingress_vips = overrides.get('ingress_vips', [])
-        if (api_vips and not ingress_vips) or (ingress_vips and not api_vips):
-            error("It's mandatory to define both api and ingress ips")
-            sys.exit(1)
+        if not dual and ingress_vips:
+            warning("Ignoring ingress_vips at creation time", quiet=quiet or existing)
+            del overrides['ingress_vips']
         if not existing:
             if 'pull_secret' not in overrides:
-                warning("Using openshift_pull.json as pull_secret file")
+                warning("Using openshift_pull.json as pull_secret file", quiet=quiet)
                 overrides['pull_secret'] = "openshift_pull.json"
             pull_secret = os.path.expanduser(overrides['pull_secret'])
             if os.path.exists(pull_secret):
@@ -247,17 +247,17 @@ class AssistedClient(object):
             if 'domain' in overrides:
                 overrides['base_dns_domain'] = overrides['domain']
             elif 'base_dns_domain' not in overrides:
-                warning("Using karmalabs.corp as DNS domain as no one was provided")
+                warning("Using karmalabs.corp as DNS domain as no one was provided", quiet=quiet)
                 overrides['base_dns_domain'] = 'karmalabs.corp'
         if 'sno' in overrides:
             if overrides['sno']:
                 overrides['high_availability_mode'] = "None"
                 overrides['user_managed_networking'] = True
                 if 'api_vip' in overrides:
-                    warning("Removing api_vip since SNO is set")
+                    warning("Removing api_vip since SNO is set", quiet=quiet)
                     del overrides['api_vip']
                 if 'ingress_vip' in overrides:
-                    warning("Removing ingress_vip since SNO is set")
+                    warning("Removing ingress_vip since SNO is set", quiet=quiet)
                     del overrides['ingress_vip']
         if 'high_availability_mode' in overrides and overrides['high_availability_mode'] is None:
             overrides['high_availability_mode'] = "None"
@@ -1046,25 +1046,23 @@ class AssistedClient(object):
             del overrides['api_vip']
         if 'api_ip' in overrides:
             del overrides['api_ip']
+        if api_vip is not None:
+            api_vips = [x.ip for x in info_cluster.api_vips]
+            if api_vip not in api_vips:
+                overrides['api_vips'] = [{'ip': ip for ip in api_vips + [api_vip]}]
+                if hasattr(info_cluster, 'api_vip'):
+                    overrides['api_vip'] = api_vip
+            else:
+                api_vip = None
         ingress_vip = overrides.get('ingress_vip') or overrides.get('ingress_ip')
         if 'ingress_vip' in overrides:
             del overrides['ingress_vip']
         if 'ingress_ip' in overrides:
             del overrides['ingress_ip']
-        if api_vip is not None:
-            api_vips = info_cluster.api_vips or []
-            if api_vip not in [x['ip'] for x in api_vips]:
-                api_vips.append({'ip': api_vip})
-                overrides['api_vips'] = api_vips
-                if hasattr(info_cluster, 'api_vip'):
-                    overrides['api_vip'] = api_vip
-            else:
-                api_vip = None
         if ingress_vip is not None:
-            ingress_vips = info_cluster.ingress_vips or []
-            if ingress_vip not in [x['ip'] for x in ingress_vips]:
-                ingress_vips.append({'ip': ingress_vip})
-                overrides['ingress_vips'] = ingress_vips
+            ingress_vips = [x.ip for x in info_cluster.ingress_vips]
+            if ingress_vip not in ingress_vips:
+                overrides['ingress_vips'] = [{'ip': ip for ip in ingress_vips + [ingress_vip]}]
                 if hasattr(info_cluster, 'ingress_vip'):
                     overrides['ingress_vip'] = ingress_vip
             else:
@@ -1379,12 +1377,12 @@ class AssistedClient(object):
             error(f"Infraenv {_id} not found")
             sys.exit(1)
 
-    def create_infra_env(self, name, overrides={}):
+    def create_infra_env(self, name, overrides={}, quiet=True):
         existing_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == name]
         if existing_ids:
             error(f"Infraenv {name} already there. Leaving")
             sys.exit(1)
-        self.set_default_values(overrides)
+        self.set_default_values(overrides, quiet=quiet)
         self.set_default_infraenv_values(overrides)
         new_infraenv_params = default_infraenv_params
         new_infraenv_params['name'] = name

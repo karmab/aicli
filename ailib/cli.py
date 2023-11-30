@@ -89,7 +89,7 @@ def create_cluster(args):
         infraenv = f"{args.cluster}_infra-env"
         overrides['cluster'] = args.cluster
         info(f"Creating infraenv {infraenv}")
-        ai.create_infra_env(infraenv, overrides)
+        ai.create_infra_env(infraenv, overrides, quiet=True)
 
 
 def delete_cluster(args):

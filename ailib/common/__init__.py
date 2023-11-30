@@ -24,7 +24,9 @@ def error(text):
     print(f'\033[0;{color}m{text}\033[0;0m')
 
 
-def warning(text):
+def warning(text, quiet=False):
+    if quiet:
+        return
     color = "33"
     print(f'\033[0;{color}m{text}\033[0;0m')
 
