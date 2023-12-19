@@ -150,8 +150,8 @@ class AssistedClient(object):
             except Exception as e:
                 error(f"Hit issue when trying to set token. Got {e}")
                 if os.path.exists(offlinetokenpath):
-                    error("Removing offlinetoken file")
-                    os.remove(offlinetokenpath)
+                    error(f"Moving wrong offlinetoken file to {offlinetokenpath}.old")
+                    move(offlinetokenpath, "{offlinetokenpath}.old")
                 sys.exit(1)
             self.config.api_key['Authorization'] = self.token
             self.config.api_key_prefix['Authorization'] = 'Bearer'
@@ -201,34 +201,22 @@ class AssistedClient(object):
                 overrides['openshift_version'] = str(overrides['openshift_version'])
             if overrides['openshift_version'] == 4.1:
                 overrides['openshift_version'] = '4.10'
-        # service_networks = overrides.get('service_networks', [])
-        # dual = len(service_networks) > 1 and ':' in service_networks[1]
+        api_vips = overrides.get('api_vips', [])
         api_vip = overrides.get('api_vip') or overrides.get('api_ip')
         if api_vip is not None:
-            overrides['api_vip'] = api_vip
-            # if not dual:
-            #     if 'api_ip' in overrides:
-            #         del overrides['api_ip']
-            #     if 'api_vip' in overrides:
-            #         del overrides['api_vip']
-            #     warning("Ignoring api_ip at creation time", quiet=quiet or existing)
+            if 'api_vip' in overrides:
+                del overrides['api_vip']
+            if api_vip not in api_vips:
+                api_vips.append({'ip': api_vip})
+                overrides['api_vips'] = api_vips
+        ingress_vips = overrides.get('ingress_vips', [])
         ingress_vip = overrides.get('ingress_vip') or overrides.get('ingress_ip')
         if ingress_vip is not None:
-            overrides['ingress_vip'] = ingress_vip
-            # if not dual:
-            #     if 'ingress_ip' in overrides:
-            #         del overrides['ingress_ip']
-            #     if 'ingress_vip' in overrides:
-            #         del overrides['ingress_vip']
-            #     warning("Ignoring ingress_ip at creation time", quiet=quiet or existing)
-        # api_vips = overrides.get('api_vips', [])
-        # if not dual and api_vips:
-        #     warning("Ignoring api_vips at creation time", quiet=quiet or existing)
-        #     del overrides['api_vips']
-        # ingress_vips = overrides.get('ingress_vips', [])
-        # if not dual and ingress_vips:
-        #     warning("Ignoring ingress_vips at creation time", quiet=quiet or existing)
-        #     del overrides['ingress_vips']
+            if 'ingress_vip' in overrides:
+                del overrides['ingress_vip']
+            if ingress_vip not in ingress_vips:
+                ingress_vips.append({'ip': ingress_vip})
+                overrides['ingress_vips'] = ingress_vips
         if not existing:
             if 'pull_secret' not in overrides:
                 warning("Using openshift_pull.json as pull_secret file", quiet=quiet)

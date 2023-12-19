@@ -15,7 +15,7 @@ VCS:            {{{ git_dir_vcs }}}
 Source:         {{{ git_dir_pack }}}
 AutoReq:        no
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-BuildRequires:  java python3 python3-setuptools
+BuildRequires:  java python3 python3-setuptools git
 Requires:       python3 python3-certifi
 
 %description
@@ -29,6 +29,7 @@ assisted-installer python library
 {{{ git_dir_setup_macro }}}
 
 %build
+# git checkout v2.27.0
 curl https://repo1.maven.org/maven2/io/swagger/swagger-codegen-cli/2.4.8/swagger-codegen-cli-2.4.8.jar > swagger-codegen-cli.jar
 curl https://raw.githubusercontent.com/openshift/assisted-service/v2.27.0/swagger.yaml > swagger.yaml
 # curl https://raw.githubusercontent.com/openshift/assisted-service/master/swagger.yaml > swagger.yaml
