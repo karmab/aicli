@@ -150,6 +150,7 @@ def get_ip():
 
 
 def create_onprem(overrides={}, debug=False):
+    onprem_version = overrides.get('onprem_version', 'v2.27.0')
     if which('podman') is None:
         error("You need podman to run this")
         sys.exit(1)
@@ -157,33 +158,42 @@ def create_onprem(overrides={}, debug=False):
         with open(f"{tmpdir}/pod.yml", 'w') as p:
             pod_url = "https://raw.githubusercontent.com/openshift/assisted-service/master/deploy/podman/pod.yml"
             response = urllib.request.urlopen(pod_url)
-            p.write(response.read().decode('utf-8'))
-        with open(f"{tmpdir}/configmap.yml.ori", 'w') as c:
-            cm_name = 'okd-configmap' if overrides.get('okd', False) else 'configmap'
-            cm_url = f"https://raw.githubusercontent.com/openshift/assisted-service/master/deploy/podman/{cm_name}.yml"
-            response = urllib.request.urlopen(cm_url)
-            c.write(response.read().decode('utf-8'))
-        ip = overrides.get('ip') or get_ip() or '192.168.122.1'
-        info(f"Using ip {ip}")
-        IMAGE_SERVICE_BASE_URL = f'http://{ip}:8888'
-        SERVICE_BASE_URL = f'http://{ip}:8090'
-        with open(f"{tmpdir}/configmap.yml", 'wt') as dest:
-            for line in open(f"{tmpdir}/configmap.yml.ori", 'rt').readlines():
-                if 'IMAGE_SERVICE_BASE_URL' in line:
-                    dest.write(f"  IMAGE_SERVICE_BASE_URL: {IMAGE_SERVICE_BASE_URL}\n")
-                elif 'SERVICE_BASE_URL:' in line:
-                    dest.write(f"  SERVICE_BASE_URL: {SERVICE_BASE_URL}\n")
-                else:
-                    dest.write(line)
+            p.write(response.read().decode('utf-8').replace('latest',
+                                                            onprem_version).replace(f'centos7:{onprem_version}',
+                                                                                    'centos7:latest'))
+        if os.path.exists('configmap.yml'):
+            info("Using existing configmap.yml")
+            copy2("configmap.yml", tmpdir)
+        else:
+            with open(f"{tmpdir}/configmap.yml.ori", 'w') as c:
+                cm_name = 'okd-configmap' if overrides.get('okd', False) else 'configmap'
+                cm_url = "https://raw.githubusercontent.com/openshift/assisted-service/master/deploy/podman/"
+                cm_url += f"{cm_name}.yml"
+                response = urllib.request.urlopen(cm_url)
+                c.write(response.read().decode('utf-8'))
+            ip = overrides.get('ip') or get_ip() or '192.168.122.1'
+            info(f"Using ip {ip}")
+            if ':' in ip and '[' not in ip:
+                ip = f"[{ip}]"
+            IMAGE_SERVICE_BASE_URL = f'http://{ip}:8888'
+            SERVICE_BASE_URL = f'http://{ip}:8090'
+            with open(f"{tmpdir}/configmap.yml", 'wt') as dest:
+                for line in open(f"{tmpdir}/configmap.yml.ori", 'rt').readlines():
+                    if 'IMAGE_SERVICE_BASE_URL' in line:
+                        dest.write(f"  IMAGE_SERVICE_BASE_URL: {IMAGE_SERVICE_BASE_URL}\n")
+                    elif 'SERVICE_BASE_URL:' in line:
+                        dest.write(f"  SERVICE_BASE_URL: {SERVICE_BASE_URL}\n")
+                    else:
+                        dest.write(line)
         if overrides.get('keep', False):
             copy2(f"{tmpdir}/configmap.yml", '.')
             copy2(f"{tmpdir}/pod.yml", '.')
-        else:
-            if debug:
-                print(open(f"{tmpdir}/configmap.yml").read())
-                info(f"Running: podman play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml")
-            storage = '--storage-driver vfs' if 'KUBERNETES_SERVICE_PORT' in os.environ else ''
-            call(f"podman {storage} play kube --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml", shell=True)
+        if debug:
+            print(open(f"{tmpdir}/configmap.yml").read())
+        storage = '--storage-driver vfs' if 'KUBERNETES_SERVICE_PORT' in os.environ else ''
+        cmd = f"podman {storage} play kube --replace --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml"
+        info(f"Running: {cmd}")
+        call(cmd, shell=True)
 
 
 def delete_onprem(overrides={}, debug=False):

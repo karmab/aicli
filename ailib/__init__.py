@@ -1514,6 +1514,9 @@ class AssistedClient(object):
         overrides['cluster'] = cluster
         self.create_infra_env(infraenv, overrides)
         del overrides['cluster']
+        if not self.saas:
+            info("Waiting 45s to let time to the iso to be available")
+            sleep(45)
         if 'iso_url' in overrides:
             download_iso_path = overrides.get('download_iso_path')
             if download_iso_path is None:

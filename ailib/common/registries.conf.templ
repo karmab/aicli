@@ -10,11 +10,19 @@ unqualified-search-registries = ["registry.access.redhat.com", "docker.io"]
 
 [[registry]]
    prefix = ""
+   location = "quay.io/edge-infrastructure"
+   mirror-by-digest-only = false
+
+   [[registry.mirror]]
+   location = "%(url)s/edge-infrastructure"
+
+[[registry]]
+   prefix = ""
    location = "quay.io/openshift-release-dev/ocp-release"
    mirror-by-digest-only = false
 
    [[registry.mirror]]
-   location = "%(url)s/ocp4"
+   location = "%(url)s/openshift/release-images"
 
 [[registry]]
    prefix = ""
@@ -22,7 +30,7 @@ unqualified-search-registries = ["registry.access.redhat.com", "docker.io"]
    mirror-by-digest-only = false
 
    [[registry.mirror]]
-   location = "%(url)s/ocp4"
+   location = "%(url)s/openshift/release"
 
 [[registry]]
    prefix = ""
@@ -30,4 +38,4 @@ unqualified-search-registries = ["registry.access.redhat.com", "docker.io"]
    mirror-by-digest-only = false
 
    [[registry.mirror]]
-   location = "%(url)s/ocp4"
+   location = "%(url)s/openshift/release-images"
