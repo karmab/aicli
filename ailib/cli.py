@@ -786,16 +786,6 @@ def list_extra_keywords(args):
     print(keywordstable)
 
 
-def create_agent_manifests(args):
-    path = args.path or args.cluster
-    manifests = 'ztp like agent manifests' if args.ztp else 'agent manifests'
-    info(f"Creating {manifests} for {args.cluster} in path")
-    overrides = handle_parameters(args.param, args.paramfile)
-    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
-                        ca=args.ca, cert=args.cert, key=args.key)
-    ai.create_agent_manifests(args.cluster, overrides, path=path, ztp=args.ztp)
-
-
 def create_onprem(args):
     warning("This is not the supported path for interacting with AI")
     info("Creating onprem deployment")
@@ -864,21 +854,6 @@ def cli():
     create_desc = 'Create Object'
     create_parser = subparsers.add_parser('create', description=create_desc, help=create_desc, aliases=['add'])
     create_subparsers = create_parser.add_subparsers(metavar='', dest='subcommand_create')
-
-    agentmanifestscreate_desc = 'Create agent based installer manifests'
-    agentmanifestscreate_epilog = None
-    agentmanifestscreate_parser = create_subparsers.add_parser('agent-manifests',
-                                                               description=agentmanifestscreate_desc,
-                                                               help=agentmanifestscreate_desc,
-                                                               epilog=agentmanifestscreate_epilog,
-                                                               formatter_class=rawhelp)
-    agentmanifestscreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
-    agentmanifestscreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
-                                             action='append')
-    agentmanifestscreate_parser.add_argument('--path', metavar='PATH', help='Where to store generated assets')
-    agentmanifestscreate_parser.add_argument('-z', '--ztp', action='store_true', help='Generate ZTP like manifests')
-    agentmanifestscreate_parser.add_argument('cluster', metavar='CLUSTER')
-    agentmanifestscreate_parser.set_defaults(func=create_agent_manifests)
 
     clustercreate_desc = 'Create Cluster'
     clustercreate_epilog = None
