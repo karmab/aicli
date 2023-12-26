@@ -68,7 +68,7 @@ def boot_hosts(overrides, hostnames=[], debug=False):
                 red.set_iso(iso_url)
             except Exception as e:
                 warning(f"Hit {e} when plugging iso to host {msg}")
-                raise e
+                return 1
         else:
             warning(f"Skipping entry {index} because either bmc_url, bmc_user or bmc_password is not set")
         if 'sno' in overrides and overrides['sno']:
@@ -1515,8 +1515,8 @@ class AssistedClient(object):
         self.create_infra_env(infraenv, overrides)
         del overrides['cluster']
         if not self.saas:
-            info("Waiting 45s to let time to the iso to be available")
-            sleep(45)
+            info("Waiting 120s for iso to be available")
+            sleep(120)
         if 'iso_url' in overrides:
             download_iso_path = overrides.get('download_iso_path')
             if download_iso_path is None:
@@ -1539,7 +1539,7 @@ class AssistedClient(object):
             boot_overrides['cluster'] = cluster
             boot_result = boot_hosts(boot_overrides, debug=debug)
             if boot_result != 0:
-                return {'result': 'failure', 'reason': 'Issue when booting hosts'}
+                return {'result': 'failure', 'reason': 'Hit issue when booting hosts'}
         if 'hosts_number' in overrides:
             hosts_number = overrides.get('hosts_number')
         elif 'hosts' in overrides and isinstance(overrides['hosts'], list):
