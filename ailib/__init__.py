@@ -881,7 +881,7 @@ class AssistedClient(object):
             infra_env_id = self.get_infra_env_id(infra_env)
             hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
             matchingids = [host['id'] for host in hosts
-                           if host['requested_hostname'] == hostname or host['id'] == hostname or
+                           if host['requested_hostname'].startswith(hostname) or host['id'].startswith(hostname) or
                            match_mac(host, hostname)]
             if matchingids:
                 infra_envs[infra_env_id] = matchingids
@@ -1515,8 +1515,8 @@ class AssistedClient(object):
         self.create_infra_env(infraenv, overrides)
         del overrides['cluster']
         if not self.saas:
-            info("Waiting 120s for iso to be available")
-            sleep(120)
+            info("Waiting 240s for iso to be available")
+            sleep(240)
         if 'iso_url' in overrides:
             download_iso_path = overrides.get('download_iso_path')
             if download_iso_path is None:
