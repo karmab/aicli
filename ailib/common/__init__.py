@@ -155,12 +155,16 @@ def create_onprem(overrides={}, debug=False):
         error("You need podman to run this")
         sys.exit(1)
     with TemporaryDirectory() as tmpdir:
+        ip = overrides.get('ip') or get_ip() or '192.168.122.1'
+        ipv6 = ':' in ip
+        info(f"Using ip {ip}")
         with open(f"{tmpdir}/pod.yml", 'w') as p:
             pod_url = "https://raw.githubusercontent.com/openshift/assisted-service/master/deploy/podman/pod.yml"
-            response = urllib.request.urlopen(pod_url)
-            p.write(response.read().decode('utf-8').replace('latest',
-                                                            onprem_version).replace(f'centos7:{onprem_version}',
-                                                                                    'centos7:latest'))
+            response = urllib.request.urlopen(pod_url).read().decode('utf-8')
+            response = response.replace('latest', onprem_version).replace(f'centos7:{onprem_version}', 'centos7:latest')
+            if ipv6:
+                response = response.replace('127.0.0.1', f"[{ip}")
+            p.write(response)
         if os.path.exists('configmap.yml'):
             info("Using existing configmap.yml")
             copy2("configmap.yml", tmpdir)
@@ -171,9 +175,7 @@ def create_onprem(overrides={}, debug=False):
                 cm_url += f"{cm_name}.yml"
                 response = urllib.request.urlopen(cm_url)
                 c.write(response.read().decode('utf-8'))
-            ip = overrides.get('ip') or get_ip() or '192.168.122.1'
-            info(f"Using ip {ip}")
-            if ':' in ip and '[' not in ip:
+            if ipv6 and '[' not in ip:
                 ip = f"[{ip}]"
             IMAGE_SERVICE_BASE_URL = f'http://{ip}:8888'
             SERVICE_BASE_URL = f'http://{ip}:8090'
@@ -190,8 +192,13 @@ def create_onprem(overrides={}, debug=False):
             copy2(f"{tmpdir}/pod.yml", '.')
         if debug:
             print(open(f"{tmpdir}/configmap.yml").read())
+        if ipv6:
+            cmd = "podman network create --subnet fd00::1:8:0/112 --gateway 'fd00::1:8:1' --ipv6 assistedv6"
+            info(f"Running: {cmd}")
+            call(cmd, shell=True)
         storage = '--storage-driver vfs' if 'KUBERNETES_SERVICE_PORT' in os.environ else ''
-        cmd = f"podman {storage} play kube --replace --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml"
+        network = '--network assistedv6' if ipv6 else ''
+        cmd = f"podman {storage} {network} play kube --replace --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml"
         info(f"Running: {cmd}")
         call(cmd, shell=True)
 
