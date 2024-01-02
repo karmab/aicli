@@ -203,7 +203,8 @@ def create_onprem(overrides={}, debug=False):
             call(cmd, shell=True)
         storage = '--storage-driver vfs' if 'KUBERNETES_SERVICE_PORT' in os.environ else ''
         network = '--network assistedv6' if ipv6 else ''
-        cmd = f"podman {storage} play kube {network} --replace --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml"
+        cmd = "podman pod rm -f assisted-installer ; "
+        cmd += f"podman {storage} play kube {network} --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml"
         info(f"Running: {cmd}")
         call(cmd, shell=True)
 
