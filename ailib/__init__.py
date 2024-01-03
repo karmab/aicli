@@ -77,6 +77,14 @@ def boot_hosts(overrides, hostnames=[], debug=False):
     return 0
 
 
+def icsps_from_url(url):
+    registries = [{'mirrors': [f"{url}/openshift/release", f"{url}/openshift/release-images"],
+                   "source": "quay.io/openshift-release-dev/ocp-release"},
+                  {'mirrors': [f"{url}/openshift/release", f"{url}/openshift/release-images"],
+                   "source": "quay.io/openshift-release-dev/ocp-v4.0-art-dev"}]
+    return registries
+
+
 class AssistedClient(object):
     def __init__(self, url='https://api.openshift.com', token=None, offlinetoken=None, debug=False,
                  ca=None, cert=None, key=None, quiet=False):
@@ -287,6 +295,22 @@ class AssistedClient(object):
                 sys.exit(1)
             platform = {"type": platform}
             overrides['platform'] = platform
+        if 'ocp_release_image' in overrides and not overrides['ocp_release_image'].startswith('quay.io'):
+            overrides['registry_url'] = overrides['ocp_release_image'].split('/')[0]
+        url = overrides.get('disconnected_url') or overrides.get('registry_url')
+        if url is not None:
+            disconnected_registries = [{'mirrors': [f"{url}/edge-infrastructure"],
+                                        "source": "quay.io/edge-infrastructure"},
+                                       {'mirrors': [f"{url}/openshift/release", f"{url}/openshift/release-images"],
+                                        "source": "quay.io/openshift-release-dev/ocp-release"},
+                                       {'mirrors': [f"{url}/openshift/release", f"{url}/openshift/release-images"],
+                                        "source": "quay.io/openshift-release-dev/ocp-v4.0-art-dev"}]
+            installconfig = {'imageContentSources': disconnected_registries}
+            info(f"Trying to gather registry ca cert from {url}")
+            cacmd = f"openssl s_client -showcerts -connect {url} </dev/null 2>/dev/null|"
+            cacmd += "openssl x509 -outform PEM"
+            installconfig['additionalTrustBundle'] = os.popen(cacmd).read()
+            overrides['installconfig'] = installconfig
 
     def set_default_infraenv_values(self, overrides):
         if 'cluster' in overrides:
@@ -391,7 +415,7 @@ class AssistedClient(object):
         if ca is None:
             if 'installconfig' in overrides and isinstance(overrides['installconfig'], dict)\
                     and 'additionalTrustBundle' in overrides['installconfig']:
-                info("using cert from installconfig/additionalTrustBundle")
+                info("Using cert from installconfig/additionalTrustBundle")
                 ca = overrides['installconfig']['additionalTrustBundle']
             elif disconnected_url is not None and 'quay.io' not in disconnected_url:
                 info(f"Trying to gather registry ca cert from {disconnected_url}")
@@ -406,19 +430,19 @@ class AssistedClient(object):
                 ignition_version = json.loads(ori.read().decode("utf-8"))['ignition']['version']
             if 'installconfig' in overrides and isinstance(overrides['installconfig'], dict)\
                     and 'imageContentSources' in overrides['installconfig']:
-                info("using imageContentSources from installconfig")
+                info("Using imageContentSources from installconfig")
                 registries = 'unqualified-search-registries = ["registry.access.redhat.com", "docker.io"]\n'
                 for registry in overrides['installconfig']['imageContentSources']:
                     source = registry.get('source')
-                    target = registry.get('mirrors')[0]
-                    new_registry = """[[registry]]
+                    for target in registry.get('mirrors', []):
+                        new_registry = """[[registry]]
    prefix = ""
    location = "{source}"
    mirror-by-digest-only = false
 
    [[registry.mirror]]
    location = "{target}"\n""".format(source=source, target=target)
-                    registries += new_registry
+                        registries += new_registry
             else:
                 ailibdir = os.path.dirname(warning.__code__.co_filename)
                 with open(f"{ailibdir}/registries.conf.templ") as f:
@@ -570,11 +594,6 @@ class AssistedClient(object):
                 new_cluster_params[parameter] = overrides[parameter]
             else:
                 extra_overrides[parameter] = overrides[parameter]
-        network_override = 'installconfig' in extra_overrides and 'networking' in extra_overrides['installconfig']\
-            and 'networkType' in extra_overrides['installconfig']['networking']
-        if 'network_type' not in overrides and not network_override:
-            warning("Forcing network_type to OVNKubernetes")
-            new_cluster_params['network_type'] = 'OVNKubernetes'
         if self.debug:
             print(new_cluster_params)
         cluster_params = models.ClusterCreateParams(**new_cluster_params)
@@ -1078,8 +1097,6 @@ class AssistedClient(object):
             pull_secret = os.path.expanduser(overrides['pull_secret'])
             if os.path.exists(pull_secret):
                 overrides['pull_secret'] = re.sub(r"\s", "", open(pull_secret).read())
-            else:
-                warning("Using pull_secret as string")
         if 'role' in overrides:
             role = overrides['role']
             hosts_roles = [{"id": host['id'], "role": role} for host in self.client.list_hosts(cluster_id=cluster_id)]
@@ -1135,7 +1152,8 @@ class AssistedClient(object):
         if 'installconfig' in overrides and isinstance(overrides['installconfig'], dict):
             installconfig.update(overrides['installconfig'])
             del overrides['installconfig']
-        if installconfig:
+        install_config_overrides = json.loads(info_cluster.install_config_overrides or '{}')
+        if installconfig and install_config_overrides != installconfig:
             self.client.v2_update_cluster_install_config(cluster_id, json.dumps(installconfig))
         if 'olm_operators' in overrides:
             overrides['olm_operators'] = self.set_olm_operators(overrides['olm_operators'])

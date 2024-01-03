@@ -155,7 +155,7 @@ def create_onprem(overrides={}, debug=False):
         error("You need podman to run this")
         sys.exit(1)
     with TemporaryDirectory() as tmpdir:
-        ip = overrides.get('ip') or get_ip() or '192.168.122.1'
+        ip = overrides.get('onprem_ip') or get_ip() or '192.168.122.1'
         ipv6 = ':' in ip
         info(f"Using ip {ip}")
         if os.path.exists('pod.yml'):
@@ -192,7 +192,46 @@ def create_onprem(overrides={}, debug=False):
                         dest.write(f"  SERVICE_BASE_URL: {SERVICE_BASE_URL}\n")
                     else:
                         dest.write(line)
-        if overrides.get('keep', False):
+        if 'ocp_release_image' in overrides:
+            info("Patching deployment for disconnected")
+            try:
+                from yaml import safe_load, safe_dump
+            except:
+                error("PyYAML is required for patching deployment")
+                sys.exit(1)
+            arch = os.uname().machine
+            ocp_release_image = overrides['ocp_release_image']
+            version_long = ocp_release_image.split(':')[-1].split('-')[0]
+            openshift_version = f"4.{version_long.split('.')[1]}"
+            with open(f'{tmpdir}/configmap.yml', 'r') as f:
+                cm = safe_load(f)
+            data = cm['data']
+            release_images = [{'openshift_version': openshift_version, 'cpu_architecture': arch,
+                               'cpu_architectures': [arch], 'url': ocp_release_image, 'version': version_long}]
+            data['RELEASE_IMAGES'] = json.dumps(release_images, indent=None, separators=(',', ':'))
+            os_images = safe_load(data['OS_IMAGES'])
+            os_images = [i for i in os_images if i['openshift_version'] == openshift_version and
+                         i['cpu_architecture'] == arch]
+            data['OS_IMAGES'] = json.dumps(os_images, indent=None, separators=(',', ':'))
+            cm['data'] = data
+            with open(f'{tmpdir}/configmap.yml', 'w') as f:
+                safe_dump(cm, f, default_flow_style=False, encoding='utf-8', allow_unicode=True)
+            with open(f'{tmpdir}/pod.yml', 'r') as f:
+                pod = safe_load(f)
+            spec = pod['spec']
+            spec['containers'][-1]['volumeMounts'] = [{'mountPath': '/etc/pki/ca-trust/extracted/pem:Z',
+                                                       'name': 'certs'}]
+            spec['volumes'] = [{'name': 'certs', 'hostPath': {'path': "/etc/pki/ca-trust/extracted/pem",
+                                                              "type": "Directory"}}]
+            if os.path.exists('containers'):
+                cwd = os.getcwd()
+                spec['containers'][-1]['volumeMounts'].append({'mountPath': '/etc/containers:Z', 'name': 'containers'})
+                new_entry = {'name': 'containers', 'hostPath': {'path': f"{cwd}/containers", "type": "Directory"}}
+                spec['volumes'].append(new_entry)
+            pod['spec'] = spec
+            with open(f'{tmpdir}/pod.yml', 'w') as f:
+                safe_dump(pod, f, default_flow_style=False, encoding='utf-8', allow_unicode=True)
+        if overrides.get('keep', True):
             copy2(f"{tmpdir}/configmap.yml", '.')
             copy2(f"{tmpdir}/pod.yml", '.')
         if debug:
@@ -201,10 +240,13 @@ def create_onprem(overrides={}, debug=False):
             cmd = "podman network create --subnet fd00::1:8:0/112 --gateway 'fd00::1:8:1' --ipv6 assistedv6"
             info(f"Running: {cmd}")
             call(cmd, shell=True)
-        storage = '--storage-driver vfs' if 'KUBERNETES_SERVICE_PORT' in os.environ else ''
-        network = '--network assistedv6' if ipv6 else ''
-        cmd = "podman pod rm -f assisted-installer ; "
-        cmd += f"podman {storage} play kube {network} --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml"
+        podman = 'podman'
+        if 'KUBERNETES_SERVICE_PORT' in os.environ:
+            podman += ' --storage-driver vfs'
+        args = '--replace'
+        if ipv6:
+            args += ' --network assistedv6'
+        cmd = f"{podman} play kube {args} --configmap {tmpdir}/configmap.yml {tmpdir}/pod.yml"
         info(f"Running: {cmd}")
         call(cmd, shell=True)
 

@@ -787,7 +787,7 @@ def list_extra_keywords(args):
 
 
 def create_onprem(args):
-    warning("This is not the supported path for interacting with AI")
+    warning("Note that this is not a supported path for interacting with AI")
     info("Creating onprem deployment")
     overrides = handle_parameters(args.param, args.paramfile)
     ai_create_onprem(overrides, debug=args.debug)
