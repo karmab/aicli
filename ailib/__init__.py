@@ -251,16 +251,16 @@ class AssistedClient(object):
             elif 'base_dns_domain' not in overrides:
                 warning("Using karmalabs.corp as DNS domain as no one was provided", quiet=quiet)
                 overrides['base_dns_domain'] = 'karmalabs.corp'
-        if 'sno' in overrides:
-            if overrides['sno']:
-                overrides['high_availability_mode'] = "None"
-                overrides['user_managed_networking'] = True
-                if 'api_vip' in overrides:
-                    warning("Removing api_vip since SNO is set", quiet=quiet)
-                    del overrides['api_vip']
-                if 'ingress_vip' in overrides:
-                    warning("Removing ingress_vip since SNO is set", quiet=quiet)
-                    del overrides['ingress_vip']
+        hosts_number = len(overrides.get('hosts', []))
+        if hosts_number == 1 or ('sno' in overrides and overrides['sno']):
+            overrides['high_availability_mode'] = "None"
+            overrides['user_managed_networking'] = True
+            if 'api_vip' in overrides:
+                warning("Removing api_vip since SNO is set", quiet=quiet)
+                del overrides['api_vip']
+            if 'ingress_vip' in overrides:
+                warning("Removing ingress_vip since SNO is set", quiet=quiet)
+                del overrides['ingress_vip']
         if 'high_availability_mode' in overrides and overrides['high_availability_mode'] is None:
             overrides['high_availability_mode'] = "None"
         if 'olm_operators' in overrides:
