@@ -213,6 +213,10 @@ def create_onprem(overrides={}, debug=False):
             os_images = [i for i in os_images if i['openshift_version'] == openshift_version and
                          i['cpu_architecture'] == arch]
             data['OS_IMAGES'] = json.dumps(os_images, indent=None, separators=(',', ':'))
+            registry = ocp_release_image.split('/')[0]
+            data['INSTALLER_IMAGE'] = f'{registry}/edge-infrastructure/assisted-installer:latest'
+            data['AGENT_DOCKER_IMAGE'] = f'{registry}/edge-infrastructure/assisted-installer-agent:latest'
+            data['CONTROLLER_IMAGE'] = f'{registry}/edge-infrastructure/assisted-installer-controller:latest'
             cm['data'] = data
             with open(f'{tmpdir}/configmap.yml', 'w') as f:
                 safe_dump(cm, f, default_flow_style=False, encoding='utf-8', allow_unicode=True)

@@ -77,14 +77,6 @@ def boot_hosts(overrides, hostnames=[], debug=False):
     return 0
 
 
-def icsps_from_url(url):
-    registries = [{'mirrors': [f"{url}/openshift/release", f"{url}/openshift/release-images"],
-                   "source": "quay.io/openshift-release-dev/ocp-release"},
-                  {'mirrors': [f"{url}/openshift/release", f"{url}/openshift/release-images"],
-                   "source": "quay.io/openshift-release-dev/ocp-v4.0-art-dev"}]
-    return registries
-
-
 class AssistedClient(object):
     def __init__(self, url='https://api.openshift.com', token=None, offlinetoken=None, debug=False,
                  ca=None, cert=None, key=None, quiet=False):
