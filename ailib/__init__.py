@@ -901,7 +901,7 @@ class AssistedClient(object):
                 infra_env_id = infra_env['id']
                 hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
                 matchingids = [host['id'] for host in hosts
-                               if host['requested_hostname'] == hostname or host['id'] == hostname or
+                               if host['requested_hostname'].startswith(hostname) or host['id'].startswith(hostname) or
                                match_mac(host, hostname)]
                 if matchingids:
                     infra_envs[infra_env_id] = matchingids
@@ -1562,13 +1562,6 @@ class AssistedClient(object):
         self.wait_hosts(infraenv, hosts_number, filter_installed=True, require_inventory=True)
         if 'hosts' in overrides:
             self.update_hosts([], overrides)
-        else:
-            cluster_id = self.get_cluster_id(cluster)
-            bad_hostnames = [h['id'] for h in self.list_hosts() if h['cluster_id'] == cluster_id and
-                             h['requested_hostname'].startswith('localhost') or h['requested_hostname'] == h['id']]
-            for index, host in enumerate(bad_hostnames):
-                role = 'master' if index < 3 else 'worker'
-                self.update_host(host, {'name': f"{cluster}-{role}-{index}"})
         self.update_cluster(cluster, overrides)
         self.wait_cluster(cluster, 'ready')
         self.start_cluster(cluster)
