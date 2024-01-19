@@ -150,7 +150,7 @@ def get_ip():
 
 
 def create_onprem(overrides={}, debug=False):
-    onprem_version = overrides.get('onprem_version', 'v2.27.0')
+    onprem_version = overrides.get('onprem_version', 'latest')
     if which('podman') is None:
         error("You need podman to run this")
         sys.exit(1)
