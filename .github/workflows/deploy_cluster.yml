@@ -53,7 +53,7 @@ jobs:
            kcli create sushy-service
        - name: Install aicli
          run: |
-           pip3 install -U 'assisted-service-client<2.28.0.post1'
+           pip3 install -U assisted-service-client
            python3 setup.py install
        - name: Clean up
          continue-on-error: true

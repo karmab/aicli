@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 import os
-INSTALL = ['assisted-service-client<2.28.0.post1', 'prettytable', 'PyYAML']
+INSTALL = ['assisted-service-client', 'prettytable', 'PyYAML']
 description = 'Assisted installer assistant'
 long_description = description
 if os.path.exists('README.rst'):
