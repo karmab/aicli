@@ -1548,6 +1548,7 @@ class AssistedClient(object):
             self.update_hosts([], overrides)
         self.update_cluster(cluster, overrides)
         self.wait_cluster(cluster, 'ready')
+        sleep(10)
         self.start_cluster(cluster)
         self.wait_cluster(cluster)
         info(f"Downloading Kubeconfig for Cluster {cluster} in current directory")
