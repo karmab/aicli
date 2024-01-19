@@ -39,7 +39,7 @@ installconfig:
        Ig5BBu37RdjCR7JGSF/2QisMmyKoTnyD9P+lFKTgGfsbbxrp7XdeLYY7xaFRzkuZ
        gAedh+jkW6mjkMIu5RUU
        -----END CERTIFICATE-----
-   imageContentSources:
+   imageDigestSources:
    - mirrors:
      - testk-disconnecter.ipv6only:5000/ocp4
      source: quay.io/openshift-release-dev/ocp-v4.0-art-dev

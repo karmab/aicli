@@ -285,7 +285,7 @@ class AssistedClient(object):
                                         "source": "quay.io/openshift-release-dev/ocp-release"},
                                        {'mirrors': [f"{url}/openshift/release", f"{url}/openshift/release-images"],
                                         "source": "quay.io/openshift-release-dev/ocp-v4.0-art-dev"}]
-            installconfig = {'imageContentSources': disconnected_registries}
+            installconfig = {'ImageDigestSources': disconnected_registries}
             info(f"Trying to gather registry ca cert from {url}")
             cacmd = f"openssl s_client -showcerts -connect {url} </dev/null 2>/dev/null|"
             cacmd += "openssl x509 -outform PEM"
@@ -409,10 +409,10 @@ class AssistedClient(object):
                                                               _preload_content=False)
                 ignition_version = json.loads(ori.read().decode("utf-8"))['ignition']['version']
             if 'installconfig' in overrides and isinstance(overrides['installconfig'], dict)\
-                    and 'imageContentSources' in overrides['installconfig']:
-                info("Using imageContentSources from installconfig")
+                    and 'ImageDigestSources' in overrides['installconfig']:
+                info("Using ImageDigestSources from installconfig")
                 registries = 'unqualified-search-registries = ["registry.access.redhat.com", "docker.io"]\n'
-                for registry in overrides['installconfig']['imageContentSources']:
+                for registry in overrides['installconfig']['ImageDigestSources']:
                     source = registry.get('source')
                     for target in registry.get('mirrors', []):
                         new_registry = """[[registry]]
