@@ -998,6 +998,7 @@ class AssistedClient(object):
 
     def wait_hosts(self, name, number=3, filter_installed=False, require_inventory=False):
         client = self.client
+        self.refresh_token(self.token, self.offlinetoken)
         infra_env_id = self.get_infra_env_id(name)
         infra_env = client.get_infra_env(infra_env_id=infra_env_id)
         cluster_id = infra_env.cluster_id
