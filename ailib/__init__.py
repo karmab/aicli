@@ -22,8 +22,6 @@ from urllib.request import urlretrieve
 import yaml
 
 
-default_cluster_params = {"openshift_version": "4.14", "base_dns_domain": "karmalabs.corp",
-                          "vip_dhcp_allocation": False}
 default_cluster_params = {"openshift_version": "4.14", "vip_dhcp_allocation": False}
 default_infraenv_params = {"openshift_version": "4.14", "image_type": "full-iso"}
 SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub']
@@ -204,16 +202,14 @@ class AssistedClient(object):
         api_vips = overrides.get('api_vips', [])
         api_vip = overrides.get('api_vip') or overrides.get('api_ip')
         if api_vip is not None:
-            if 'api_vip' in overrides:
-                del overrides['api_vip']
+            overrides['api_vip'] = api_vip
             if api_vip not in api_vips:
                 api_vips.append({'ip': api_vip})
                 overrides['api_vips'] = api_vips
         ingress_vips = overrides.get('ingress_vips', [])
         ingress_vip = overrides.get('ingress_vip') or overrides.get('ingress_ip')
         if ingress_vip is not None:
-            if 'ingress_vip' in overrides:
-                del overrides['ingress_vip']
+            overrides['ingress_vip'] = ingress_vip
             if ingress_vip not in ingress_vips:
                 ingress_vips.append({'ip': ingress_vip})
                 overrides['ingress_vips'] = ingress_vips
