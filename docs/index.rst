@@ -228,6 +228,15 @@ The data can be provided either as a string (say ``a=xxx b=yyy``) in which case 
    - operation: append
      value: 'b=yyy'
 
+Custom install config
+~~~~~~~~~~~~~~~~~~~~~
+
+You can tweak the install config of a cluster by providing a dictionary such as
+
+::
+
+   aicli update cluster mycluster -P installconfig="{'CPUPartitioningMode': 'AllNodes'}"
+
 Custom networking
 ~~~~~~~~~~~~~~~~~
 

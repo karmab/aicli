@@ -206,6 +206,14 @@ kernel_arguments:
   value: 'b=yyy'
 ```
 
+### Custom install config
+
+You can tweak the install config of a cluster by providing a dictionary such as
+
+```
+aicli update cluster mycluster -P installconfig="{'CPUPartitioningMode': 'AllNodes'}"
+```
+
 ### Custom networking
 
 #### Network type
