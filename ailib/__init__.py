@@ -1563,3 +1563,48 @@ class AssistedClient(object):
         new_host_params = models.HostCreateParams(**new_host_params)
         self.client.api_client.default_headers['X-Secret-Key'] = secret_key
         self.client.v2_register_host(infra_env_id=infra_env_id, new_host_params=new_host_params)
+
+    def scale_deployment(self, cluster, overrides, force=False, debug=False):
+        if cluster.endswith('-day2'):
+            self.create_cluster(cluster, overrides.copy(), force=force)
+            infraenv = f"{cluster}_infra-env"
+            minimal = overrides.get('minimal', False)
+            overrides['cluster'] = cluster
+            self.create_infra_env(infraenv, overrides)
+            del overrides['cluster']
+        else:
+            info_cluster = self.info_cluster(cluster)
+            if info_cluster.status != 'adding-hosts':
+                self.update_cluster(cluster, {'day2': True})
+        if not self.saas:
+            info("Waiting 240s for iso to be available")
+            sleep(240)
+        if 'iso_url' in overrides:
+            download_iso_path = overrides.get('download_iso_path')
+            if download_iso_path is None:
+                download_iso_path = '/var/www/html'
+                warning(f"Using {download_iso_path} to store iso")
+            else:
+                info(f"Using {download_iso_path} to store iso")
+            self.download_iso(cluster, download_iso_path)
+        else:
+            iso_url = self.info_iso(infraenv, overrides, minimal=minimal)
+            if 'hosts' not in overrides:
+                warning(f"Retrieve iso from {iso_url} and plug it to your nodes:")
+            else:
+                overrides['iso_url'] = iso_url
+        download_iso_cmd = overrides.get('download_iso_cmd')
+        if download_iso_cmd is not None:
+            call(download_iso_cmd, shell=True)
+        hosts_number = len(overrides.get('hosts', [0, 0]))
+        info(f"Setting hosts_number to {hosts_number}")
+        if 'hosts' not in overrides:
+            boot_overrides = overrides.copy()
+            boot_overrides['cluster'] = cluster
+            boot_result = boot_hosts(boot_overrides, debug=debug)
+            if boot_result != 0:
+                return {'result': 'failure', 'reason': 'Hit issue when booting hosts'}
+        self.wait_hosts(infraenv, hosts_number, filter_installed=True, require_inventory=True)
+        hosts = [h['requested_hostname'] for h in self.list_hosts() if h['status'] != 'installed']
+        self.start_hosts(hosts)
+        return {'result': 'success'}

@@ -221,6 +221,14 @@ def create_deployment(args):
     ai.create_deployment(args.cluster, overrides, force=args.force, debug=args.debugredfish)
 
 
+def scale_deployment(args):
+    info(f"Scaling deployment {args.cluster}")
+    overrides = handle_parameters(args.param, args.paramfile)
+    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
+                        ca=args.ca, cert=args.cert, key=args.key)
+    ai.scale_deployment(args.cluster, overrides, force=args.force, debug=args.debugredfish)
+
+
 def create_manifests(args):
     info(f"Uploading manifests for Cluster {args.cluster}")
     directory = args.dir
@@ -1250,6 +1258,22 @@ def cli():
     manifestslist_parser.set_defaults(func=list_manifests)
     list_subparsers.add_parser('manifest', parents=[manifestslist_parser], description=manifestslist_desc,
                                help=manifestslist_desc, aliases=['manifests'])
+
+    scale_desc = 'scale Object'
+    scale_parser = subparsers.add_parser('scale', description=scale_desc, help=scale_desc)
+    scale_subparsers = scale_parser.add_subparsers(metavar='', dest='subcommand_scale')
+
+    deploymentscale_desc = 'Scale deployment'
+    deploymentscale_epilog = None
+    deploymentscale_parser = scale_subparsers.add_parser('deployment', description=deploymentscale_desc,
+                                                         help=deploymentscale_desc, epilog=deploymentscale_epilog,
+                                                         formatter_class=rawhelp)
+    deploymentscale_parser.add_argument('-d', '--debugredfish', action='store_true')
+    deploymentscale_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
+    deploymentscale_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
+                                        action='append')
+    deploymentscale_parser.add_argument('cluster', metavar='CLUSTER')
+    deploymentscale_parser.set_defaults(func=scale_deployment)
 
     start_desc = 'Start Object'
     start_parser = subparsers.add_parser('start', description=start_desc, help=start_desc, aliases=['launch'])
