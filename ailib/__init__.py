@@ -649,9 +649,8 @@ class AssistedClient(object):
             cluster = self.client.v2_get_cluster(cluster_id=cluster_id)
             openshift_version = cluster.openshift_version
             ssh_public_key = cluster.image_info.ssh_public_key
-            # api_name = f"api.{cluster_name}.{cluster.base_dns_domain}"
             if api_vip_dnsname is None:
-                api_vip_dnsname = cluster.api_vips[0]
+                api_vip_dnsname = cluster.api_vips[0].ip
                 warning(f"Forcing api_vip_dnsname to {api_vip_dnsname}")
             response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name="install-config.yaml",
                                                              _preload_content=False)
