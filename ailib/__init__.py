@@ -20,7 +20,7 @@ import urllib
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 import yaml
-
+import traceback
 
 default_cluster_params = {"openshift_version": "4.15", "base_dns_domain": "karmalabs.corp",
                           "vip_dhcp_allocation": False}
@@ -68,6 +68,8 @@ def boot_hosts(overrides, hostnames=[], debug=False):
                 red.set_iso(iso_url)
             except Exception as e:
                 warning(f"Hit {e} when plugging iso to host {msg}")
+                if debug:
+                    traceback.print_exception(e)
                 return 1
         else:
             warning(f"Skipping entry {index} because either bmc_url, bmc_user or bmc_password is not set")
