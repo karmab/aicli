@@ -47,13 +47,12 @@ jobs:
       timeout-minutes: 70
       steps:
       - name: Deploy ai cluster
-        run: |
-          aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER --force
+        run: aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER --force
 
     clean-up:
       needs: deploy-ai-cluster
       runs-on: libvirt
       steps:
       - name: Clean everything after success
-        run: |
-          kcli -C local delete plan --yes $CLUSTER
+        if: always()
+        run: kcli -C local delete plan --yes $CLUSTER
