@@ -321,9 +321,11 @@ class AssistedClient(object):
                 bonds = []
                 nics = []
                 mac_interface_map = entry.get('mac_interface_map', [])
+                network_yaml = entry.get('network_yaml')
                 interfaces = entry.get('interfaces', [])
-                if entry.get('network_yaml') is not None:
-                    final_network_config.append(models.HostStaticNetworkConfig(**entry))
+                if network_yaml is not None and mac_interface_map is not None:
+                    new_entry = {'network_yaml': yaml.dump(network_yaml), 'mac_interface_map': mac_interface_map}
+                    final_network_config.append(models.HostStaticNetworkConfig(**new_entry))
                     continue
                 if not interfaces:
                     error("You need to provide a list of interfaces")
