@@ -331,8 +331,9 @@ class AssistedClient(object):
                 for interface in interfaces:
                     interface_type = interface.get('type', 'ethernet')
                     if interface_type == 'ethernet':
-                        logical_nic_name, mac_address = interface['name'], interface['mac-address']
-                        interface_map.append({"mac_address": mac_address, "logical_nic_name": logical_nic_name})
+                        logical_nic_name, mac_address = interface.get('name'), interface.get('mac-address')
+                        if logical_nic_name is not None and mac_address is not None:
+                            interface_map.append({"mac_address": mac_address, "logical_nic_name": logical_nic_name})
                     elif interface_type == 'bond' and 'link-aggregation' in interface\
                             and 'port' in interface['link-aggregation']:
                         bonds.append(interface['name'])
@@ -346,6 +347,8 @@ class AssistedClient(object):
                     if nic not in bonds and nic not in mac_interface_map_nics:
                         error(f"Nic {nic} is missing from mac_interface_map")
                         sys.exit(1)
+                if 'mac_interface_map' in entry:
+                    del entry['mac_interface_map']
                 new_entry = {'network_yaml': yaml.dump(entry), 'mac_interface_map': mac_interface_map}
                 final_network_config.append(models.HostStaticNetworkConfig(**new_entry))
             static_network_config = final_network_config
