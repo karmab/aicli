@@ -211,6 +211,11 @@ class AssistedClient(object):
             if api_vip not in api_vips:
                 api_vips.append({'ip': api_vip})
                 overrides['api_vips'] = api_vips
+        new_api_vips = []
+        for entry in api_vips:
+            new_api_vips.append({'ip': entry} if not isinstance(entry, dict) else entry)
+        if new_api_vips:
+            overrides['api_vips'] = new_api_vips
         ingress_vips = overrides.get('ingress_vips', [])
         ingress_vip = overrides.get('ingress_vip') or overrides.get('ingress_ip')
         if ingress_vip is not None:
@@ -219,6 +224,11 @@ class AssistedClient(object):
             if ingress_vip not in ingress_vips:
                 ingress_vips.append({'ip': ingress_vip})
                 overrides['ingress_vips'] = ingress_vips
+        new_ingress_vips = []
+        for entry in ingress_vips:
+            new_ingress_vips.append({'ip': entry} if not isinstance(entry, dict) else entry)
+        if new_ingress_vips:
+            overrides['ingress_vips'] = new_ingress_vips
         if not existing:
             if 'pull_secret' not in overrides:
                 warning("Using openshift_pull.json as pull_secret file", quiet=quiet)
