@@ -287,8 +287,9 @@ class AssistedClient(object):
                 sys.exit(1)
             platform = {"type": platform}
             overrides['platform'] = platform
-        if 'ocp_release_image' in overrides and not overrides['ocp_release_image'].startswith('quay.io'):
-            overrides['registry_url'] = overrides['ocp_release_image'].split('/')[0]
+        ocp_release_image = overrides.get('ocp_release_image')
+        if ocp_release_image is not None and ocp_release_image != '' and not ocp_release_image.startswith('quay.io'):
+            overrides['registry_url'] = ocp_release_image.split('/')[0]
         url = overrides.get('disconnected_url') or overrides.get('registry_url')
         if url is not None:
             disconnected_registries = [{'mirrors': [f"{url}/edge-infrastructure"],
@@ -1186,7 +1187,7 @@ class AssistedClient(object):
         if 'openshift_manifests' in overrides:
             self.upload_manifests(name, directory=overrides['openshift_manifests'], openshift=True)
         if 'ignore_validations' in overrides and overrides['ignore_validations']:
-            ignored_validations = models.IgnoredValidations(cluster_validation_ids='all')
+            ignored_validations = models.IgnoredValidations(cluster_validation_ids=['all'])
             self.client.v2_set_ignored_validations(cluster_id=cluster_id, ignored_validations=ignored_validations)
         if 'day2' in overrides and isinstance(overrides['day2'], bool) and overrides['day2']\
            and info_cluster.status == "installed":
