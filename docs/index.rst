@@ -342,7 +342,7 @@ or download it locally with
 
    aicli download iso mycluster
 
-Note that when AI api was in v1, a specific call ``create iso`` was needed to trigger the creation of the iso, but it’s no longer needed (the command is maintained for retrocompatibility but does the same as info iso\`
+Note that when AI api was in v1, a specific call ``create iso`` was needed to trigger the creation of the iso, but it’s no longer needed (the command is maintained for retrocompatibility but does the same as info iso).
 
 When using this call, the expiration time of the token associated to the iso is checked and if necessary, it gets refreshed (and as such so does the url)
 
