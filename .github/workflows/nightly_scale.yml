@@ -1,8 +1,8 @@
-name: nightly-ci
+name: nightly-ci-scale
 
 on:
    schedule:
-    - cron: '01 1 * * *'
+    - cron: '21 2 * * *'
 
 env:
  HOME: /root
@@ -10,7 +10,7 @@ env:
  CLUSTER: ci-ai
  NODES: 3
  PULLSECRET: /root/openshift_pull.json
- PARAMFILE: .github/aicli_parameters.yml
+ PARAMFILE: .github/scale_parameters.yml
  PLANFILE: .github/kcli_plan.yml
  AI_OFFLINETOKEN: ${{ secrets.AI_OFFLINETOKEN }}
 
@@ -31,28 +31,19 @@ jobs:
        - name: Clean up
          continue-on-error: true
          run: |
-           kcli delete plan --yes $CLUSTER || true
            kcli delete iso --yes full.iso || true
 
-    deploy-kcli-plan:
+    scale-kcli-plan:
       needs: requirements
       runs-on: libvirt
       steps:
       - name: Deploy kcli plan
-        run: kcli -C local create plan -f $PLANFILE -P NODES=$NODES $CLUSTER
+        run: kcli -C local create plan -f $PLANFILE -P nodes=$(($NODES +2 )) $CLUSTER
 
-    deploy-ai-cluster:
-      needs: deploy-kcli-plan
+    scale-ai-cluster:
+      needs: scale-kcli-plan
       runs-on: libvirt
-      timeout-minutes: 70
+      timeout-minutes: 30
       steps:
       - name: Deploy ai cluster
-        run: aicli create deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER --force
-
-#    clean-up:
-#      needs: deploy-ai-cluster
-#      runs-on: libvirt
-#      steps:
-#      - name: Clean everything after success
-#        if: always()
-#        run: kcli -C local delete plan --yes $CLUSTER
+        run: aicli scale deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER

@@ -1013,7 +1013,7 @@ class AssistedClient(object):
                 elif not bind_updated and not extra_args_updated and not ignition_updated:
                     warning("Nothing updated for this host")
 
-    def wait_hosts(self, name, number=3, filter_installed=False, require_inventory=False):
+    def wait_hosts(self, name, number=3, filter_installed=False, require_inventory=False, filter_insufficient=False):
         client = self.client
         self.refresh_token(self.token, self.offlinetoken)
         infra_env_id = self.get_infra_env_id(name)
@@ -1022,13 +1022,16 @@ class AssistedClient(object):
         if cluster_id is not None and client.v2_get_cluster(cluster_id=cluster_id).high_availability_mode == 'None':
             number = 1
         info(f"Waiting for hosts to reach expected number {number}", quiet=self.quiet)
+        installed = ['installed', 'added-to-existing-cluster']
         while True:
             try:
                 current_hosts = client.v2_list_hosts(infra_env_id=infra_env_id)
                 if require_inventory:
                     current_hosts = [h for h in current_hosts if 'inventory' in h]
                 if filter_installed:
-                    current_hosts = [h for h in current_hosts if h['status'] != 'installed']
+                    current_hosts = [h for h in current_hosts if h['status'] not in installed]
+                if filter_insufficient:
+                    current_hosts = [h for h in current_hosts if h['status'] not in ['insufficient', 'discovering']]
                 if len(current_hosts) >= number:
                     return
                 else:
@@ -1582,11 +1585,11 @@ class AssistedClient(object):
         self.client.api_client.default_headers['X-Secret-Key'] = secret_key
         self.client.v2_register_host(infra_env_id=infra_env_id, new_host_params=new_host_params)
 
-    def scale_deployment(self, cluster, overrides, force=False, debug=False):
+    def scale_deployment(self, cluster, overrides, debug=False):
+        infraenv = f"{cluster}_infra-env"
+        minimal = overrides.get('minimal', False)
         if cluster.endswith('-day2'):
-            self.create_cluster(cluster, overrides.copy(), force=force)
-            infraenv = f"{cluster}_infra-env"
-            minimal = overrides.get('minimal', False)
+            self.create_cluster(cluster, overrides.copy())
             overrides['cluster'] = cluster
             self.create_infra_env(infraenv, overrides)
             del overrides['cluster']
@@ -1616,13 +1619,14 @@ class AssistedClient(object):
             call(download_iso_cmd, shell=True)
         hosts_number = len(overrides.get('hosts', [0, 0]))
         info(f"Setting hosts_number to {hosts_number}")
-        if 'hosts' not in overrides:
+        if 'hosts' in overrides:
             boot_overrides = overrides.copy()
             boot_overrides['cluster'] = cluster
             boot_result = boot_hosts(boot_overrides, debug=debug)
             if boot_result != 0:
                 return {'result': 'failure', 'reason': 'Hit issue when booting hosts'}
-        self.wait_hosts(infraenv, hosts_number, filter_installed=True, require_inventory=True)
-        hosts = [h['requested_hostname'] for h in self.list_hosts() if h['status'] != 'installed']
+        self.wait_hosts(infraenv, hosts_number, filter_installed=True, require_inventory=True, filter_insufficient=True)
+        installed = ['installed', 'added-to-existing-cluster']
+        hosts = [h['requested_hostname'] for h in self.list_hosts() if h['status'] not in installed]
         self.start_hosts(hosts)
         return {'result': 'success'}

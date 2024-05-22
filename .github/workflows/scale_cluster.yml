@@ -1,0 +1,77 @@
+name: scale-cluster
+
+on:
+  workflow_dispatch:
+    inputs:
+      CLUSTER:
+        description: 'Cluster Name'
+        required: true
+        default: ci-ai
+      NODES:
+        description: 'Nodes'
+        required: true
+        default: 3
+      PULLSECRET:
+        description: 'Pull Secret'
+        required: false
+        default: /root/openshift_pull.json
+      PARAMFILE:
+        description: 'paramfile'
+        required: false
+        default: .github/scale_parameters.yml
+      PLANFILE:
+        description: 'planfile'
+        required: false
+        default: .github/kcli_plan.yml
+      EXTRAPARAMS:
+        description: 'Extra params'
+        default: ''
+
+env:
+ HOME: /root
+ PYTHONUNBUFFERED: true
+ CLUSTER: ${{github.event.inputs.CLUSTER}}
+ NODES: ${{github.event.inputs.NODES}}
+ PULLSECRET: ${{github.event.inputs.PULLSECRET}}
+ PARAMFILE: ${{github.event.inputs.PARAMFILE}}
+ PLANFILE: ${{github.event.inputs.PLANFILE}}
+ EXTRAPARAMS: ${{github.event.inputs.EXTRAPARAMS}}
+ AI_OFFLINETOKEN: ${{ secrets.AI_OFFLINETOKEN }}
+# CLUSTER: ai-ci
+# PULLSECRET: /root/openshift_pull.json
+# PARAMFILE: .github/aicli_parameters.yml
+
+jobs:
+    requirements:
+      runs-on: libvirt
+      steps:
+       - uses: actions/checkout@v2
+       - run: git pull origin ${GITHUB_REF##*/}
+       - name: Install kcli
+         run: |
+           curl https://raw.githubusercontent.com/karmab/kcli/master/install.sh | bash
+           kcli create sushy-service
+       - name: Install aicli
+         run: |
+           pip3 install -U assisted-service-client
+           python3 setup.py install
+       - name: Clean up
+         continue-on-error: true
+         run: |
+           kcli delete iso --yes full.iso || true
+
+    scale-kcli-plan:
+      needs: requirements
+      runs-on: libvirt
+      steps:
+      - name: Scale kcli plan
+        run: kcli -C local create plan -f $PLANFILE -P nodes=$(($NODES +2)) $CLUSTER
+
+    scale-ai-cluster:
+      needs: scale-kcli-plan
+      runs-on: libvirt
+      timeout-minutes: 30
+      steps:
+      - name: Scale ai cluster
+        run: |
+          aicli scale deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $EXTRAPARAMS $CLUSTER

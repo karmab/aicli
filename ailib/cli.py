@@ -226,7 +226,7 @@ def scale_deployment(args):
     overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.scale_deployment(args.cluster, overrides, force=args.force, debug=args.debugredfish)
+    ai.scale_deployment(args.cluster, overrides, debug=args.debugredfish)
 
 
 def create_manifests(args):
