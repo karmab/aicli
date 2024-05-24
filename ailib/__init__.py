@@ -1629,4 +1629,18 @@ class AssistedClient(object):
         installed = ['installed', 'added-to-existing-cluster']
         hosts = [h['requested_hostname'] for h in self.list_hosts() if h['status'] not in installed]
         self.start_hosts(hosts)
+        info("Waiting for new hosts to be installed", quiet=self.quiet)
+        infra_env_id = self.get_infra_env_id(f"{cluster}_infra-env")
+        while True:
+            try:
+                all_hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+                ihosts = [h for h in all_hosts if h['requested_hostname'] in hosts and h['status'] == 'installed']
+                if len(ihosts) == len(hosts):
+                    break
+                else:
+                    sleep(5)
+                    self.refresh_token(self.token, self.offlinetoken)
+            except KeyboardInterrupt:
+                info("Leaving as per your request")
+                sys.exit(0)
         return {'result': 'success'}
