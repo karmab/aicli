@@ -1013,7 +1013,7 @@ class AssistedClient(object):
                 elif not bind_updated and not extra_args_updated and not ignition_updated:
                     warning("Nothing updated for this host")
 
-    def wait_hosts(self, name, number=3, filter_installed=False, require_inventory=False, filter_insufficient=False):
+    def wait_hosts(self, name, number=3):
         client = self.client
         self.refresh_token(self.token, self.offlinetoken)
         infra_env_id = self.get_infra_env_id(name)
@@ -1022,18 +1022,32 @@ class AssistedClient(object):
         if cluster_id is not None and client.v2_get_cluster(cluster_id=cluster_id).high_availability_mode == 'None':
             number = 1
         info(f"Waiting for hosts to reach expected number {number}", quiet=self.quiet)
-        installed = ['installed', 'added-to-existing-cluster']
         while True:
             try:
-                current_hosts = client.v2_list_hosts(infra_env_id=infra_env_id)
-                if require_inventory:
-                    current_hosts = [h for h in current_hosts if 'inventory' in h]
-                if filter_installed:
-                    current_hosts = [h for h in current_hosts if h['status'] not in installed]
-                if filter_insufficient:
-                    current_hosts = [h for h in current_hosts if h['status'] not in ['insufficient', 'discovering']]
-                if len(current_hosts) >= number:
+                current_hosts = [h for h in client.v2_list_hosts(infra_env_id=infra_env_id) if h['status'] == 'known']
+                if len(current_hosts) == number:
                     return
+                else:
+                    sleep(5)
+                    self.refresh_token(self.token, self.offlinetoken)
+            except KeyboardInterrupt:
+                info("Leaving as per your request")
+                sys.exit(0)
+
+    def wait_hosts_added(self, hosts=[], infraenv=None):
+        self.refresh_token(self.token, self.offlinetoken)
+        if infraenv is None:
+            infra_env_id = [h['infra_env_id'] for h in self.list_hosts() if h['requested_hostname'] in hosts][0]
+        else:
+            infra_env_id = self.get_infra_env_id(infraenv)
+        info("Waiting for all hosts to be added to cluster", quiet=self.quiet)
+        while True:
+            try:
+                all_hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+                ihosts = [h for h in all_hosts if h['requested_hostname'] in hosts and
+                          h['status'] == 'added-to-existing-cluster']
+                if len(ihosts) == len(hosts):
+                    break
                 else:
                     sleep(5)
                     self.refresh_token(self.token, self.offlinetoken)
@@ -1564,7 +1578,7 @@ class AssistedClient(object):
         else:
             hosts_number = 3
         info(f"Setting hosts_number to {hosts_number}")
-        self.wait_hosts(infraenv, hosts_number, filter_installed=True, require_inventory=True)
+        self.wait_hosts(infraenv, hosts_number)
         if 'hosts' in overrides:
             self.update_hosts([], overrides)
         self.update_cluster(cluster, overrides)
@@ -1625,22 +1639,9 @@ class AssistedClient(object):
             boot_result = boot_hosts(boot_overrides, debug=debug)
             if boot_result != 0:
                 return {'result': 'failure', 'reason': 'Hit issue when booting hosts'}
-        self.wait_hosts(infraenv, hosts_number, filter_installed=True, require_inventory=True, filter_insufficient=True)
+        self.wait_hosts(infraenv, hosts_number)
         installed = ['installed', 'added-to-existing-cluster']
         hosts = [h['requested_hostname'] for h in self.list_hosts() if h['status'] not in installed]
         self.start_hosts(hosts)
-        info("Waiting for new hosts to be installed", quiet=self.quiet)
-        infra_env_id = self.get_infra_env_id(f"{cluster}_infra-env")
-        while True:
-            try:
-                all_hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
-                ihosts = [h for h in all_hosts if h['requested_hostname'] in hosts and h['status'] == 'installed']
-                if len(ihosts) == len(hosts):
-                    break
-                else:
-                    sleep(5)
-                    self.refresh_token(self.token, self.offlinetoken)
-            except KeyboardInterrupt:
-                info("Leaving as per your request")
-                sys.exit(0)
+        self.wait_hosts_added(hosts, infraenv)
         return {'result': 'success'}
