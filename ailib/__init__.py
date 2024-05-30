@@ -1543,8 +1543,8 @@ class AssistedClient(object):
         self.create_infra_env(infraenv, overrides)
         del overrides['cluster']
         if not self.saas:
-            info("Waiting 240s for iso to be available")
-            sleep(240)
+            info("Waiting 60s for iso to be available")
+            sleep(60)
         if 'iso_url' in overrides:
             download_iso_path = overrides.get('download_iso_path')
             if download_iso_path is None:
@@ -1611,8 +1611,8 @@ class AssistedClient(object):
             if info_cluster.status != 'adding-hosts':
                 self.update_cluster(cluster, {'day2': True})
         if not self.saas:
-            info("Waiting 240s for iso to be available")
-            sleep(240)
+            info("Waiting 60s for iso to be available")
+            sleep(60)
         if 'iso_url' in overrides:
             download_iso_path = overrides.get('download_iso_path')
             if download_iso_path is None:
