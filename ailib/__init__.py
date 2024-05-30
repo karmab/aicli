@@ -1229,11 +1229,10 @@ class AssistedClient(object):
     def start_hosts(self, hostnames=[]):
         for infra_env in self.client.list_infra_envs():
             infra_env_id = infra_env['id']
-            infra_env_hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
-            hosts = [h for h in infra_env_hosts if h['requested_hostname'] in hostnames or h['id'] in hostnames]
-            if hosts:
-                host = hosts[0]
-                if host['status'] in ['installed', 'added-to-existing-cluster']:
+            for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
+                if host['requested_hostname'] not in hostnames and host['id'] not in hostnames:
+                    continue
+                elif host['status'] in ['installed', 'added-to-existing-cluster']:
                     info(f"Skipping installed Host {host['requested_hostname']}")
                 else:
                     info(f"Installing Host {host['requested_hostname']}")
