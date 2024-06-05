@@ -167,6 +167,9 @@ def create_onprem(overrides={}, debug=False):
                 response = urllib.request.urlopen(pod_url).read().decode('utf-8')
                 response = response.replace('latest', onprem_version).replace(f'centos7:{onprem_version}',
                                                                               'centos7:latest')
+                restart_policy = overrides.get('restart_policy')
+                if restart_policy is not None and restart_policy == 'Always':
+                    response.replace('Never', 'Always')
                 p.write(response)
         if os.path.exists('configmap.yml'):
             info("Using existing configmap.yml")
