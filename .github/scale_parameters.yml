@@ -1,7 +1,7 @@
 bmc_user: admin
 bmc_password: password
 hosts:
+- name: ci-ai-node-3
+  bmc_url: http://192.168.122.1:9000/redfish/v1/Systems/local/ci-ai-node-3
 - name: ci-ai-node-4
   bmc_url: http://192.168.122.1:9000/redfish/v1/Systems/local/ci-ai-node-4
-- name: ci-ai-node-5
-  bmc_url: http://192.168.122.1:9000/redfish/v1/Systems/local/ci-ai-node-5
