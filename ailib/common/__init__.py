@@ -169,7 +169,7 @@ def create_onprem(overrides={}, debug=False):
                                                                               'centos7:latest')
                 restart_policy = overrides.get('restart_policy')
                 if restart_policy is not None and restart_policy == 'Always':
-                    response.replace('Never', 'Always')
+                    response = response.replace('Never', 'Always')
                 p.write(response)
         if os.path.exists('configmap.yml'):
             info("Using existing configmap.yml")
