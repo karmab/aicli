@@ -246,6 +246,7 @@ def create_onprem(overrides={}, debug=False):
             copy2(f"{tmpdir}/pod.yml", '.')
         if debug:
             print(open(f"{tmpdir}/configmap.yml").read())
+            print(open(f"{tmpdir}/pod.yml").read())
         if ipv6:
             cmd = "podman network create --subnet fd00::1:8:0/112 --gateway 'fd00::1:8:1' --ipv6 assistedv6"
             info(f"Running: {cmd}")
