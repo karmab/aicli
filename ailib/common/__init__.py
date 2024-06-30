@@ -165,7 +165,7 @@ def create_onprem(overrides={}, debug=False):
             with open(f"{tmpdir}/pod.yml", 'w') as p:
                 if overrides.get('persistent', False):
                     pod_url = "https://raw.githubusercontent.com/openshift/assisted-service/master/deploy/podman/pod.yml"
-                else
+                else:
                     pod_url = "https://raw.githubusercontent.com/openshift/assisted-service/master/deploy/podman/pod-persistent.yml"
                 response = urllib.request.urlopen(pod_url).read().decode('utf-8')
                 response = response.replace('latest', onprem_version).replace(f'postgresql-12-c8s:{onprem_version}',
