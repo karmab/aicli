@@ -163,13 +163,14 @@ def create_onprem(overrides={}, debug=False):
             copy2("pod.yml", tmpdir)
         else:
             with open(f"{tmpdir}/pod.yml", 'w') as p:
-                pod_url = "https://raw.githubusercontent.com/openshift/assisted-service/master/deploy/podman/pod.yml"
+                pod_url = "https://raw.githubusercontent.com/openshift/assisted-service/master/deploy/podman/"
+                pod_url += "pod-persistent.yml" if overrides.get('persistent', False) else 'pod.yml'
                 response = urllib.request.urlopen(pod_url).read().decode('utf-8')
-                response = response.replace('latest', onprem_version).replace(f'centos7:{onprem_version}',
-                                                                              'centos7:latest')
+                response = response.replace('latest', onprem_version).replace(f'postgresql-12-c8s:{onprem_version}',
+                                                                              'postgresql-12-c8s:latest')
                 restart_policy = overrides.get('restart_policy')
                 if restart_policy is not None and restart_policy == 'Always':
-                    response.replace('Never', 'Always')
+                    response = response.replace('Never', 'Always')
                 p.write(response)
         if os.path.exists('configmap.yml'):
             info("Using existing configmap.yml")
@@ -243,6 +244,7 @@ def create_onprem(overrides={}, debug=False):
             copy2(f"{tmpdir}/pod.yml", '.')
         if debug:
             print(open(f"{tmpdir}/configmap.yml").read())
+            print(open(f"{tmpdir}/pod.yml").read())
         if ipv6:
             cmd = "podman network create --subnet fd00::1:8:0/112 --gateway 'fd00::1:8:1' --ipv6 assistedv6"
             info(f"Running: {cmd}")
