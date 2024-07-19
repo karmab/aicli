@@ -48,3 +48,11 @@ jobs:
       steps:
       - name: Deploy ai cluster
         run: aicli scale deployment --pf $PARAMFILE -P pull_secret=$PULLSECRET $CLUSTER
+
+    clean-up:
+      needs: scale-ai-cluster
+      runs-on: libvirt
+      steps:
+      - name: Clean everything after success
+        if: always()
+        run: kcli -C local delete plan --yes $CLUSTER
