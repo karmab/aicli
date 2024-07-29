@@ -1409,8 +1409,8 @@ def cli():
 
     clusterwait_desc = 'Wait for cluster'
     clusterwait_parser = argparse.ArgumentParser(add_help=False)
-    clusterwait_parser.add_argument('-s', '--status', help='Which status to wait for', choices=('installed', 'ready'),
-                                    default='installed')
+    clusterwait_parser.add_argument('-s', '--status', help='Which status to wait for',
+                                    choices=('installing', 'installed', 'ready'), default='installed')
     clusterwait_parser.add_argument('cluster', metavar='CLUSTER')
     clusterwait_parser.set_defaults(func=wait_cluster)
     wait_subparsers.add_parser('cluster', parents=[clusterwait_parser], description=clusterwait_desc,

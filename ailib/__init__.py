@@ -1061,8 +1061,8 @@ class AssistedClient(object):
         while True:
             try:
                 cluster_info = self.client.v2_get_cluster(cluster_id=cluster_id).to_dict()
-                if status == 'ready':
-                    reached = cluster_info['status'] == 'ready'
+                if status in ['installing', 'ready']:
+                    reached = cluster_info['status'] == status
                 else:
                     reached = str(cluster_info['install_completed_at']) != '0001-01-01 00:00:00+00:00'
                 if reached:
