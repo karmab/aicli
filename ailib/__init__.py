@@ -22,10 +22,8 @@ from urllib.request import urlretrieve
 import yaml
 import traceback
 
-default_cluster_params = {"openshift_version": "4.16", "base_dns_domain": "karmalabs.corp",
-                          "vip_dhcp_allocation": False}
-default_cluster_params = {"openshift_version": "4.16", "vip_dhcp_allocation": False}
-default_infraenv_params = {"openshift_version": "4.16", "image_type": "full-iso"}
+default_cluster_params = {"openshift_version": "4.17", "vip_dhcp_allocation": False}
+default_infraenv_params = {"openshift_version": "4.17", "image_type": "full-iso"}
 SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub']
 
 
