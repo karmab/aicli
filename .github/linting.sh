@@ -1,8 +1,6 @@
 #!/bin/bash
 
-set -ex
+. venv/bin/activate
 
-pip3 install pep8 wheel
-
-# find . -type f -iname "*.py" -exec pep8 --ignore=E402,W504,E721 --max-line-length=120 {} +
-# find . -name '*.py' | misspellings -f -
+find ailib -type f -iname "*.py" -exec pycodestyle --ignore=E402,W504,E721,E722,E741 --max-line-length=120 {} +
+find ailib -name '*.py' | codespell -f -
