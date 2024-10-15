@@ -123,6 +123,8 @@ class AssistedClient(object):
         tokenpath = f'{aihome}/token.txt'
         if not os.path.exists(aihome):
             os.mkdir(aihome)
+        self.offlinetoken = None
+        self.token = None
         if self.saas:
             if offlinetoken is None:
                 if os.path.exists(offlinetokenpath):
@@ -155,9 +157,9 @@ class AssistedClient(object):
                 sys.exit(1)
             self.config.api_key['Authorization'] = self.token
             self.config.api_key_prefix['Authorization'] = 'Bearer'
-        else:
-            self.offlinetoken = None
-            self.token = None
+        elif 'AI_TOKEN' in os.environ:
+            self.token = os.environ['AI_TOKEN']
+            self.config.api_key['Authorization'] = self.token
         self.api = ApiClient(configuration=self.config)
         self.client = api.InstallerApi(api_client=self.api)
         self.debug = debug
