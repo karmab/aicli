@@ -55,7 +55,7 @@ def boot_hosts(overrides, hostnames=[], debug=False):
         bmc_user = host.get('bmc_user') or host.get('user') or overrides.get('bmc_user')
         bmc_password = host.get('bmc_password') or host.get('password') or overrides.get('bmc_password')
         bmc_reset = host.get('reset') or host.get('bmc_reset') or overrides.get('bmc_reset', False)
-        if bmc_url is not None:
+        if bmc_url is not None and bmc_user is not None and bmc_password is not None:
             red = Redfish(bmc_url, bmc_user, bmc_password, debug=debug)
             if bmc_reset:
                 red.reset()
