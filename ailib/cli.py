@@ -327,8 +327,13 @@ def list_hosts(args):
         cluster_id = host.get('cluster_id')
         if cluster_id is not None:
             if cluster_id not in cluster_ids:
-                cluster_ids[cluster_id] = ai.get_cluster_name(cluster_id)
-            cluster_name = cluster_ids[cluster_id]
+                try:
+                    cluster_ids[cluster_id] = ai.get_cluster_name(cluster_id)
+                    cluster_name = cluster_ids[cluster_id]
+                except:
+                    cluster_name = cluster_id
+        else:
+            cluster_name = 'N/A'
         infra_env_id = host.get('infra_env_id')
         if infra_env_id not in infra_env_ids:
             infra_env_ids[infra_env_id] = ai.get_infra_env_name(infra_env_id)
