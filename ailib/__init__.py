@@ -1381,14 +1381,10 @@ class AssistedClient(object):
         component_versions = versionapi.v2_list_component_versions().to_dict()
         print(f"release: {component_versions['release_tag']}")
         supported_versions = versionapi.v2_list_supported_openshift_versions()
-        print("supported openshift versions:")
-        for version in supported_versions:
-            print(version)
+        print(f"supported openshift versions: {','.join(supported_versions)}")
         operatorsapi = api.OperatorsApi(api_client=self.api)
         supported_operators = operatorsapi.v2_list_supported_operators()
-        print("supported operators:")
-        for operator in sorted(supported_operators):
-            print(operator)
+        print(f"supported operators: {','.join(supported_operators)}")
 
     def get_infra_env_id(self, name):
         valid_names = [name, f'{name}_infra-env']
