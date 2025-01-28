@@ -12,6 +12,7 @@ from ailib import AssistedClient
 from ailib import boot_hosts as ai_boot_hosts
 from ailib.common import create_onprem as ai_create_onprem
 from ailib.common import delete_onprem as ai_delete_onprem
+from ailib.common import create_creds as ai_create_creds
 
 PARAMHELP = "specify parameter or keyword for rendering (multiple can be specified)"
 
@@ -806,6 +807,12 @@ def create_onprem(args):
     ai_create_onprem(overrides, debug=args.debug)
 
 
+def create_creds(args):
+    cluster = args.cluster
+    info(f"Creating creds for cluster {cluster}")
+    ai_create_creds(cluster)
+
+
 def delete_onprem(args):
     info("Deleting onprem deployment")
     overrides = handle_parameters(args.param, args.paramfile)
@@ -855,10 +862,8 @@ def cli():
     boot_subparsers = boot_parser.add_subparsers(metavar='', dest='subcommand_boot')
 
     hostsboot_desc = 'Boot Hosts through redfish'
-    hostsboot_epilog = None
     hostsboot_parser = boot_subparsers.add_parser('host', description=hostsboot_desc,
-                                                  help=hostsboot_desc, epilog=hostsboot_epilog, formatter_class=rawhelp,
-                                                  aliases=['hosts'])
+                                                  help=hostsboot_desc, formatter_class=rawhelp, aliases=['hosts'])
     hostsboot_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     hostsboot_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE', action='append')
     hostsboot_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
@@ -869,10 +874,8 @@ def cli():
     create_subparsers = create_parser.add_subparsers(metavar='', dest='subcommand_create')
 
     clustercreate_desc = 'Create Cluster'
-    clustercreate_epilog = None
     clustercreate_parser = create_subparsers.add_parser('cluster', description=clustercreate_desc,
-                                                        help=clustercreate_desc,
-                                                        epilog=clustercreate_epilog, formatter_class=rawhelp)
+                                                        help=clustercreate_desc, formatter_class=rawhelp)
     clustercreate_parser.add_argument('-f', '--force', action='store_true', help='Delete existing cluster if needed')
     clustercreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     clustercreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
@@ -880,11 +883,15 @@ def cli():
     clustercreate_parser.add_argument('cluster', metavar='CLUSTER')
     clustercreate_parser.set_defaults(func=create_cluster)
 
+    credscreate_desc = 'Create Creds for ABI'
+    credscreate_parser = create_subparsers.add_parser('creds', description=credscreate_desc, help=credscreate_desc,
+                                                      formatter_class=rawhelp)
+    credscreate_parser.add_argument('cluster', metavar='CLUSTER')
+    credscreate_parser.set_defaults(func=create_creds)
+
     deploymentcreate_desc = 'Create Deployment e2e'
-    deploymentcreate_epilog = None
     deploymentcreate_parser = create_subparsers.add_parser('deployment', description=deploymentcreate_desc,
-                                                           help=deploymentcreate_desc,
-                                                           epilog=deploymentcreate_epilog, formatter_class=rawhelp)
+                                                           help=deploymentcreate_desc, formatter_class=rawhelp)
     deploymentcreate_parser.add_argument('-d', '--debugredfish', action='store_true')
     deploymentcreate_parser.add_argument('-f', '--force', action='store_true', help='Delete existing cluster if needed')
     deploymentcreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
@@ -894,10 +901,8 @@ def cli():
     deploymentcreate_parser.set_defaults(func=create_deployment)
 
     fakehostscreate_desc = 'Create Fake Hosts'
-    fakehostscreate_epilog = None
     fakehostscreate_parser = create_subparsers.add_parser('fakehost', description=fakehostscreate_desc,
-                                                          help=fakehostscreate_desc,
-                                                          epilog=fakehostscreate_epilog, formatter_class=rawhelp,
+                                                          help=fakehostscreate_desc, formatter_class=rawhelp,
                                                           aliases=['fakehosts', 'fake-host', 'fake-hosts'])
     fakehostscreate_parser.add_argument('-c', '--count', help='How many hosts to create', type=int, default=1)
     fakehostscreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
@@ -907,10 +912,8 @@ def cli():
     fakehostscreate_parser.set_defaults(func=create_fake_hosts)
 
     infraenvcreate_desc = 'Create Infraenv'
-    infraenvcreate_epilog = None
     infraenvcreate_parser = create_subparsers.add_parser('infraenv', description=infraenvcreate_desc,
-                                                         help=infraenvcreate_desc,
-                                                         epilog=infraenvcreate_epilog, formatter_class=rawhelp)
+                                                         help=infraenvcreate_desc, formatter_class=rawhelp)
     infraenvcreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     infraenvcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
                                        action='append')
@@ -918,9 +921,8 @@ def cli():
     infraenvcreate_parser.set_defaults(func=create_infra_env)
 
     isocreate_desc = 'Create iso'
-    isocreate_epilog = None
     isocreate_parser = create_subparsers.add_parser('iso', description=isocreate_desc, help=isocreate_desc,
-                                                    epilog=isocreate_epilog, formatter_class=rawhelp)
+                                                    formatter_class=rawhelp)
     isocreate_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
     isocreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     isocreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE', action='append')
@@ -928,18 +930,16 @@ def cli():
     isocreate_parser.set_defaults(func=create_iso)
 
     onpremcreate_desc = 'Create Onprem Deployment'
-    onpremcreate_epilog = None
     onpremcreate_parser = create_subparsers.add_parser('onprem', description=onpremcreate_desc, help=onpremcreate_desc,
-                                                       epilog=onpremcreate_epilog, formatter_class=rawhelp)
+                                                       formatter_class=rawhelp)
     onpremcreate_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     onpremcreate_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
                                      action='append')
     onpremcreate_parser.set_defaults(func=create_onprem)
 
     manifestscreate_desc = 'Upload manifests to cluster'
-    manifestscreate_epilog = None
     manifestscreate_parser = create_subparsers.add_parser('manifest', description=manifestscreate_desc,
-                                                          help=manifestscreate_desc, epilog=manifestscreate_epilog,
+                                                          help=manifestscreate_desc,
                                                           formatter_class=rawhelp, aliases=['manifests'])
     manifestscreate_parser.add_argument('--dir', '--directory', help='directory with stored manifests', required=True)
     manifestscreate_parser.add_argument('-o', '--openshift', action='store_true', help='Store in openshift folder')
@@ -952,10 +952,8 @@ def cli():
     delete_subparsers = delete_parser.add_subparsers(metavar='', dest='subcommand_delete')
 
     clusterdelete_desc = 'Delete Cluster'
-    clusterdelete_epilog = None
     clusterdelete_parser = delete_subparsers.add_parser('cluster', description=clusterdelete_desc,
-                                                        help=clusterdelete_desc,
-                                                        epilog=clusterdelete_epilog, formatter_class=rawhelp,
+                                                        help=clusterdelete_desc, formatter_class=rawhelp,
                                                         aliases=['deployment'])
     clusterdelete_parser.add_argument('-a', '--all', action='store_true', help='Delete all clusters')
     clusterdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
@@ -963,10 +961,8 @@ def cli():
     clusterdelete_parser.set_defaults(func=delete_cluster)
 
     infraenvdelete_desc = 'Delete Infraenv'
-    infraenvdelete_epilog = None
     infraenvdelete_parser = delete_subparsers.add_parser('infraenv', description=infraenvdelete_desc,
-                                                         help=infraenvdelete_desc,
-                                                         epilog=infraenvdelete_epilog, formatter_class=rawhelp)
+                                                         help=infraenvdelete_desc, formatter_class=rawhelp)
     infraenvdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
     infraenvdelete_parser.add_argument('infraenvs', metavar='INFRAENVS', nargs='*')
     infraenvdelete_parser.set_defaults(func=delete_infra_env)
@@ -981,10 +977,9 @@ def cli():
     delete_subparsers.add_parser('host', parents=[hostdelete_parser], description=hostdelete_desc, help=hostdelete_desc)
 
     manifestsdelete_desc = 'Delete manifests to cluster'
-    manifestsdelete_epilog = None
     manifestsdelete_parser = delete_subparsers.add_parser('manifest', description=manifestsdelete_desc,
-                                                          help=manifestsdelete_desc, epilog=manifestsdelete_epilog,
-                                                          formatter_class=rawhelp, aliases=['manifests'])
+                                                          help=manifestsdelete_desc, formatter_class=rawhelp,
+                                                          aliases=['manifests'])
     manifestsdelete_parser.add_argument('--dir', '--directory', help='directory with stored manifests')
     manifestsdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
     manifestsdelete_parser.add_argument('cluster', metavar='CLUSTER')
@@ -992,10 +987,8 @@ def cli():
     manifestsdelete_parser.set_defaults(func=delete_manifests)
 
     onpremdelete_desc = 'Delete Onprem'
-    onpremdelete_epilog = None
     onpremdelete_parser = delete_subparsers.add_parser('onprem', description=onpremdelete_desc,
-                                                       help=onpremdelete_desc,
-                                                       epilog=onpremdelete_epilog, formatter_class=rawhelp)
+                                                       help=onpremdelete_desc, formatter_class=rawhelp)
     onpremdelete_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     onpremdelete_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
                                      action='append')
@@ -1120,9 +1113,8 @@ def cli():
     info_subparsers = info_parser.add_subparsers(metavar='', dest='subcommand_info')
 
     clusterinfo_desc = 'Info Cluster'
-    clusterinfo_epilog = None
     clusterinfo_parser = info_subparsers.add_parser('cluster', description=clusterinfo_desc, help=clusterinfo_desc,
-                                                    epilog=clusterinfo_epilog, formatter_class=rawhelp)
+                                                    formatter_class=rawhelp)
     clusterinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
                                     'separated by a comma', metavar='FIELDS')
     clusterinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
@@ -1132,18 +1124,16 @@ def cli():
     clusterinfo_parser.set_defaults(func=info_cluster)
 
     validationinfo_desc = 'Info validation'
-    validationinfo_epilog = None
     validationinfo_parser = info_subparsers.add_parser('validation', description=validationinfo_desc,
-                                                       help=validationinfo_desc, epilog=validationinfo_epilog,
+                                                       help=validationinfo_desc,
                                                        formatter_class=rawhelp, aliases=['validations'])
     validationinfo_parser.add_argument('-a', '--all', action='store_true', help='Report successful checks too')
     validationinfo_parser.add_argument('cluster', metavar='CLUSTER')
     validationinfo_parser.set_defaults(func=info_validation)
 
     infraenvinfo_desc = 'Info Infraenv'
-    infraenvinfo_epilog = None
     infraenvinfo_parser = info_subparsers.add_parser('infraenv', description=infraenvinfo_desc, help=infraenvinfo_desc,
-                                                     epilog=infraenvinfo_epilog, formatter_class=rawhelp)
+                                                     formatter_class=rawhelp)
     infraenvinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
                                      'separated by a comma', metavar='FIELDS')
     infraenvinfo_parser.add_argument('-v', '--values', action='store_true', help='Only report values')
@@ -1152,9 +1142,8 @@ def cli():
     infraenvinfo_parser.set_defaults(func=info_infra_env)
 
     isoinfo_desc = 'Get iso url'
-    isoinfo_epilog = None
     isoinfo_parser = info_subparsers.add_parser('iso', description=isoinfo_desc, help=isoinfo_desc,
-                                                epilog=isoinfo_epilog, formatter_class=rawhelp)
+                                                formatter_class=rawhelp)
     isoinfo_parser.add_argument('-m', '--minimal', action='store_true', help='Use minimal iso')
     isoinfo_parser.add_argument('-s', '--short', action='store_true', help='Only print iso url')
     isoinfo_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
@@ -1163,9 +1152,8 @@ def cli():
     isoinfo_parser.set_defaults(func=info_iso)
 
     hostinfo_desc = 'Info Host'
-    hostinfo_epilog = None
     hostinfo_parser = info_subparsers.add_parser('host', description=hostinfo_desc, help=hostinfo_desc,
-                                                 epilog=hostinfo_epilog, formatter_class=rawhelp)
+                                                 formatter_class=rawhelp)
     hostinfo_parser.add_argument('-i', '--inventory', action='store_true', help='Report host inventory')
     hostinfo_parser.add_argument('-f', '--fields', help='Display Corresponding list of fields,'
                                  'separated by a comma', metavar='FIELDS')
@@ -1175,16 +1163,13 @@ def cli():
     hostinfo_parser.set_defaults(func=info_host)
 
     serviceinfo_desc = 'Info Service'
-    serviceinfo_epilog = None
     serviceinfo_parser = info_subparsers.add_parser('service', description=serviceinfo_desc, help=serviceinfo_desc,
-                                                    epilog=serviceinfo_epilog, formatter_class=rawhelp)
+                                                    formatter_class=rawhelp)
     serviceinfo_parser.set_defaults(func=info_service)
 
     staticinfo_desc = 'Info Static Network Config'
-    staticinfo_epilog = None
     staticinfo_parser = info_subparsers.add_parser('static-network-config', description=staticinfo_desc,
-                                                   help=staticinfo_desc, epilog=staticinfo_epilog,
-                                                   formatter_class=rawhelp)
+                                                   help=staticinfo_desc, formatter_class=rawhelp)
     staticinfo_parser.add_argument('infraenv', metavar='INFRAENV')
     staticinfo_parser.set_defaults(func=info_static_network_config)
 
@@ -1269,10 +1254,8 @@ def cli():
     scale_subparsers = scale_parser.add_subparsers(metavar='', dest='subcommand_scale')
 
     deploymentscale_desc = 'Scale deployment'
-    deploymentscale_epilog = None
     deploymentscale_parser = scale_subparsers.add_parser('deployment', description=deploymentscale_desc,
-                                                         help=deploymentscale_desc, epilog=deploymentscale_epilog,
-                                                         formatter_class=rawhelp)
+                                                         help=deploymentscale_desc, formatter_class=rawhelp)
     deploymentscale_parser.add_argument('-d', '--debugredfish', action='store_true')
     deploymentscale_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     deploymentscale_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE',
@@ -1285,29 +1268,22 @@ def cli():
     start_subparsers = start_parser.add_subparsers(metavar='', dest='subcommand_start')
 
     clusterstart_desc = 'Start Cluster'
-    clusterstart_epilog = None
     clusterstart_parser = start_subparsers.add_parser('cluster', description=clusterstart_desc,
-                                                      help=clusterstart_desc,
-                                                      epilog=clusterstart_epilog, formatter_class=rawhelp)
+                                                      help=clusterstart_desc, formatter_class=rawhelp)
     clusterstart_parser.add_argument('cluster', metavar='CLUSTER')
     clusterstart_parser.set_defaults(func=start_cluster)
 
     hostsstart_desc = 'Start (day2) Hosts'
-    hostsstart_epilog = None
     hostsstart_parser = start_subparsers.add_parser('host', description=hostsstart_desc,
-                                                    help=hostsstart_desc,
-                                                    epilog=hostsstart_epilog, formatter_class=rawhelp,
-                                                    aliases=['hosts'])
+                                                    help=hostsstart_desc, formatter_class=rawhelp, aliases=['hosts'])
     hostsstart_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     hostsstart_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE', action='append')
     hostsstart_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
     hostsstart_parser.set_defaults(func=start_hosts)
 
     infraenvstart_desc = 'Start Infraenv'
-    infraenvstart_epilog = None
     infraenvstart_parser = start_subparsers.add_parser('infraenv', description=infraenvstart_desc,
-                                                       help=infraenvstart_desc,
-                                                       epilog=infraenvstart_epilog, formatter_class=rawhelp)
+                                                       help=infraenvstart_desc, formatter_class=rawhelp)
     infraenvstart_parser.add_argument('infraenv', metavar='INFRAENV')
     infraenvstart_parser.set_defaults(func=start_infraenv)
 
@@ -1316,27 +1292,22 @@ def cli():
     stop_subparsers = stop_parser.add_subparsers(metavar='', dest='subcommand_stop')
 
     clusterstop_desc = 'Stop Cluster'
-    clusterstop_epilog = None
     clusterstop_parser = stop_subparsers.add_parser('cluster', description=clusterstop_desc,
-                                                    help=clusterstop_desc,
-                                                    epilog=clusterstop_epilog, formatter_class=rawhelp)
+                                                    help=clusterstop_desc, formatter_class=rawhelp)
     clusterstop_parser.add_argument('cluster', metavar='CLUSTER')
     clusterstop_parser.set_defaults(func=stop_cluster)
 
     hostsstop_desc = 'Stop (day2) Hosts'
-    hostsstop_epilog = None
     hostsstop_parser = stop_subparsers.add_parser('host', description=hostsstop_desc, help=hostsstop_desc,
-                                                  epilog=hostsstop_epilog, formatter_class=rawhelp,
-                                                  aliases=['hosts'])
+                                                  formatter_class=rawhelp, aliases=['hosts'])
     hostsstop_parser.add_argument('-P', '--param', action='append', help=PARAMHELP, metavar='PARAM')
     hostsstop_parser.add_argument('--paramfile', '--pf', help='Parameters file', metavar='PARAMFILE', action='append')
     hostsstop_parser.add_argument('hostnames', metavar='HOSTNAMES', nargs='*')
     hostsstop_parser.set_defaults(func=stop_hosts)
 
     infraenvstop_desc = 'Stop Infraenv'
-    infraenvstop_epilog = None
     infraenvstop_parser = stop_subparsers.add_parser('infraenv', description=infraenvstop_desc, help=infraenvstop_desc,
-                                                     epilog=infraenvstop_epilog, formatter_class=rawhelp)
+                                                     formatter_class=rawhelp)
     infraenvstop_parser.add_argument('infraenv', metavar='INFRAENV')
     infraenvstop_parser.set_defaults(func=stop_infraenv)
 

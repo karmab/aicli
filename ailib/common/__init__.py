@@ -269,6 +269,22 @@ def delete_onprem(overrides={}, debug=False):
     call("podman pod rm -fi assisted-installer", shell=True)
 
 
+def create_creds(cluster):
+    jsonfile = f"{cluster}/.openshift_install_state.json"
+    if not os.path.exists(jsonfile):
+        error(f"{jsonfile} Not found")
+        return
+    with open(jsonfile, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    result = next((file["contents"]["source"] for file in data["*image.Ignition"]["Config"]["storage"]["files"]
+                   if file["path"] == "/usr/local/share/assisted-service/assisted-service.env"), None)
+    if result is not None:
+        for line in b64decode(result.split(",", 1)[-1]).decode('utf-8').split('\n'):
+            if line.startswith('AGENT_AUTH_TOKEN'):
+                AI_TOKEN = line.split('=')[1].strip()
+                call(f"echo export AI_TOKEN={AI_TOKEN} >> {os.environ.get('HOME', '/root')}/.bashrc", shell=True)
+
+
 def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
     sno = overrides.get('high_availability_mode', 'XXX') == "None" or overrides.get('sno', False)
     basedir = f'{os.path.dirname(get_overrides.__code__.co_filename)}/relocate'
