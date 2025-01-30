@@ -947,18 +947,6 @@ class AssistedClient(object):
                         host_ignition_params = models.HostIgnitionParams(config=ignition_data)
                         self.client.v2_update_host_ignition(infra_env_id, host_id, host_ignition_params)
                         ignition_updated = True
-                if 'relocate' in overrides and overrides['relocate'] and 'extra_args' not in overrides:
-                    baremetal_cidr = overrides.get('baremetal_cidr', '192.168.7.0/24')
-                    network = ip_network(baremetal_cidr)
-                    mask = network.prefixlen
-                    count = overrides.get('index')
-                    ip_count = str(network[10 + count]) if count is not None else None
-                    ip = overrides.get('ip') or ip_count
-                    if ip is None:
-                        warning("Cant set extra_args needed for relocation. Set ip")
-                    else:
-                        warning(f"Setting relocation ip of {host_id} to {ip}")
-                        overrides['extra_args'] = f'--append-karg relocateip={ip} --append-karg relocatenetmask={mask}'
                 if 'extra_args' in overrides:
                     extra_args = overrides['extra_args'].replace('-karg ', '-karg=')
                     extra_args = sum([entry.split('=', 1) for entry in extra_args.split(" ")], [])
@@ -1527,9 +1515,8 @@ class AssistedClient(object):
         return ['sno', 'pull_secret', 'domain', 'tpm', 'minimal', 'static_network_config', 'proxy', 'disconnected_url',
                 'disconnected_ca', 'network_type', 'sno_disk', 'tpm_ctlplanes', 'tpm_workers', 'tang_servers', 'api_ip',
                 'ingress_ip', 'role', 'manifests', 'openshift_manifests', 'disk', 'mcp', 'extra_args', 'ignition_file',
-                'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels', 'relocate',
-                'relocate_switch', 'relocate_registry', 'relocate_cidr', 'download_iso_path', 'ignore_validations',
-                'mtu', 'platform']
+                'discovery_ignition_file', 'hosts', 'registry_url', 'fips', 'skip_disks', 'labels',
+                'download_iso_path', 'ignore_validations', 'mtu', 'platform']
 
     def create_deployment(self, cluster, overrides, force=False, debug=False):
         self.create_cluster(cluster, overrides.copy(), force=force)

@@ -1,6 +1,5 @@
 from ast import literal_eval
-from base64 import b64decode, b64encode
-from ipaddress import ip_network, ip_address
+from base64 import b64decode
 from urllib.request import urlopen
 from urllib.parse import urlencode
 import json
@@ -91,9 +90,6 @@ def get_overrides(paramfile=None, param=[]):
                             v = v.strip()
                             value[index] = v
                 overrides[key] = value
-    if overrides.get('relocate', False):
-        relocate_cidr = overrides.get('relocate_cidr', '192.168.7.0/24')
-        overrides.update(get_relocate_data(relocate_cidr, overrides))
     return overrides
 
 
@@ -283,83 +279,6 @@ def create_creds(cluster):
             if line.startswith('AGENT_AUTH_TOKEN'):
                 AI_TOKEN = line.split('=')[1].strip()
                 call(f"echo export AI_TOKEN={AI_TOKEN} >> {os.environ.get('HOME', '/root')}/.bashrc", shell=True)
-
-
-def get_relocate_data(relocate_cidr='192.168.7.0/24', overrides={}):
-    sno = overrides.get('high_availability_mode', 'XXX') == "None" or overrides.get('sno', False)
-    basedir = f'{os.path.dirname(get_overrides.__code__.co_filename)}/relocate'
-    data = {}
-    mcs = []
-    network = ip_network(relocate_cidr)
-    api_vip = overrides.get('api_vip') or overrides.get('api_ip')
-    ingress_vip = overrides.get('ingress_vip') or overrides.get('ingress_ip')
-    new_api_vip, new_ingress_vip = None, None
-    if api_vip is None or (api_vip is not None and not ip_address(api_vip) in network):
-        new_api_vip = str(network[-3])
-        if not sno:
-            warning(f"Current api vip doesnt belong to {relocate_cidr}, Setting it to {new_api_vip} instead")
-            _type = 'api_ip' if 'api_ip' in overrides else 'api_vip'
-            data[_type] = new_api_vip
-    if ingress_vip is None or (ingress_vip is not None and not ip_address(ingress_vip) in network):
-        new_ingress_vip = str(network[-4])
-        if not sno:
-            warning(f"Current ingress vip doesnt belong to {relocate_cidr}, Setting it to {new_ingress_vip} instead")
-            _type = 'ingress_ip' if 'ingress_ip' in overrides else 'ingress_vip'
-            data['ingress_ip'] = new_ingress_vip
-    if sno:
-        overrides['machine_networks'] = [relocate_cidr]
-    if overrides.get('relocate_switch', True) and new_api_vip is not None and new_ingress_vip is not None:
-        info("Setting relocation switch")
-        namespace_data = open(f"{basedir}/00-relocate-namespace.yaml").read()
-        mcs.append({'00-relocate-namespace.yaml': namespace_data})
-        sa_data = open(f"{basedir}/97-relocate-sa.yaml").read()
-        mcs.append({'97-relocate-sa.yaml': sa_data})
-        binding_data = open(f"{basedir}/98-relocate-binding.yaml").read()
-        mcs.append({'98-relocate-binding.yaml': binding_data})
-        if overrides.get('ovn_hostrouting', False):
-            ovn_data = open(f"{basedir}/99-ovn.yaml").read()
-            mcs.append({'99-ovn.yaml': ovn_data})
-        job_template = open(f"{basedir}/99-relocate-job.yaml").read()
-        registry = overrides.get('relocate_registry', True)
-        olm_operators = overrides.get('olm_operators', [])
-        if registry:
-            sc = 'odf-lvm-vg1' if sno else 'ocs-storagecluster-ceph-rbd'
-            waitcommand = f'kubectl get sc {sc}'
-            waitcommand = f'until [ "$({waitcommand})" != "" ] ; do sleep 5 ; done'
-            waitcommand += f'; kubectl patch storageclass {sc} '
-            waitcommand += '-p \'{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}\''
-            storage_operator = 'lvm' if sno else 'odf'
-            if storage_operator not in olm_operators:
-                warning(f"Enabling {storage_operator} for relocate registry")
-                olm_operators.append(storage_operator)
-                data['olm_operators'] = olm_operators
-        else:
-            waitcommand = "WAITCOMMAND=$(kubectl get clusterversion version -o jsonpath='{.status.history[0].state}') ;"
-            waitcommand = ' until [ "$WAITCOMMAND" == "Completed" ] ; do sleep 10 ; '
-            waitcommand += "WAITCOMMAND=$(kubectl get clusterversion version -o jsonpath='{.status.history[0].state}')"
-            waitcommand += " ; done"
-        job_data = job_template % {'api_vip': api_vip, 'ingress_vip': ingress_vip, 'registry': str(registry).lower(),
-                                   'waitcommand': waitcommand}
-        mcs.append({'99-relocate-job.yaml': job_data})
-    hack_file = 'hack_sno.sh' if sno else "hack.sh"
-    template = open(f"{basedir}/{hack_file}").read()
-    netmask = network.prefixlen
-    first = str(network[1]).split('.')
-    prefix, num = '.'.join(first[:-1]), first[-1]
-    hack_data = template % {'netmask': netmask, 'prefix': prefix, 'num': num}
-    hack_data = str(b64encode(hack_data.encode('utf-8')), 'utf-8')
-    hack_template = open(f"{basedir}/hack.ign").read()
-    ignition_config_override = json.dumps(yaml.safe_load(hack_template % {'data': hack_data}))
-    data['ignition_config_override'] = ignition_config_override
-    relocate_script = open(f"{basedir}/relocate-ip.sh").read()
-    relocate_script_data = str(b64encode(relocate_script.encode('utf-8')), 'utf-8')
-    relocate_template = open(f"{basedir}/10-relocate-ip.yaml").read()
-    mc_relocate = relocate_template % {'role': 'master', 'data': relocate_script_data}
-    mcs.append({'10-relocate-ip-ctlplane.yaml': mc_relocate})
-    mc_relocate = relocate_template % {'role': 'worker', 'data': relocate_script_data}
-    mcs.append({'10-relocate-ip-worker.yaml': mc_relocate})
-    data['manifests'] = mcs
-    return data
 
 
 def container_mode():
