@@ -1,21 +1,20 @@
 from ast import literal_eval
 from base64 import b64decode
-from urllib.request import urlopen
-from urllib.parse import urlencode
+from glob import glob
 import json
 import os
-import socket
 from shutil import copy2, which
+import socket
 from subprocess import call
 import sys
 from tempfile import TemporaryDirectory
 from time import time
+import urllib.request
+from urllib.request import urlopen
+from urllib.parse import urlencode
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-import urllib.request
 import yaml
-
-# colors = {'blue': '36', 'red': '31', 'green': '32', 'yellow': '33', 'pink': '35', 'white': '37'}
 
 
 def error(text):
@@ -265,11 +264,12 @@ def delete_onprem(overrides={}, debug=False):
     call("podman pod rm -fi assisted-installer", shell=True)
 
 
-def create_creds(cluster):
-    jsonfile = f"{cluster}/.openshift_install_state.json"
-    if not os.path.exists(jsonfile):
-        error(f"{jsonfile} Not found")
+def create_creds():
+    jsonfiles = glob('.openshift_install_state.json') + glob('*/.openshift_install_state.json')
+    if not jsonfiles:
+        error("No .openshift_install_state.json file Not found")
         return
+    jsonfile = jsonfiles[0]
     with open(jsonfile, "r", encoding="utf-8") as f:
         data = json.load(f)
     result = next((file["contents"]["source"] for file in data["*image.Ignition"]["Config"]["storage"]["files"]

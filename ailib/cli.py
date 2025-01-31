@@ -808,9 +808,8 @@ def create_onprem(args):
 
 
 def create_creds(args):
-    cluster = args.cluster
-    info(f"Creating creds for cluster {cluster}")
-    ai_create_creds(cluster)
+    info("Gathering ABI creds")
+    ai_create_creds()
 
 
 def delete_onprem(args):
@@ -885,8 +884,7 @@ def cli():
 
     credscreate_desc = 'Create Creds for ABI'
     credscreate_parser = create_subparsers.add_parser('creds', description=credscreate_desc, help=credscreate_desc,
-                                                      formatter_class=rawhelp)
-    credscreate_parser.add_argument('cluster', metavar='CLUSTER')
+                                                      formatter_class=rawhelp, aliases=['credentials', 'abi-creds'])
     credscreate_parser.set_defaults(func=create_creds)
 
     deploymentcreate_desc = 'Create Deployment e2e'
