@@ -51,7 +51,8 @@ def get_info(url, headers, context):
         request = Request(chassis_url, headers=headers)
         chassis = json.loads(urlopen(request, context=context).read())['Members'][0]['@odata.id']
     except Exception as e:
-        error(f"Hit issue {e.msg} when accessing url {chassis_url}")
+        msg = getattr(e, 'msg', str(e))
+        error(f"Hit issue {msg} when accessing url {chassis_url}")
         sys.exit(1)
     request_url = f"{p.scheme}://{p.netloc}{chassis}"
     request = Request(request_url, headers=headers)
@@ -133,7 +134,8 @@ class Redfish(object):
             pprint(f"Getting {iso_url}")
         request = Request(iso_url, headers=self.headers)
         response = json.loads(urlopen(request, context=self.context).read())
-        iso = f"{response['Image']}"
+        # Image can be set to '' or to None to indicate no image is configured
+        iso = str(response['Image']) if response['Image'] else ''
         inserted = response['Inserted']
         if self.debug:
             pprint(f"ISO status is Image: {iso} Inserted: {inserted}")
