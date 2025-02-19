@@ -270,15 +270,22 @@ def create_creds():
         error("No .openshift_install_state.json file Not found")
         return
     jsonfile = jsonfiles[0]
+    info(f"Parsing {jsonfile}")
     with open(jsonfile, "r", encoding="utf-8") as f:
         data = json.load(f)
+    found = False
     result = next((file["contents"]["source"] for file in data["*image.Ignition"]["Config"]["storage"]["files"]
                    if file["path"] == "/usr/local/share/assisted-service/assisted-service.env"), None)
     if result is not None:
         for line in b64decode(result.split(",", 1)[-1]).decode('utf-8').split('\n'):
             if line.startswith('AGENT_AUTH_TOKEN'):
+                found = True
                 AI_TOKEN = line.split('=')[1].strip()
                 call(f"echo export AI_TOKEN={AI_TOKEN} >> {os.environ.get('HOME', '/root')}/.bashrc", shell=True)
+    else:
+        error("Couldnt process any .openshift_install_state.json file")
+    if not found:
+        error("No line with AGENT_AUTH_TOKEN found. Defining creds might not be needed")
 
 
 def container_mode():

@@ -883,8 +883,8 @@ def cli():
     clustercreate_parser.set_defaults(func=create_cluster)
 
     credscreate_desc = 'Create Creds for ABI'
-    credscreate_parser = create_subparsers.add_parser('creds', description=credscreate_desc, help=credscreate_desc,
-                                                      formatter_class=rawhelp, aliases=['credentials', 'abi-creds'])
+    credscreate_parser = create_subparsers.add_parser('abi-creds', description=credscreate_desc, help=credscreate_desc,
+                                                      formatter_class=rawhelp, aliases=['abi-credentials'])
     credscreate_parser.set_defaults(func=create_creds)
 
     deploymentcreate_desc = 'Create Deployment e2e'
