@@ -278,7 +278,7 @@ def create_creds():
                    if file["path"] == "/usr/local/share/assisted-service/assisted-service.env"), None)
     if result is not None:
         for line in b64decode(result.split(",", 1)[-1]).decode('utf-8').split('\n'):
-            if line.startswith('AGENT_AUTH_TOKEN'):
+            if line.startswith('AGENT_AUTH_TOKEN') or line.startswith('USER_AUTH_TOKEN'):
                 found = True
                 AI_TOKEN = line.split('=')[1].strip()
                 call(f"echo export AI_TOKEN={AI_TOKEN} >> {os.environ.get('HOME', '/root')}/.bashrc", shell=True)
