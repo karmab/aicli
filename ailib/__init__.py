@@ -458,7 +458,8 @@ class AssistedClient(object):
             info("Creating aicli user with password aicli in the discovery iso")
             password = '$2y$05$OuDf.Q80OWQsK75AAW1oreQnGqDykML9Zq4VW9.J1yqs/2Qlvoun.'
             password_overrides = {'ignition': {'version': "3.1.0"},
-                                  "passwd": {'users': [{"groups": ["sudo"], "name":"aicli", 'passwordHash': password}]}}
+                                  "passwd": {'users': [{"groups": ["sudo"], "name": "aicli",
+                                                        'passwordHash': password}]}}
             if ignition_config_override is not None:
                 ignition_config_override.update(password_overrides)
             else:
@@ -1410,8 +1411,15 @@ class AssistedClient(object):
         infraenv_create_params = models.InfraEnvCreateParams(**new_infraenv_params)
         self.client.register_infra_env(infraenv_create_params=infraenv_create_params)
 
-    def delete_infra_env(self, name):
+    def delete_infra_env(self, name, force=False):
         infra_env_id = self.get_infra_env_id(name)
+        if force:
+            warning("Deleting any potential hosts associated to this infraenv")
+            for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
+                host_id = host['id']
+                host_name = host['requested_hostname']
+                info(f"Deleting Host {host_name}")
+                self.delete_host(host_id)
         self.client.deregister_infra_env(infra_env_id=infra_env_id)
         day2_matching_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == f'{name}-day2']
         if day2_matching_ids:

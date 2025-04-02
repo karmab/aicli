@@ -415,13 +415,14 @@ def create_infra_env(args):
 def delete_infra_env(args):
     yes = args.yes
     yes_top = args.yes_top
+    force = args.force
     if not yes and not yes_top:
         confirm("Are you sure?")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     for infraenv in args.infraenvs:
         info(f"Deleting infraenv {infraenv}")
-        ai.delete_infra_env(infraenv)
+        ai.delete_infra_env(infraenv, force=force)
 
 
 def info_infra_env(args):
@@ -961,6 +962,7 @@ def cli():
     infraenvdelete_desc = 'Delete Infraenv'
     infraenvdelete_parser = delete_subparsers.add_parser('infraenv', description=infraenvdelete_desc,
                                                          help=infraenvdelete_desc, formatter_class=rawhelp)
+    infraenvdelete_parser.add_argument('-f', '--force', action='store_true', help='Force deletion')
     infraenvdelete_parser.add_argument('-y', '--yes', action='store_true', help='Dont ask for confirmation')
     infraenvdelete_parser.add_argument('infraenvs', metavar='INFRAENVS', nargs='*')
     infraenvdelete_parser.set_defaults(func=delete_infra_env)
