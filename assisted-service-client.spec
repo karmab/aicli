@@ -15,7 +15,7 @@ VCS:            {{{ git_dir_vcs }}}
 Source:         {{{ git_dir_pack }}}
 AutoReq:        no
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-BuildRequires:  java python3 python3-setuptools git
+BuildRequires:  java python3 python3-setuptools git python3-pip
 Requires:       python3 python3-certifi
 
 %description
@@ -38,7 +38,7 @@ java -jar swagger-codegen-cli.jar generate --lang python --config swagger.spec -
 
 %install
 cd build
-%{__python} setup.py install --prefix=%{_prefix} --root=%{buildroot}
+pip3 install --force-reinstall . --prefix=%{_prefix} --root=%{buildroot}
 
 %clean
 rm -rf %{buildroot}

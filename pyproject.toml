@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aicli"
+version = "99.0"
+description = "Assisted installer assistant"
+readme = "README.md"
+license = {text = "ASL"}
+authors = [{ name = "Karim Boumedhel", email = "karimboumedhel@gmail.com" }]
+urls = {Homepage = "http://github.com/karmab/assisted-installer-cli"}
+dependencies = [ "assisted-service-client", "prettytable", "PyYAML"]
+
+[project.scripts]
+aicli = "ailib.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]

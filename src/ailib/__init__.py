@@ -137,7 +137,7 @@ class AssistedClient(object):
                     sys.exit(1)
             elif os.path.exists(offlinetokenpath) and open(offlinetokenpath).read().strip() != offlinetoken:
                 error(f"Moving wrong offlinetoken file to {offlinetokenpath}.old")
-                move(offlinetokenpath, "{offlinetokenpath}.old")
+                move(offlinetokenpath, f"{offlinetokenpath}.old")
                 if os.path.exists(tokenpath):
                     os.remove(tokenpath)
             if not os.path.exists(offlinetokenpath):

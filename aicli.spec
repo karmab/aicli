@@ -15,11 +15,11 @@ VCS:            {{{ git_dir_vcs }}}
 Source:         {{{ git_dir_pack }}}
 AutoReq:        no
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-BuildRequires:  python3 python3-setuptools
+BuildRequires:  python3 python3-setuptools python3-build python3-pip
 Requires:       assisted-service-client python3 python3-prettytable python3-PyYAML
 
 %description
-This is a python client on top of the generated assisted-installer python library to ease working with assisted installer
+This is a python wrapper around assisted-installer library
 
 %global debug_package %{nil}
 %global __python /usr/bin/python3
@@ -29,14 +29,11 @@ This is a python client on top of the generated assisted-installer python librar
 {{{ git_dir_setup_macro }}}
 
 %build
-sed -i "s/install_requires=INSTALL/install_requires=[]/" setup.py
-sed -i '/INSTALL/d' setup.py
-#GIT_VERSION="$(curl -s https://github.com/karmab/aicli/commits/main | grep 'https://github.com/karmab/aicli/commits/main?' | sed 's@.*=\(.......\).*+.*@\1@') $(date +%Y/%m/%d)"
-#echo $GIT_VERSION > aicli/version/git
-%{__python} setup.py build
+sed -i "/dependencies = /d" pyproject.toml
+python3 -m build
 
 %install
-%{__python} setup.py install --prefix=%{_prefix} --root=%{buildroot}
+pip3 install --force-reinstall . --prefix=%{_prefix} --root=%{buildroot}
 
 %clean
 rm -rf %{buildroot}
