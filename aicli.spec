@@ -42,6 +42,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{python_sitelib}/*
 %attr(0755,root,root) %{_bindir}/aicli
+%attr(0755,root,root) %{_bindir}/aiclimcp
 
 %changelog
 {{{ git_dir_changelog }}}

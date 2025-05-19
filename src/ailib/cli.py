@@ -557,13 +557,13 @@ def download_iso(args):
 
 def download_kubeadminpassword(args):
     stdout = args.stdout
+    path = args.path
     if not stdout:
-        args.path = container_path(args.path)
-        dest = f"{args.path}/kubeadmin-password.{args.cluster}"
-        info(f"Downloading KubeAdminPassword for Cluster {args.cluster} in {dest}")
+        path = f"{container_path(path)}/kubeadmin-password.{args.cluster}"
+        info(f"Downloading KubeAdminPassword for Cluster {args.cluster} in {path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.download_kubeadminpassword(args.cluster, args.path, stdout=stdout)
+    ai.download_kubeadminpassword(args.cluster, path, stdout=stdout)
 
 
 def download_kubeconfig(args):

@@ -14,6 +14,7 @@ dependencies = [ "assisted-service-client", "prettytable", "PyYAML"]
 
 [project.scripts]
 aicli = "ailib.cli:cli"
+aiclimcp = "ailib.mcp:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
