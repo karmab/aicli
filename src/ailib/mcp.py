@@ -27,6 +27,33 @@ def get_doc() -> str:
 
 
 @mcp.tool()
+def bind_host(hostname: str, cluster: str, url: str = "https://api.openshift.com", token: str = None,
+              offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+              key: str = None):
+    """Bind host to cluster"""
+    overrides = {'cluster': cluster}
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.update_host(hostname, overrides)
+
+
+@mcp.tool()
+def bind_infra_env(infraenv: str, cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                   offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                   key: str = None, force: bool = False):
+    """Bind infraenv to cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.bind_infra_env(infraenv, cluster, force=force)
+
+
+@mcp.tool()
+def boot_hosts(hostnames: list, url: str = "https://api.openshift.com", token: str = None,
+               offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+               key: str = None, overrides: dict = {}):
+    """Boot hosts"""
+    ai_boot_hosts(overrides, hostnames=hostnames, debug=debug)
+
+
+@mcp.tool()
 def create_cluster(cluster: str, url: str = "https://api.openshift.com", token: str = None,
                    offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
                    key: str = None, force: bool = False, overrides: dict = {}) -> dict:
@@ -36,6 +63,59 @@ def create_cluster(cluster: str, url: str = "https://api.openshift.com", token: 
         infraenv = f"{cluster}_infra-env"
         overrides['cluster'] = cluster
         ai.create_infra_env(infraenv, overrides, quiet=True)
+
+
+@mcp.tool()
+def create_deployment(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                      offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                      key: str = None, force: bool = False, debugredfish: bool = False, overrides: dict = {}):
+    """Create deployment of cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.create_deployment(cluster, overrides, force=force, debug=debugredfish)
+
+
+@mcp.tool()
+def create_fake_hosts(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                      offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                      key: str = None, overrides: dict = {}, count: int = 3):
+    """Create fake hosts"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    if 'pull_secret' not in overrides:
+        overrides['pull_secret'] = "openshift_pull.json"
+    pull_secret = os.path.expanduser(overrides['pull_secret'])
+    if os.path.exists(pull_secret):
+        pull_secret = re.sub(r"\s", "", open(pull_secret).read())
+    elif '{' not in pull_secret:
+        return "Couldn't parse pull secret file {pull_secret}"
+    pull_secret_data = json.loads(pull_secret)
+    secret_key = pull_secret_data['auths']['cloud.openshift.com']['auth']
+    for num in range(0, count):
+        hostname = f"{cluster}-node-{num}"
+        ai.create_fake_host(hostname, cluster, secret_key)
+
+
+@mcp.tool()
+def create_infra_env(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                     key: str = None, force: bool = False, overrides: dict = {}):
+    """Create infraenv"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.create_infra_env(infraenv, overrides)
+
+
+@mcp.tool()
+def create_manifests(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                     key: str = None, directory: str = '.', openshift: bool = False):
+    """Upload manifests of cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.upload_manifests(cluster, directory=directory, openshift=openshift)
+
+
+@mcp.tool()
+def create_onprem(debug: bool = False, overrides: dict = {}):
+    "Create onprem deployment"
+    ai_create_onprem(overrides, debug=debug)
 
 
 @mcp.tool()
@@ -53,6 +133,132 @@ def delete_cluster(clusters: list, allclusters: bool = False, url: str = "https:
             if infra_env_name is not None and infra_env_name in associated_infra_envs:
                 infra_env_id = infra_env['id']
                 ai.delete_infra_env(infra_env_id)
+
+
+@mcp.tool()
+def delete_host(hostname: str, url: str = "https://api.openshift.com", token: str = None,
+                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                key: str = None, overrides: dict = {}):
+    """Delete host"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.delete_host(hostname, overrides=overrides)
+
+
+@mcp.tool()
+def delete_infra_env(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                     key: str = None, force: bool = False):
+    """Delete infraenv"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.delete_infra_env(infraenv, force=force)
+
+
+@mcp.tool()
+def delete_manifests(cluster: str, manifests: list = [], url: str = "https://api.openshift.com", token: str = None,
+                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                     key: str = None, directory: str = '.'):
+    """Delete manifests of cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.delete_manifests(cluster, directory=directory, manifests=manifests)
+
+
+@mcp.tool()
+def delete_onprem(debug: bool = False, overrides: dict = {}):
+    """Delete onprem deployment"""
+    ai_delete_onprem(overrides, debug=debug)
+
+
+@mcp.tool()
+def download_discovery_ignition(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                                key: str = None, path: str = '.'):
+    """Download discovery ignition of infraenv"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.download_discovery_ignition(infraenv, path)
+
+
+@mcp.tool()
+def download_ignition(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                      offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                      key: str = None, role: str = 'worker', path: str = '.'):
+    """Download ignition of cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.download_ignition(cluster, path, role=role)
+
+
+@mcp.tool()
+def download_initrd(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                    offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                    key: str = None, path: str = '.'):
+    """Download initrd of infraenv/cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.download_initrd(infraenv, path)
+
+
+@mcp.tool()
+def download_installconfig(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                           offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                           key: str = None, stdout: bool = True, path: str = '.') -> str:
+    """Download installconfig cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.download_installconfig(cluster, path, stdout=stdout)
+
+
+@mcp.tool()
+def download_ipxe_script(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                         offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                         key: str = None, path: str = '.', serve: bool = False, local: bool = True):
+    """Download ipxe script of infraenv"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    local = True if serve else local
+    ai.download_ipxe_script(infraenv, path, local=local, serve=serve)
+
+
+@mcp.tool()
+def download_iso(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                 offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                 key: str = None, path: str = '.'):
+    """Download discovery iso of infraenv/cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.download_iso(infraenv, path)
+
+
+@mcp.tool()
+def download_kubeadminpassword(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                               offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                               key: str = None, stdout: bool = True, path: str = '.') -> str:
+    """Download kubeadminpassword of cluster"""
+    if not stdout:
+        path = f"{path}/kubeadmin-password.{cluster}"
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.download_kubeadminpassword(cluster, path, stdout=stdout)
+
+
+@mcp.tool()
+def download_kubeconfig(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                        offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                        key: str = None, stdout: bool = True, path: str = '.') -> str:
+    """Download kubeconfig of cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.download_kubeconfig(cluster, path, stdout=stdout)
+
+
+@mcp.tool()
+def download_manifests(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                       offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                       key: str = None, path: str = '.'):
+    """Download manifests of cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.download_manifests(cluster, path)
+
+
+@mcp.tool()
+def download_static_networking_config(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                                      offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                                      key: str = None, path: str = '.'):
+    """Download static network config of infraenv/cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.download_static_networking_config(infraenv, path)
 
 
 @mcp.tool()
@@ -88,124 +294,6 @@ def info_cluster(cluster: str, full: bool = False, fields: list = [], preflight:
         if key in skipped or info[key] is None:
             del info[key]
     return info
-
-
-@mcp.tool()
-def info_validation(cluster: str, allmessages: bool = False, url: str = "https://api.openshift.com", token: str = None,
-                    offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                    key: str = None) -> list:
-    """Get validations on cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    info = ai.info_cluster(cluster).to_dict()
-    validations = json.loads(info.get('validations_info'))
-    validationstable = ["Id", "Type", "Status", "Message"]
-    for validation in validations:
-        for entry in validations[validation]:
-            _id = entry['id']
-            status = entry['status']
-            if not allmessages and status == 'success':
-                continue
-            message = entry['message']
-            entry = [_id, validation, status, message]
-            validationstable.append(entry)
-    return validationstable
-
-
-@mcp.tool()
-def list_clusters(subscription: str = None, org: str = None, url: str = "https://api.openshift.com", token: str = None,
-                  offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                  key: str = None) -> list:
-    """List aicli clusters"""
-    ams_subscription_id, org_id = subscription, org
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    clusters = ai.list_clusters()
-    clusterstable = ["Cluster", "Id", "Status", "Dns Domain"]
-    for cluster in sorted(clusters, key=lambda x: x['name'] or 'zzz'):
-        if ams_subscription_id is not None and cluster['ams_subscription_id'] != ams_subscription_id:
-            continue
-        if org_id is not None and cluster['org_id'] != org_id:
-            continue
-        name = cluster['name']
-        status = cluster['status']
-        _id = cluster['id']
-        base_dns_domain = cluster.get('base_dns_domain', 'N/A')
-        entry = [name, _id, status, base_dns_domain]
-        clusterstable.append(entry)
-    return clusterstable
-
-
-@mcp.tool()
-def update_cluster(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                   offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                   key: str = None, overrides: dict = {}):
-    """Update cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.update_cluster(cluster, overrides)
-    if overrides.get('infraenv', True):
-        ai.update_infra_env(cluster, overrides)
-
-
-@mcp.tool()
-def start_cluster(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                  offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                  key: str = None):
-    """Start cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.start_cluster(cluster)
-
-
-@mcp.tool()
-def stop_cluster(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                 offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                 key: str = None):
-    """Stop cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.stop_cluster(cluster)
-
-
-@mcp.tool()
-def create_deployment(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                      offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                      key: str = None, force: bool = False, debugredfish: bool = False, overrides: dict = {}):
-    """Create deployment of cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.create_deployment(cluster, overrides, force=force, debug=debugredfish)
-
-
-@mcp.tool()
-def scale_deployment(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                     key: str = None, debugredfish: bool = False, overrides: dict = {}):
-    """"Scale deployment of cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.scale_deployment(cluster, overrides, debug=debugredfish)
-
-
-@mcp.tool()
-def create_manifests(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                     key: str = None, directory: str = '.', openshift: bool = False):
-    """Upload manifests of cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.upload_manifests(cluster, directory=directory, openshift=openshift)
-
-
-@mcp.tool()
-def delete_manifests(cluster: str, manifests: list = [], url: str = "https://api.openshift.com", token: str = None,
-                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                     key: str = None, directory: str = '.'):
-    """Delete manifests of cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.delete_manifests(cluster, directory=directory, manifests=manifests)
-
-
-@mcp.tool()
-def delete_host(hostname: str, url: str = "https://api.openshift.com", token: str = None,
-                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                key: str = None, overrides: dict = {}):
-    """Delete host"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.delete_host(hostname, overrides=overrides)
 
 
 @mcp.tool()
@@ -248,6 +336,175 @@ def info_host(host: str, url: str = "https://api.openshift.com", token: str = No
             if len(all_addr) > 1:
                 hostinfo["ips"] = all_addr
         return hostinfo
+
+
+@mcp.tool()
+def info_infra_env(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                   offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                   key: str = None, full: bool = False, fields: list = []) -> dict:
+    """Provide information on infraenv"""
+    if not full:
+        skipped = ['kind', 'href', 'ssh_public_key', 'http_proxy', 'https_proxy', 'no_proxy', 'pull_secret_set',
+                   'vip_dhcp_allocation', 'validations_info', 'hosts', 'image_info', 'host_networks']
+    else:
+        skipped = []
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    info = ai.info_infra_env(infraenv).to_dict()
+    if fields:
+        for key in list(info):
+            if key not in fields:
+                del info[key]
+    for key in list(info):
+        if key in skipped or info[key] is None:
+            del info[key]
+    return info
+
+
+@mcp.tool()
+def info_iso(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+             offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+             key: str = None, overrides: dict = {}, minimal: bool = False) -> str:
+    """Provide discovery iso url of infraenv/cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    iso_url = ai.info_iso(infraenv, overrides, minimal=minimal)
+    return iso_url
+
+
+@mcp.tool()
+def info_service(url: str = "https://api.openshift.com", token: str = None,
+                 offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                 key: str = None):
+    """Provide information on service"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.info_service()
+
+
+@mcp.tool()
+def info_static_network_config(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                               offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                               key: str = None) -> str:
+    """Provide static network config of cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    static_network_config = ai.info_infra_env(infraenv).to_dict()['static_network_config']
+    if static_network_config is not None:
+        static_network_config = eval(static_network_config)
+        for index, entry in enumerate(static_network_config):
+            static_network_config[index]['network_yaml'] = yaml.safe_load(entry['network_yaml'])
+        return (yaml.safe_dump(static_network_config))
+
+
+@mcp.tool()
+def info_validation(cluster: str, allmessages: bool = False, url: str = "https://api.openshift.com", token: str = None,
+                    offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                    key: str = None) -> list:
+    """Get validations on cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    info = ai.info_cluster(cluster).to_dict()
+    validations = json.loads(info.get('validations_info'))
+    validationstable = ["Id", "Type", "Status", "Message"]
+    for validation in validations:
+        for entry in validations[validation]:
+            _id = entry['id']
+            status = entry['status']
+            if not allmessages and status == 'success':
+                continue
+            message = entry['message']
+            entry = [_id, validation, status, message]
+            validationstable.append(entry)
+    return validationstable
+
+
+def list_all_keywords(url: str = "https://api.openshift.com", token: str = None,
+                      offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                      key: str = None) -> list:
+    """List all keywords"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    cluster_keywords = ai.get_cluster_keywords()
+    infra_keywords = ai.get_infraenv_keywords()
+    host_keywords = ai.get_host_keywords()
+    extra_keywords = ai.get_extra_keywords()
+    keywordstable = ["Keyword"]
+    for keyword in sorted(cluster_keywords + infra_keywords + host_keywords + extra_keywords):
+        keywordstable.append([keyword])
+    return keywordstable
+
+
+@mcp.tool()
+def list_cluster_keywords(url: str = "https://api.openshift.com", token: str = None,
+                          offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                          key: str = None) -> list:
+    """List cluster keywords"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    keywords = ai.get_cluster_keywords()
+    keywordstable = ["Keyword"]
+    for keyword in sorted(keywords):
+        keywordstable.append([keyword])
+    return keywordstable
+
+
+@mcp.tool()
+def list_clusters(subscription: str = None, org: str = None, url: str = "https://api.openshift.com", token: str = None,
+                  offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                  key: str = None) -> list:
+    """List aicli clusters"""
+    ams_subscription_id, org_id = subscription, org
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    clusters = ai.list_clusters()
+    clusterstable = ["Cluster", "Id", "Status", "Dns Domain"]
+    for cluster in sorted(clusters, key=lambda x: x['name'] or 'zzz'):
+        if ams_subscription_id is not None and cluster['ams_subscription_id'] != ams_subscription_id:
+            continue
+        if org_id is not None and cluster['org_id'] != org_id:
+            continue
+        name = cluster['name']
+        status = cluster['status']
+        _id = cluster['id']
+        base_dns_domain = cluster.get('base_dns_domain', 'N/A')
+        entry = [name, _id, status, base_dns_domain]
+        clusterstable.append(entry)
+    return clusterstable
+
+
+@mcp.tool()
+def list_events(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                key: str = None, follow: bool = False) -> list:
+    """List events of cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    events = ai.list_events(cluster)
+    eventstable = ["Date", "Message"]
+    for event in events:
+        date = event['event_time']
+        message = event['message']
+        entry = [date, message]
+        eventstable.append(entry)
+    return eventstable
+
+
+@mcp.tool()
+def list_extra_keywords(url: str = "https://api.openshift.com", token: str = None,
+                        offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                        key: str = None) -> list:
+    """"List extra keywords"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    keywords = ai.get_extra_keywords()
+    keywordstable = ["Keyword"]
+    for keyword in sorted(keywords):
+        keywordstable.append([keyword])
+    return keywordstable
+
+
+@mcp.tool()
+def list_host_keywords(url: str = "https://api.openshift.com", token: str = None,
+                       offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                       key: str = None) -> list:
+    """List host keywords"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    keywords = ai.get_host_keywords()
+    keywordstable = ["Keyword"]
+    for keyword in sorted(keywords):
+        keywordstable.append([keyword])
+    return keywordstable
 
 
 @mcp.tool()
@@ -300,92 +557,6 @@ def list_hosts(url: str = "https://api.openshift.com", token: str = None,
 
 
 @mcp.tool()
-def boot_hosts(hostnames: list, url: str = "https://api.openshift.com", token: str = None,
-               offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-               key: str = None, overrides: dict = {}):
-    """Boot hosts"""
-    ai_boot_hosts(overrides, hostnames=hostnames, debug=debug)
-
-
-@mcp.tool()
-def start_hosts(hostnames: list, url: str = "https://api.openshift.com", token: str = None,
-                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                key: str = None):
-    """Start hosts"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.start_hosts(hostnames=hostnames)
-
-
-@mcp.tool()
-def stop_hosts(hostnames: list, url: str = "https://api.openshift.com", token: str = None,
-               offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-               key: str = None):
-    """Stop hosts"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.stop_hosts(hostnames=hostnames)
-
-
-@mcp.tool()
-def create_fake_hosts(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                      offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                      key: str = None, overrides: dict = {}, count: int = 3):
-    """Create fake hosts"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    if 'pull_secret' not in overrides:
-        overrides['pull_secret'] = "openshift_pull.json"
-    pull_secret = os.path.expanduser(overrides['pull_secret'])
-    if os.path.exists(pull_secret):
-        pull_secret = re.sub(r"\s", "", open(pull_secret).read())
-    elif '{' not in pull_secret:
-        return "Couldn't parse pull secret file {pull_secret}"
-    pull_secret_data = json.loads(pull_secret)
-    secret_key = pull_secret_data['auths']['cloud.openshift.com']['auth']
-    for num in range(0, count):
-        hostname = f"{cluster}-node-{num}"
-        ai.create_fake_host(hostname, cluster, secret_key)
-
-
-@mcp.tool()
-def create_infra_env(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                     key: str = None, force: bool = False, overrides: dict = {}):
-    """Create infraenv"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.create_infra_env(infraenv, overrides)
-
-
-@mcp.tool()
-def delete_infra_env(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                     key: str = None, force: bool = False):
-    """Delete infraenv"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.delete_infra_env(infraenv, force=force)
-
-
-@mcp.tool()
-def info_infra_env(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                   offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                   key: str = None, full: bool = False, fields: list = []) -> dict:
-    """Provide information on infraenv"""
-    if not full:
-        skipped = ['kind', 'href', 'ssh_public_key', 'http_proxy', 'https_proxy', 'no_proxy', 'pull_secret_set',
-                   'vip_dhcp_allocation', 'validations_info', 'hosts', 'image_info', 'host_networks']
-    else:
-        skipped = []
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    info = ai.info_infra_env(infraenv).to_dict()
-    if fields:
-        for key in list(info):
-            if key not in fields:
-                del info[key]
-    for key in list(info):
-        if key in skipped or info[key] is None:
-            del info[key]
-    return info
-
-
-@mcp.tool()
 def list_infra_envs(url: str = "https://api.openshift.com", token: str = None,
                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
                     key: str = None) -> list:
@@ -413,212 +584,16 @@ def list_infra_envs(url: str = "https://api.openshift.com", token: str = None,
 
 
 @mcp.tool()
-def bind_infra_env(infraenv: str, cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                   offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                   key: str = None, force: bool = False):
-    """Bind infraenv to cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.bind_infra_env(infraenv, cluster, force=force)
-
-
-@mcp.tool()
-def start_infraenv(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                   offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                   key: str = None):
-    """Start infraenv"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.start_infraenv(infraenv)
-
-
-@mcp.tool()
-def stop_infraenv(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                  offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                  key: str = None):
-    """Stop infraenv"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.stop_infraenv(infraenv)
-
-
-@mcp.tool()
-def unbind_infra_env(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                     key: str = None):
-    """Unbind infraenv"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.unbind_infra_env(infraenv)
-
-
-@mcp.tool()
-def update_infra_env(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                     key: str = None, overrides: dict = {}):
-    """Update infraenv"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.update_infra_env(infraenv, overrides)
-
-
-@mcp.tool()
-def info_static_network_config(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                               offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                               key: str = None) -> str:
-    """Provide static network config of cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    static_network_config = ai.info_infra_env(infraenv).to_dict()['static_network_config']
-    if static_network_config is not None:
-        static_network_config = eval(static_network_config)
-        for index, entry in enumerate(static_network_config):
-            static_network_config[index]['network_yaml'] = yaml.safe_load(entry['network_yaml'])
-        return (yaml.safe_dump(static_network_config))
-
-
-@mcp.tool()
-def info_iso(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-             offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-             key: str = None, overrides: dict = {}, minimal: bool = False) -> str:
-    """Provide discovery iso url of infraenv/cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    iso_url = ai.info_iso(infraenv, overrides, minimal=minimal)
-    return iso_url
-
-
-@mcp.tool()
-def download_iso(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                 offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                 key: str = None, path: str = '.'):
-    """Download discovery iso of infraenv/cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.download_iso(infraenv, path)
-
-
-@mcp.tool()
-def download_kubeadminpassword(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                               offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                               key: str = None, stdout: bool = True, path: str = '.') -> str:
-    """Download kubeadminpassword of cluster"""
-    if not stdout:
-        path = f"{path}/kubeadmin-password.{cluster}"
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.download_kubeadminpassword(cluster, path, stdout=stdout)
-
-
-@mcp.tool()
-def download_kubeconfig(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                        offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                        key: str = None, stdout: bool = True, path: str = '.') -> str:
-    """Download kubeconfig of cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.download_kubeconfig(cluster, path, stdout=stdout)
-
-
-@mcp.tool()
-def download_initrd(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                    offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                    key: str = None, path: str = '.'):
-    """Download initrd of infraenv/cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.download_initrd(infraenv, path)
-
-
-@mcp.tool()
-def download_installconfig(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+def list_infraenv_keywords(url: str = "https://api.openshift.com", token: str = None,
                            offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                           key: str = None, stdout: bool = True, path: str = '.') -> str:
-    """Download installconfig cluster"""
+                           key: str = None) -> list:
+    """List infraenv keywords"""
     ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.download_installconfig(cluster, path, stdout=stdout)
-
-
-@mcp.tool()
-def download_ignition(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                      offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                      key: str = None, role: str = 'worker', path: str = '.'):
-    """Download ignition of cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.download_ignition(cluster, path, role=role)
-
-
-@mcp.tool()
-def download_discovery_ignition(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                                key: str = None, path: str = '.'):
-    """Download discovery ignition of infraenv"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.download_discovery_ignition(infraenv, path)
-
-
-@mcp.tool()
-def download_ipxe_script(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                         offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                         key: str = None, path: str = '.', serve: bool = False, local: bool = True):
-    """Download ipxe script of infraenv"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    local = True if serve else local
-    ai.download_ipxe_script(infraenv, path, local=local, serve=serve)
-
-
-@mcp.tool()
-def download_manifests(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                       offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                       key: str = None, path: str = '.'):
-    """Download manifests of cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.download_manifests(cluster, path)
-
-
-@mcp.tool()
-def download_static_networking_config(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-                                      offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                                      key: str = None, path: str = '.'):
-    """Download static network config of infraenv/cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.download_static_networking_config(infraenv, path)
-
-
-@mcp.tool()
-def bind_host(hostname: str, cluster: str, url: str = "https://api.openshift.com", token: str = None,
-              offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-              key: str = None):
-    """Bind host to cluster"""
-    overrides = {'cluster': cluster}
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.update_host(hostname, overrides)
-
-
-@mcp.tool()
-def unbind_host(hostname: str, url: str = "https://api.openshift.com", token: str = None,
-                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                key: str = None):
-    """Unbind host to cluster"""
-    overrides = {'cluster': None}
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.update_host(hostname, overrides)
-
-
-@mcp.tool()
-def update_host(hostnames: list = [], url: str = "https://api.openshift.com", token: str = None,
-                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                key: str = None, overrides: dict = {}):
-    """Update hosts"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.update_hosts(hostnames, overrides)
-
-
-@mcp.tool()
-def wait_hosts(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
-               offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-               key: str = None, filter_installed: bool = True, number: int = 3):
-    """Wait for hosts"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.wait_hosts(infraenv, number, filter_installed=filter_installed)
-
-
-@mcp.tool()
-def wait_cluster(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                 offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                 key: str = None, status: str = 'installed'):
-    """Wait for cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.wait_cluster(cluster, status)
+    keywords = ai.get_infraenv_keywords()
+    keywordstable = ["Keyword"]
+    for keyword in sorted(keywords):
+        keywordstable.append([keyword])
+    return keywordstable
 
 
 @mcp.tool()
@@ -635,6 +610,117 @@ def list_manifests(cluster: str, url: str = "https://api.openshift.com", token: 
         entry = [filename, folder]
         manifeststable.append(entry)
     return manifeststable
+
+
+@mcp.tool()
+def scale_deployment(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                     key: str = None, debugredfish: bool = False, overrides: dict = {}):
+    """"Scale deployment of cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.scale_deployment(cluster, overrides, debug=debugredfish)
+
+
+@mcp.tool()
+def start_cluster(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                  offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                  key: str = None):
+    """Start cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.start_cluster(cluster)
+
+
+@mcp.tool()
+def start_hosts(hostnames: list, url: str = "https://api.openshift.com", token: str = None,
+                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                key: str = None):
+    """Start hosts"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.start_hosts(hostnames=hostnames)
+
+
+@mcp.tool()
+def start_infraenv(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                   offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                   key: str = None):
+    """Start infraenv"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.start_infraenv(infraenv)
+
+
+@mcp.tool()
+def stop_cluster(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                 offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                 key: str = None):
+    """Stop cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.stop_cluster(cluster)
+
+
+@mcp.tool()
+def stop_hosts(hostnames: list, url: str = "https://api.openshift.com", token: str = None,
+               offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+               key: str = None):
+    """Stop hosts"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.stop_hosts(hostnames=hostnames)
+
+
+@mcp.tool()
+def stop_infraenv(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                  offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                  key: str = None):
+    """Stop infraenv"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.stop_infraenv(infraenv)
+
+
+@mcp.tool()
+def unbind_host(hostname: str, url: str = "https://api.openshift.com", token: str = None,
+                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                key: str = None):
+    """Unbind host to cluster"""
+    overrides = {'cluster': None}
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.update_host(hostname, overrides)
+
+
+@mcp.tool()
+def unbind_infra_env(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                     key: str = None):
+    """Unbind infraenv"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.unbind_infra_env(infraenv)
+
+
+@mcp.tool()
+def update_cluster(cluster: str, url: str = "https://api.openshift.com", token: str = None,
+                   offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                   key: str = None, overrides: dict = {}):
+    """Update cluster"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.update_cluster(cluster, overrides)
+    if overrides.get('infraenv', True):
+        ai.update_infra_env(cluster, overrides)
+
+
+@mcp.tool()
+def update_host(hostnames: list = [], url: str = "https://api.openshift.com", token: str = None,
+                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                key: str = None, overrides: dict = {}):
+    """Update hosts"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.update_hosts(hostnames, overrides)
+
+
+@mcp.tool()
+def update_infra_env(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+                     offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+                     key: str = None, overrides: dict = {}):
+    """Update infraenv"""
+    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
+    ai.update_infra_env(infraenv, overrides)
 
 
 @mcp.tool()
@@ -656,107 +742,21 @@ def update_iso(infraenv: str, url: str = "https://api.openshift.com", token: str
 
 
 @mcp.tool()
-def info_service(url: str = "https://api.openshift.com", token: str = None,
+def wait_cluster(cluster: str, url: str = "https://api.openshift.com", token: str = None,
                  offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                 key: str = None):
-    """Provide information on service"""
+                 key: str = None, status: str = 'installed'):
+    """Wait for cluster"""
     ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.info_service()
+    ai.wait_cluster(cluster, status)
 
 
 @mcp.tool()
-def list_events(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                key: str = None, follow: bool = False) -> list:
-    """List events of cluster"""
+def wait_hosts(infraenv: str, url: str = "https://api.openshift.com", token: str = None,
+               offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
+               key: str = None, filter_installed: bool = True, number: int = 3):
+    """Wait for hosts"""
     ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    events = ai.list_events(cluster)
-    eventstable = ["Date", "Message"]
-    for event in events:
-        date = event['event_time']
-        message = event['message']
-        entry = [date, message]
-        eventstable.append(entry)
-    return eventstable
-
-
-def list_all_keywords(url: str = "https://api.openshift.com", token: str = None,
-                      offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                      key: str = None) -> list:
-    """List all keywords"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    cluster_keywords = ai.get_cluster_keywords()
-    infra_keywords = ai.get_infraenv_keywords()
-    host_keywords = ai.get_host_keywords()
-    extra_keywords = ai.get_extra_keywords()
-    keywordstable = ["Keyword"]
-    for keyword in sorted(cluster_keywords + infra_keywords + host_keywords + extra_keywords):
-        keywordstable.append([keyword])
-    return keywordstable
-
-
-@mcp.tool()
-def list_infraenv_keywords(url: str = "https://api.openshift.com", token: str = None,
-                           offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                           key: str = None) -> list:
-    """List infraenv keywords"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    keywords = ai.get_infraenv_keywords()
-    keywordstable = ["Keyword"]
-    for keyword in sorted(keywords):
-        keywordstable.append([keyword])
-    return keywordstable
-
-
-@mcp.tool()
-def list_cluster_keywords(url: str = "https://api.openshift.com", token: str = None,
-                          offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                          key: str = None) -> list:
-    """List cluster keywords"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    keywords = ai.get_cluster_keywords()
-    keywordstable = ["Keyword"]
-    for keyword in sorted(keywords):
-        keywordstable.append([keyword])
-    return keywordstable
-
-
-@mcp.tool()
-def list_host_keywords(url: str = "https://api.openshift.com", token: str = None,
-                       offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                       key: str = None) -> list:
-    """List host keywords"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    keywords = ai.get_host_keywords()
-    keywordstable = ["Keyword"]
-    for keyword in sorted(keywords):
-        keywordstable.append([keyword])
-    return keywordstable
-
-
-@mcp.tool()
-def list_extra_keywords(url: str = "https://api.openshift.com", token: str = None,
-                        offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                        key: str = None) -> list:
-    """"List extra keywords"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    keywords = ai.get_extra_keywords()
-    keywordstable = ["Keyword"]
-    for keyword in sorted(keywords):
-        keywordstable.append([keyword])
-    return keywordstable
-
-
-@mcp.tool()
-def create_onprem(debug: bool = False, overrides: dict = {}):
-    "Create onprem deployment"
-    ai_create_onprem(overrides, debug=debug)
-
-
-@mcp.tool()
-def delete_onprem(debug: bool = False, overrides: dict = {}):
-    """Delete onprem deployment"""
-    ai_delete_onprem(overrides, debug=debug)
+    ai.wait_hosts(infraenv, number, filter_installed=filter_installed)
 
 
 def main():
