@@ -1,6 +1,7 @@
 from assisted_service_client import ApiClient, Configuration, api, models
 from ailib.common import warning, error, info, get_token, match_mac
 from ailib.kfish import Redfish
+from ast import literal_eval
 import base64
 from datetime import datetime
 import http.server
@@ -33,17 +34,20 @@ def normalize_proxy(proxy):
 
 def boot_hosts(overrides, hostnames=[], debug=False):
     if 'hosts' not in overrides:
-        warning("No hosts to boot found in your parameter file")
-        return 1
+        msg = "No hosts to boot found in your parameter file"
+        warning(msg)
+    return {'result': 'failure', 'reason': msg}
     iso_url = overrides['iso_url']
     if iso_url is None:
-        warning("Missing iso_url in your parameters")
-        return 1
+        msg = "Missing iso_url in your parameters"
+        warning(msg)
+        return {'result': 'failure', 'reason': msg}
     elif not iso_url.endswith('.iso') and 'image_token=' not in iso_url:
         cluster = overrides.get('cluster')
         if cluster is None:
-            warning("Missing cluster name in your parameters to append it to iso_url")
-            return 1
+            msg = "Missing cluster name in your parameters to append it to iso_url"
+            warning(msg)
+            return {'result': 'failure', 'reason': msg}
         iso_url += f"/{cluster}.iso"
     hosts = overrides['hosts']
     for index, host in enumerate(hosts):
@@ -65,16 +69,17 @@ def boot_hosts(overrides, hostnames=[], debug=False):
             try:
                 red.set_iso(iso_url)
             except Exception as e:
-                warning(f"Hit {e} when plugging iso to host {msg}")
+                msg = f"Hit {e} when plugging iso to host {msg}"
+                warning(msg)
                 if debug:
                     traceback.print_exception(e)
-                return 1
+                return {'result': 'failure', 'reason': msg}
         else:
             warning(f"Skipping entry {index} because either bmc_url, bmc_user or bmc_password is not set")
         if 'sno' in overrides and overrides['sno']:
             info("Not booting more hosts since you asked for an SNO")
             break
-    return 0
+    return {'result': 'success'}
 
 
 class AssistedClient(object):
@@ -308,6 +313,10 @@ class AssistedClient(object):
     def set_default_infraenv_values(self, overrides):
         if 'cluster' in overrides:
             cluster_id = self.get_cluster_id(overrides['cluster'])
+            if cluster_id is None:
+                msg = f"{overrides['cluster']} Not found"
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
             overrides['cluster_id'] = cluster_id
         if 'minimal' in overrides:
             image_type = "minimal-iso" if overrides['minimal'] else 'full-iso'
@@ -348,8 +357,9 @@ class AssistedClient(object):
                 mac_interface_map_nics = [interface['logical_nic_name'] for interface in mac_interface_map]
                 for nic in nics:
                     if nic not in bonds and nic not in mac_interface_map_nics:
-                        error(f"Nic {nic} is missing from mac_interface_map")
-                        sys.exit(1)
+                        msg = f"Nic {nic} is missing from mac_interface_map"
+                        error(msg)
+                        return {'result': 'failure', 'reason': msg}
                 if 'mac_interface_map' in entry:
                     del entry['mac_interface_map']
                 new_entry = {'network_yaml': yaml.dump(entry), 'mac_interface_map': mac_interface_map}
@@ -364,8 +374,9 @@ class AssistedClient(object):
                 if os.path.exists(pub_key):
                     overrides['ssh_authorized_key'] = open(pub_key).read().strip()
                 else:
-                    error(f"Missing public key file {pub_key}")
-                    sys.exit(1)
+                    msg = f"Missing public key file {pub_key}"
+                    error(msg)
+                    return {'result': 'failure', 'reason': msg}
         if 'ignition_config_override' not in overrides:
             iso_overrides = overrides.copy()
             iso_overrides['ignition_version'] = '3.1.0'
@@ -403,6 +414,7 @@ class AssistedClient(object):
                 else:
                     new_entry = {'operation': 'append', 'value': entry}
                 overrides['kernel_arguments'].append(models.KernelArgument(**new_entry))
+        return {'result': 'success'}
 
     def set_disconnected_ignition_config_override(self, infra_env_id=None, overrides={}):
         ignition_config_override = None
@@ -550,7 +562,6 @@ class AssistedClient(object):
             return matching_ids[0]
         else:
             error(f"Cluster {name} not found")
-            sys.exit(1)
 
     def get_cluster_name(self, _id):
         matching_names = [x['name'] for x in self.list_clusters() if x['id'] == _id]
@@ -565,19 +576,31 @@ class AssistedClient(object):
         if existing_ids:
             if force:
                 info(f"Cluster {name} there. Deleting")
-                self.delete_cluster(name)
+                try:
+                    self.delete_cluster(name)
+                except Exception as e:
+                    msg = literal_eval(e.body)['reason']
+                    error(msg)
+                    return {'result': 'failure', 'reason': msg}
                 for infra_env in self.list_infra_envs():
                     infra_env_name = infra_env.get('name')
                     if infra_env_name is not None and infra_env_name == f"{name}_infra-env":
-                        self.delete_infra_env(infra_env['id'])
-                        break
+                        try:
+                            self.delete_infra_env(infra_env['id'])
+                            break
+                        except Exception as e:
+                            msg = literal_eval(e.body)['reason']
+                            error(msg)
+                            return {'result': 'failure', 'reason': msg}
             else:
-                error(f"Cluster {name} already there. Leaving")
-                sys.exit(1)
+                msg = f"Cluster {name} already there. Leaving"
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
         if name.endswith('-day2'):
-            self.create_day2_cluster(name, overrides)
-            return
-        self.set_default_values(overrides)
+            return self.create_day2_cluster(name, overrides)
+        result = self.set_default_values(overrides)
+        if result['result'] != 'success':
+            return result
         new_cluster_params = default_cluster_params
         new_cluster_params['name'] = name
         update_parameters = ['cluster_networks', 'service_networks', 'machine_networks']
@@ -595,33 +618,81 @@ class AssistedClient(object):
                 extra_overrides[parameter] = overrides[parameter]
         if self.debug:
             print(new_cluster_params)
-        cluster_params = models.ClusterCreateParams(**new_cluster_params)
-        result = self.client.v2_register_cluster(new_cluster_params=cluster_params)
-        if extra_overrides:
-            self.update_cluster(name, extra_overrides)
+        try:
+            cluster_params = models.ClusterCreateParams(**new_cluster_params)
+            result = self.client.v2_register_cluster(new_cluster_params=cluster_params)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         info(f"Using version {result.openshift_version}")
+        if extra_overrides:
+            return self.update_cluster(name, extra_overrides)
+        return {'result': 'success'}
 
     def delete_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         info_cluster = self.info_cluster(cluster_id)
         if info_cluster.to_dict()['status'] == 'installing':
-            self.client.v2_reset_cluster(cluster_id=cluster_id)
-        self.client.v2_deregister_cluster(cluster_id=cluster_id)
+            try:
+                self.client.v2_reset_cluster(cluster_id=cluster_id)
+            except Exception as e:
+                msg = literal_eval(e.body)['reason']
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
+        try:
+            self.client.v2_deregister_cluster(cluster_id=cluster_id)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         day2_matching_ids = [x['id'] for x in self.list_clusters() if x['name'] == f'{name}-day2']
         if day2_matching_ids:
-            self.client.v2_deregister_cluster(cluster_id=day2_matching_ids[0])
+            try:
+                self.client.v2_deregister_cluster(cluster_id=day2_matching_ids[0])
+            except Exception as e:
+                msg = literal_eval(e.body)['reason']
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def info_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
-        return self.client.v2_get_cluster(cluster_id=cluster_id)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        try:
+            return self.client.v2_get_cluster(cluster_id=cluster_id)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
 
     def preflight_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
-        return self.client.v2_get_preflight_requirements(cluster_id=cluster_id)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        try:
+            return self.client.v2_get_preflight_requirements(cluster_id=cluster_id)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
 
     def export_cluster(self, name):
         allowed_parameters = self._allowed_parameters(models.ClusterCreateParams)
         cluster_id = self.get_cluster_id(name)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         alldata = self.client.v2_get_cluster(cluster_id=cluster_id).to_dict()
         data = {}
         for k in allowed_parameters:
@@ -629,7 +700,7 @@ class AssistedClient(object):
                 data[k] = alldata[k]
             if k == 'disk_encryption' and alldata[k]['enable_on'] is None:
                 del data[k]
-        print(yaml.dump(data, default_flow_style=False, indent=2))
+        return yaml.dump(data, default_flow_style=False, indent=2)
 
     def create_day2_cluster(self, name, overrides={}):
         api_vip_dnsname = overrides.get('api_vip_dnsname')
@@ -665,6 +736,10 @@ class AssistedClient(object):
             pull_secret, ssh_public_key = overrides['pull_secret'], overrides['ssh_public_key']
         else:
             cluster_id = self.get_cluster_id(cluster_name)
+            if cluster_id is None:
+                msg = f"{cluster_name} Not found"
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
             cluster = self.client.v2_get_cluster(cluster_id=cluster_id)
             openshift_version = cluster.openshift_version
             ssh_public_key = cluster.image_info.ssh_public_key
@@ -684,7 +759,13 @@ class AssistedClient(object):
         cluster_update_params = {'pull_secret': pull_secret, 'ssh_public_key': ssh_public_key}
         cluster_update_params = models.V2ClusterUpdateParams(**cluster_update_params)
         new_cluster_id = self.get_cluster_id(name)
-        self.client.v2_update_cluster(cluster_id=new_cluster_id, cluster_update_params=cluster_update_params)
+        try:
+            self.client.v2_update_cluster(cluster_id=new_cluster_id, cluster_update_params=cluster_update_params)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def _expired_iso(self, iso_url):
         search = re.search(r".*&image_token=(.*)&type=.*", iso_url)
@@ -715,66 +796,121 @@ class AssistedClient(object):
         if self.saas and self._expired_iso(iso_url):
             warning("Generating new iso url")
             iso_url = self.client.get_infra_env_download_url(infra_env['id']).url
-        urlretrieve(iso_url, f"{path}/{name}.iso")
-
-    def download_initrd(self, name, path):
-        print("not implemented")
-        return
-        infra_env_id = self.get_infra_env_id(name)
-        response = self.client.download_minimal_initrd(infra_env_id=infra_env_id, _preload_content=False)
-        with open(f"{path}/initrd.{name}", "wb") as f:
-            for line in response:
-                f.write(line)
+        try:
+            urlretrieve(iso_url, f"{path}/{name}.iso")
+        except Exception as e:
+            error(e)
+            return {'result': 'failure', 'reason': e}
+        return {'result': 'success'}
 
     def download_installconfig(self, name, path, stdout=False):
         cluster_id = self.get_cluster_id(name)
-        response = self.client.v2_get_cluster_install_config(cluster_id=cluster_id)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        try:
+            response = self.client.v2_get_cluster_install_config(cluster_id=cluster_id)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         if stdout:
-            print(response)
+            return response
         else:
             installconfig_path = f"{path}/install-config.yaml.{name}"
             with open(installconfig_path, "w") as f:
                 f.write(response)
+        return {'result': 'success'}
 
     def download_kubeadminpassword(self, name, path, stdout=False):
         cluster_id = self.get_cluster_id(name)
-        response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id, file_name="kubeadmin-password",
-                                                               _preload_content=False)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        try:
+            response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id,
+                                                                   file_name="kubeadmin-password",
+                                                                   _preload_content=False)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         if stdout:
-            print(response.data.decode())
+            return response.data.decode()
         else:
             kubeadminpassword_path = f"{path}/kubeadmin-password.{name}"
             with open(kubeadminpassword_path, "wb") as f:
                 copyfileobj(response, f)
+        return {'result': 'success'}
 
     def download_kubeconfig(self, name, path, stdout=False):
         cluster_id = self.get_cluster_id(name)
-        response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id, file_name="kubeconfig-noingress",
-                                                               _preload_content=False)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        try:
+            response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id,
+                                                                   file_name="kubeconfig-noingress",
+                                                                   _preload_content=False)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         if stdout:
-            print(response.data.decode())
+            return response.data.decode()
         else:
             kubeconfig_path = f"{path}/kubeconfig.{name}"
             with open(kubeconfig_path, "wb") as f:
                 copyfileobj(response, f)
+        return {'result': 'success'}
 
     def download_discovery_ignition(self, name, path):
         infra_env_id = self.get_infra_env_id(name)
-        response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="discovery.ign",
-                                                           _preload_content=False)
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        try:
+            response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id,
+                                                               file_name="discovery.ign",
+                                                               _preload_content=False)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         with open(f"{path}/discovery.ign.{name}", "wb") as f:
             copyfileobj(response, f)
+        return {'result': 'success'}
 
     def download_ignition(self, name, path, role='bootstrap'):
         cluster_id = self.get_cluster_id(name)
-        response = self.client.v2_download_cluster_files(cluster_id=cluster_id, file_name=f"{role}.ign",
-                                                         _preload_content=False)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        try:
+            response = self.client.v2_download_cluster_files(cluster_id=cluster_id,
+                                                             file_name=f"{role}.ign",
+                                                             _preload_content=False)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         with open(f"{path}/{role}.ign.{name}", "wb") as f:
             copyfileobj(response, f)
+        return {'result': 'success'}
 
     def download_ipxe_script(self, name, path, local=False, serve=False):
         infra_env_id = self.get_infra_env_id(name)
-        response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="ipxe-script",
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id,
+                                                           file_name="ipxe-script",
                                                            _preload_content=False)
         with open(f"{path}/ipxe-script.{name}", "wb") as f:
             copyfileobj(response, f)
@@ -816,23 +952,45 @@ class AssistedClient(object):
                 handler = http.server.SimpleHTTPRequestHandler
                 with socketserver.TCPServer(("", PORT), handler) as httpd:
                     httpd.serve_forever()
+        return {'result': 'success'}
 
     def download_static_networking_config(self, name, path):
         infra_env_id = self.get_infra_env_id(name)
-        response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id, file_name="static-network-config",
-                                                           _preload_content=False)
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        try:
+            response = self.client.v2_download_infra_env_files(infra_env_id=infra_env_id,
+                                                               file_name="static-network-config",
+                                                               _preload_content=False)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         with open(f"{path}/static-network-config.{name}.tar", "wb") as f:
             copyfileobj(response, f)
+        return {'result': 'success'}
 
     def list_clusters(self):
-        return self.client.v2_list_clusters()
+        clusters = []
+        try:
+            clusters = self.client.v2_list_clusters()
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+        return clusters
 
     def list_hosts(self):
         allhosts = []
         for infra_env in self.client.list_infra_envs():
             infra_env_id = infra_env['id']
-            hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
-            allhosts.extend(hosts)
+            try:
+                hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+                allhosts.extend(hosts)
+            except Exception as e:
+                msg = literal_eval(e.body)['reason']
+                error(msg)
         return allhosts
 
     def delete_host(self, hostname, overrides={}):
@@ -840,30 +998,57 @@ class AssistedClient(object):
         if 'infraenv' in overrides:
             infraenv = overrides['infraenv']
             infra_env_id = self.get_infra_env_id(infraenv)
-            hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+            if infra_env_id is None:
+                msg = f"{infraenv} Not found"
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
+            try:
+                hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+            except Exception as e:
+                msg = literal_eval(e.body)['reason']
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
             matchingids = [host['id'] for host in hosts
                            if host['requested_hostname'] == hostname or host['id'] == hostname]
         else:
             for infra_env in self.client.list_infra_envs():
                 infra_env_id = infra_env['id']
-                hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+                try:
+                    hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+                except Exception as e:
+                    msg = literal_eval(e.body)['reason']
+                    error(msg)
+                    return {'result': 'failure', 'reason': msg}
                 matchingids = [host['id'] for host in hosts
                                if host['requested_hostname'] == hostname or host['id'] == hostname]
                 if matchingids:
                     infra_envs[infra_env_id] = matchingids
         if not infra_envs:
-            error(f"No Matching Host with name {hostname} found")
+            msg = f"No Matching Host with name {hostname} found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         for infra_env_id in infra_envs:
             host_ids = infra_envs[infra_env_id]
             for host_id in host_ids:
                 info(f"Deleting Host with id {host_id} in infraenv {infra_env_id}")
-                self.client.v2_deregister_host(infra_env_id, host_id)
+                try:
+                    self.client.v2_deregister_host(infra_env_id, host_id)
+                except Exception as e:
+                    msg = literal_eval(e.body)['reason']
+                    error(msg)
+                    return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def info_host(self, hostname):
         hostinfo = None
         for infra_env in self.client.list_infra_envs():
             infra_env_id = infra_env['id']
-            infra_env_hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+            try:
+                infra_env_hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+            except Exception as e:
+                msg = literal_eval(e.body)['reason']
+                error(msg)
+                infra_env_hosts = []
             hosts = [h for h in infra_env_hosts if h['requested_hostname'] == hostname or h['id'] == hostname]
             if hosts:
                 hostinfo = hosts[0]
@@ -878,8 +1063,9 @@ class AssistedClient(object):
                 hostnames = [h.get('mac') or h.get('id') or h.get('name') for h in host_param_overrides if
                              'mac' in h or 'id' in h or 'name' in h]
         if not hostnames:
-            warning("No hosts provided to update")
-            return
+            msg = "No hosts provided to update"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         for index, hostname in enumerate(hostnames):
             info(f"Updating Host {hostname}")
             host_overrides = overrides.copy()
@@ -889,14 +1075,26 @@ class AssistedClient(object):
                    entry.get('name', '') == hostname:
                     host_overrides.update(entry)
                     break
-            self.update_host(hostname, host_overrides)
+            result = self.update_host(hostname, host_overrides)
+            if 'result' in result and result['result'] != 'success':
+                return result
+        return {'result': 'success'}
 
     def update_host(self, hostname, overrides):
         infra_envs = {}
         if 'infraenv' in overrides:
             infra_env = overrides['infraenv']
             infra_env_id = self.get_infra_env_id(infra_env)
-            hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+            if infra_env_id is None:
+                msg = f"{infra_env} Not found"
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
+            try:
+                hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+            except Exception as e:
+                msg = literal_eval(e.body)['reason']
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
             matchingids = [host['id'] for host in hosts
                            if host['requested_hostname'].startswith(hostname) or host['id'].startswith(hostname) or
                            match_mac(host, hostname)]
@@ -905,14 +1103,21 @@ class AssistedClient(object):
         else:
             for infra_env in self.client.list_infra_envs():
                 infra_env_id = infra_env['id']
-                hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+                try:
+                    hosts = self.client.v2_list_hosts(infra_env_id=infra_env_id)
+                except Exception as e:
+                    msg = literal_eval(e.body)['reason']
+                    error(msg)
+                    return {'result': 'failure', 'reason': msg}
                 matchingids = [host['id'] for host in hosts
                                if host['requested_hostname'].startswith(hostname) or host['id'].startswith(hostname) or
                                match_mac(host, hostname)]
                 if matchingids:
                     infra_envs[infra_env_id] = matchingids
         if not infra_envs:
-            error(f"No Matching Host with name {hostname} found")
+            msg = f"No Matching Host with name {hostname} found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         for infra_env_id in infra_envs:
             host_ids = infra_envs[infra_env_id]
             for index, host_id in enumerate(host_ids):
@@ -927,9 +1132,18 @@ class AssistedClient(object):
                         self.client.unbind_host(infra_env_id=infra_env_id, host_id=host_id)
                     else:
                         cluster_id = self.get_cluster_id(cluster)
+                        if cluster_id is None:
+                            msg = f"{cluster} Not found"
+                            error(msg)
+                            return {'result': 'failure', 'reason': msg}
                         bind_host_params = {'cluster_id': cluster_id}
                         bind_host_params = models.BindHostParams(**bind_host_params)
-                        self.client.bind_host(infra_env_id, host_id, bind_host_params)
+                        try:
+                            self.client.bind_host(infra_env_id, host_id, bind_host_params)
+                        except Exception as e:
+                            msg = literal_eval(e.body)['reason']
+                            error(msg)
+                            return {'result': 'failure', 'reason': msg}
                     bind_updated = True
                 if 'role' in overrides:
                     role = overrides['role']
@@ -942,7 +1156,9 @@ class AssistedClient(object):
                 if 'ignition_file' in overrides:
                     ignition_path = overrides['ignition_file']
                     if not os.path.exists(ignition_path):
-                        warning(f"Ignition File {ignition_path} not found. Ignoring")
+                        msg = f"Ignition File {ignition_path} not found. Ignoring"
+                        error(msg)
+                        return {'result': 'failure', 'reason': msg}
                     else:
                         ignition_data = open(ignition_path).read()
                         host_ignition_params = models.HostIgnitionParams(config=ignition_data)
@@ -959,7 +1175,9 @@ class AssistedClient(object):
                     currenthost = self.client.v2_get_host(infra_env_id=infra_env_id, host_id=host_id)
                     currentstatus = currenthost.status
                     if currentstatus not in valid_status:
-                        error(f"Mcp can't be set for host {hostname} because of incorrect status {currentstatus}")
+                        msg = f"Mcp can't be set for host {hostname} because of incorrect status {currentstatus}"
+                        error(msg)
+                        return {'result': 'failure', 'reason': msg}
                     else:
                         mcp = overrides['mcp']
                         host_update_params['machine_config_pool_name'] = mcp
@@ -1000,12 +1218,19 @@ class AssistedClient(object):
                     self.client.v2_update_host(infra_env_id=infra_env_id, host_id=host_id,
                                                host_update_params=host_update_params)
                 elif not bind_updated and not extra_args_updated and not ignition_updated:
-                    warning("Nothing updated for this host")
+                    msg = "Nothing updated for this host"
+                    error(msg)
+                    return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def wait_hosts(self, name, number=3):
         client = self.client
         self.refresh_token(self.token, self.offlinetoken)
         infra_env_id = self.get_infra_env_id(name)
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         infra_env = client.get_infra_env(infra_env_id=infra_env_id)
         cluster_id = infra_env.cluster_id
         if cluster_id is not None and client.v2_get_cluster(cluster_id=cluster_id).high_availability_mode == 'None':
@@ -1029,6 +1254,10 @@ class AssistedClient(object):
             infra_env_id = [h['infra_env_id'] for h in self.list_hosts() if h['requested_hostname'] in hosts][0]
         else:
             infra_env_id = self.get_infra_env_id(infraenv)
+            if infra_env_id is None:
+                msg = f"{infraenv} Not found"
+                error(msg)
+            return {'result': 'failure', 'reason': msg}
         info("Waiting for all hosts to be added to cluster", quiet=self.quiet)
         while True:
             try:
@@ -1046,6 +1275,10 @@ class AssistedClient(object):
 
     def wait_cluster(self, name, status='installed'):
         cluster_id = self.get_cluster_id(name)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         info(f"Waiting for cluster {name} to reach state {status}", quiet=self.quiet)
         while True:
             try:
@@ -1065,6 +1298,10 @@ class AssistedClient(object):
 
     def update_cluster(self, name, overrides):
         cluster_id = self.get_cluster_id(name)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         info_cluster = self.info_cluster(name)
         api_vip = overrides.get('api_vip') or overrides.get('api_ip')
         if 'api_vip' in overrides:
@@ -1091,8 +1328,9 @@ class AssistedClient(object):
         api_vips = overrides.get('api_vips', [])
         ingress_vips = overrides.get('ingress_vips', [])
         if (api_vips and not ingress_vips) or (ingress_vips and not api_vips):
-            error("It's mandatory to define both api and ingress ips")
-            sys.exit(1)
+            msg = "It's mandatory to define both api and ingress ips"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         if 'pull_secret' in overrides:
             pull_secret = os.path.expanduser(overrides['pull_secret'])
             if os.path.exists(pull_secret):
@@ -1137,8 +1375,9 @@ class AssistedClient(object):
                 httpsProxy = proxy.get('https_proxy') or proxy.get('httpsProxy')
                 noproxy = proxy.get('no_proxy') or proxy.get('noProxy')
             else:
-                error(f"Invalid entry for proxy: {proxy}")
-                sys.exit(1)
+                msg = f"Invalid entry for proxy: {proxy}"
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
             if not httpProxy.startswith('http'):
                 httpProxy = f'http://{httpProxy}'
             if not httpsProxy.startswith('http'):
@@ -1154,7 +1393,12 @@ class AssistedClient(object):
             del overrides['installconfig']
         install_config_overrides = json.loads(info_cluster.install_config_overrides or '{}')
         if installconfig and install_config_overrides != installconfig:
-            self.client.v2_update_cluster_install_config(cluster_id, json.dumps(installconfig))
+            try:
+                self.client.v2_update_cluster_install_config(cluster_id, json.dumps(installconfig))
+            except Exception as e:
+                msg = literal_eval(e.body)['reason']
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
         if 'olm_operators' in overrides:
             overrides['olm_operators'] = self.set_olm_operators(overrides['olm_operators'])
         if 'machine_networks' in overrides:
@@ -1167,8 +1411,9 @@ class AssistedClient(object):
             platform = overrides['platform']
             valid_platforms = ['baremetal', 'nutanix', 'vsphere', 'none', 'oci']
             if platform not in valid_platforms:
-                error(f"Invalid platform. Should belong in {valid_platforms}")
-                sys.exit(1)
+                msg = f"Invalid platform. Should belong in {valid_platforms}"
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
             platform = {"type": platform}
             overrides['platform'] = platform
         if overrides:
@@ -1179,7 +1424,12 @@ class AssistedClient(object):
                     del cluster_update_params[parameter]
             if cluster_update_params:
                 cluster_update_params = models.V2ClusterUpdateParams(**cluster_update_params)
-                self.client.v2_update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
+                try:
+                    self.client.v2_update_cluster(cluster_id=cluster_id, cluster_update_params=cluster_update_params)
+                except Exception as e:
+                    msg = literal_eval(e.body)['reason']
+                    error(msg)
+                    return {'result': 'failure', 'reason': msg}
         if 'mtu' in overrides:
             mtu = overrides['mtu']
             mtu_manifest = {'apiVersion': 'operator.openshift.io/v1', 'kind': 'Network',
@@ -1198,13 +1448,27 @@ class AssistedClient(object):
         if 'day2' in overrides and isinstance(overrides['day2'], bool) and overrides['day2']\
            and info_cluster.status == "installed":
             info(f"Converting cluster {name} to day2")
-            self.client.transform_cluster_to_day2(cluster_id)
+            try:
+                self.client.transform_cluster_to_day2(cluster_id)
+            except Exception as e:
+                msg = literal_eval(e.body)['reason']
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def start_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         cluster_info = self.client.v2_get_cluster(cluster_id=cluster_id).to_dict()
         if cluster_info['status'] == 'adding-hosts':
             infra_env_id = self.get_infra_env_id(name)
+            if infra_env_id is None:
+                msg = f"{name} Not found"
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
             for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
                 if host['status'] in ['installed', 'added-to-existing-cluster']:
                     info(f"Skipping installed Host {host['requested_hostname']}")
@@ -1214,6 +1478,7 @@ class AssistedClient(object):
                     self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
         else:
             self.client.v2_install_cluster(cluster_id=cluster_id)
+        return {'result': 'success'}
 
     def start_hosts(self, hostnames=[]):
         for infra_env in self.client.list_infra_envs():
@@ -1226,7 +1491,13 @@ class AssistedClient(object):
                 else:
                     info(f"Installing Host {host['requested_hostname']}")
                     host_id = host['id']
-                    self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
+                    try:
+                        self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
+                    except Exception as e:
+                        msg = literal_eval(e.body)['reason']
+                        error(msg)
+                        return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def stop_hosts(self, hostnames=[]):
         for infra_env in self.client.list_infra_envs():
@@ -1240,14 +1511,33 @@ class AssistedClient(object):
                 else:
                     info(f"Resetting Host {host['requested_hostname']}")
                     host_id = host['id']
-                    self.client.v2_reset_host(infra_env_id=infra_env_id, host_id=host_id)
+                    try:
+                        self.client.v2_reset_host(infra_env_id=infra_env_id, host_id=host_id)
+                    except Exception as e:
+                        msg = literal_eval(e.body)['reason']
+                        error(msg)
+                        return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def stop_cluster(self, name):
         cluster_id = self.get_cluster_id(name)
-        self.client.v2_reset_cluster(cluster_id=cluster_id)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        try:
+            self.client.v2_reset_cluster(cluster_id=cluster_id)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
 
     def upload_manifests(self, name, directory, openshift=False):
         cluster_id = self.get_cluster_id(name)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         cleanup = False
         if isinstance(directory, list):
             cleanup = True
@@ -1286,6 +1576,10 @@ class AssistedClient(object):
 
     def delete_manifests(self, name, directory, manifests=[]):
         cluster_id = self.get_cluster_id(name)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         manifests_api = api.ManifestsApi(api_client=self.api)
         all_manifests = [m['file_name'] for m in manifests_api.v2_list_cluster_manifests(cluster_id)]
         if not manifests and directory is None:
@@ -1294,36 +1588,64 @@ class AssistedClient(object):
             for manifest in manifests:
                 if manifest in all_manifests:
                     info(f"Deleting file {manifest}")
-                    manifests_api.v2_delete_cluster_manifest(cluster_id, manifest)
-            sys.exit(0)
+                    try:
+                        manifests_api.v2_delete_cluster_manifest(cluster_id, manifest)
+                    except Exception as e:
+                        msg = literal_eval(e.body)['reason']
+                        error(msg)
+                        return {'result': 'failure', 'reason': msg}
         elif not os.path.exists(directory):
-            error(f"Directory {directory} not found")
-            sys.exit(1)
+            msg = f"Directory {directory} not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         elif not os.path.isdir(directory):
-            error(f"{directory} is not a directory")
-            sys.exit(1)
+            msg = f"{directory} is not a directory"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         _fics = os.listdir(directory)
         if not _fics:
-            error(f"No files found in directory {directory}")
-            sys.exit(0)
+            warning(f"No files found in directory {directory}")
         for _fic in _fics:
             if _fic in all_manifests:
                 info(f"Deleting file {_fic}")
-                manifests_api.v2_delete_cluster_manifest(cluster_id, _fic)
+                try:
+                    manifests_api.v2_delete_cluster_manifest(cluster_id, _fic)
+                except Exception as e:
+                    msg = literal_eval(e.body)['reason']
+                    error(msg)
+                    return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def list_manifests(self, name):
         results = []
         cluster_id = self.get_cluster_id(name)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         manifests_api = api.ManifestsApi(api_client=self.api)
-        manifests = manifests_api.v2_list_cluster_manifests(cluster_id)
-        for manifest in manifests:
-            results.append({'file_name': manifest['file_name'], 'folder': manifest['folder']})
+        try:
+            manifests = manifests_api.v2_list_cluster_manifests(cluster_id)
+            for manifest in manifests:
+                results.append({'file_name': manifest['file_name'], 'folder': manifest['folder']})
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
         return results
 
     def download_manifests(self, name, path='.'):
         cluster_id = self.get_cluster_id(name)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         manifests_api = api.ManifestsApi(api_client=self.api)
-        manifests = manifests_api.v2_list_cluster_manifests(cluster_id)
+        try:
+            manifests = manifests_api.v2_list_cluster_manifests(cluster_id)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            manifests = []
         for manifest in manifests:
             folder = manifest['folder']
             file_name = manifest['file_name']
@@ -1336,6 +1658,10 @@ class AssistedClient(object):
 
     def update_installconfig(self, name, overrides={}):
         cluster_id = self.get_cluster_id(name)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         installconfig = {}
         if 'network_type' in overrides or 'sno_disk' in overrides:
             if 'network_type' in overrides:
@@ -1353,27 +1679,38 @@ class AssistedClient(object):
             if not isinstance(installconfig, dict):
                 error("installconfig is not in correct format")
                 sys.exit(1)
-        self.client.v2_update_cluster_install_config(cluster_id, json.dumps(installconfig))
+        try:
+            self.client.v2_update_cluster_install_config(cluster_id, json.dumps(installconfig))
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def update_iso(self, name, overrides={}):
         iso_overrides = overrides.copy()
         infra_env_id = self.get_infra_env_id(name)
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         if 'ignition_config_override' not in iso_overrides:
             ignition_config_override = self.set_disconnected_ignition_config_override(infra_env_id, iso_overrides)
             if ignition_config_override is not None:
                 iso_overrides['ignition_config_override'] = ignition_config_override
-        self.update_infra_env(name, overrides=iso_overrides)
+        return self.update_infra_env(name, overrides=iso_overrides)
 
     def info_service(self):
-        print(f"url: {self.url}")
+        result = f"url: {self.url}\n"
         versionapi = api.VersionsApi(api_client=self.api)
         component_versions = versionapi.v2_list_component_versions().to_dict()
-        print(f"release: {component_versions['release_tag']}")
+        result += f"release: {component_versions['release_tag']}\n"
         supported_versions = versionapi.v2_list_supported_openshift_versions()
-        print(f"supported openshift versions: {','.join(supported_versions)}")
+        result += f"supported openshift versions: {','.join(supported_versions)}\n"
         operatorsapi = api.OperatorsApi(api_client=self.api)
         supported_operators = operatorsapi.v2_list_supported_operators()
-        print(f"supported operators: {','.join(supported_operators)}")
+        result += f"supported operators: {','.join(supported_operators)}\n"
+        return result
 
     def get_infra_env_id(self, name):
         valid_names = [name, f'{name}_infra-env']
@@ -1382,7 +1719,6 @@ class AssistedClient(object):
             return matching_ids[0]
         else:
             error(f"Infraenv {name} not found")
-            sys.exit(1)
 
     def get_infra_env_name(self, _id):
         matching_names = [x['name'] for x in self.list_infra_envs() if x['id'] == _id]
@@ -1403,16 +1739,31 @@ class AssistedClient(object):
         new_infraenv_params['name'] = name
         cluster = overrides.get('cluster_id') or overrides.get('cluster')
         if cluster is not None:
-            overrides['cluster_id'] = self.get_cluster_id(cluster)
+            cluster_id = self.get_cluster_id(cluster)
+            if cluster_id is None:
+                msg = f"{cluster} Not found"
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
+            overrides['cluster_id'] = cluster_id
         allowed_parameters = self._allowed_parameters(models.InfraEnvCreateParams)
         for parameter in overrides:
             if parameter in allowed_parameters:
                 new_infraenv_params[parameter] = overrides[parameter]
-        infraenv_create_params = models.InfraEnvCreateParams(**new_infraenv_params)
-        self.client.register_infra_env(infraenv_create_params=infraenv_create_params)
+        try:
+            infraenv_create_params = models.InfraEnvCreateParams(**new_infraenv_params)
+            self.client.register_infra_env(infraenv_create_params=infraenv_create_params)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def delete_infra_env(self, name, force=False):
         infra_env_id = self.get_infra_env_id(name)
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         if force:
             warning("Deleting any potential hosts associated to this infraenv")
             for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
@@ -1420,13 +1771,28 @@ class AssistedClient(object):
                 host_name = host['requested_hostname']
                 info(f"Deleting Host {host_name}")
                 self.delete_host(host_id)
-        self.client.deregister_infra_env(infra_env_id=infra_env_id)
+        try:
+            self.client.deregister_infra_env(infra_env_id=infra_env_id)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         day2_matching_ids = [x['id'] for x in self.list_infra_envs() if x['name'] == f'{name}-day2']
         if day2_matching_ids:
-            self.client.deregister_infra_env(infra_env_id=day2_matching_ids[0])
+            try:
+                self.client.deregister_infra_env(infra_env_id=day2_matching_ids[0])
+            except Exception as e:
+                msg = literal_eval(e.body)['reason']
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def info_infra_env(self, name):
         infra_env_id = self.get_infra_env_id(name)
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         return self.client.get_infra_env(infra_env_id=infra_env_id)
 
     def list_infra_envs(self):
@@ -1435,6 +1801,10 @@ class AssistedClient(object):
     def update_infra_env(self, name, overrides={}):
         infra_env_update_params = {}
         infra_env_id = self.get_infra_env_id(name)
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         self.set_default_values(overrides, existing=True)
         self.set_default_infraenv_values(overrides)
         infra_env_update_params = {}
@@ -1447,11 +1817,25 @@ class AssistedClient(object):
                 infra_env_update_params[parameter] = overrides[parameter]
         if infra_env_update_params:
             infra_env_update_params = models.InfraEnvUpdateParams(**infra_env_update_params)
-            self.client.update_infra_env(infra_env_id=infra_env_id, infra_env_update_params=infra_env_update_params)
+            try:
+                self.client.update_infra_env(infra_env_id=infra_env_id, infra_env_update_params=infra_env_update_params)
+            except Exception as e:
+                msg = literal_eval(e.body)['reason']
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def bind_infra_env(self, name, cluster, force=False):
         infra_env_id = self.get_infra_env_id(name)
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         cluster_id = self.get_cluster_id(cluster)
+        if cluster_id is None:
+            msg = f"{cluster} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
             host_id = host['id']
             host_name = host['requested_hostname']
@@ -1478,10 +1862,20 @@ class AssistedClient(object):
             info(f"Binding Host {host_name} to Cluster {cluster}")
             bind_host_params = {'cluster_id': cluster_id}
             bind_host_params = models.BindHostParams(**bind_host_params)
-            self.client.bind_host(infra_env_id, host_id, bind_host_params)
+            try:
+                self.client.bind_host(infra_env_id, host_id, bind_host_params)
+            except Exception as e:
+                msg = literal_eval(e.body)['reason']
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def start_infraenv(self, name):
         infra_env_id = self.get_infra_env_id(name)
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
             if host['status'] in ['installed', 'added-to-existing-cluster']:
                 info(f"Skipping installed host {host['requested_hostname']}")
@@ -1490,19 +1884,39 @@ class AssistedClient(object):
             else:
                 info(f"Installing Host {host['requested_hostname']}")
                 host_id = host['id']
-                self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
+                try:
+                    self.client.v2_install_host(infra_env_id=infra_env_id, host_id=host_id)
+                except Exception as e:
+                    msg = literal_eval(e.body)['reason']
+                    error(msg)
+                    return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def stop_infraenv(self, name):
         infra_env_id = self.get_infra_env_id(name)
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
             if host['status'] == 'installed':
                 info(f"Skipping Host {host['requested_hostname']}")
             else:
                 host_id = host['id']
-                self.client.v2_reset_host(infra_env_id=infra_env_id, host_id=host_id)
+                try:
+                    self.client.v2_reset_host(infra_env_id=infra_env_id, host_id=host_id)
+                except Exception as e:
+                    msg = literal_eval(e.body)['reason']
+                    error(msg)
+                    return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def unbind_infra_env(self, name):
         infra_env_id = self.get_infra_env_id(name)
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         for host in self.client.v2_list_hosts(infra_env_id=infra_env_id):
             host_id = host['id']
             host_cluster_id = host.get('cluster_id')
@@ -1511,12 +1925,27 @@ class AssistedClient(object):
                 info(f"Host {host_name} already unbound")
                 continue
             info(f"Unbinding Host {host_name}")
-            self.client.unbind_host(infra_env_id=infra_env_id, host_id=host_id)
+            try:
+                self.client.unbind_host(infra_env_id=infra_env_id, host_id=host_id)
+            except Exception as e:
+                msg = literal_eval(e.body)['reason']
+                error(msg)
+                return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def list_events(self, name):
         cluster_id = self.get_cluster_id(name)
+        if cluster_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         events_api = api.EventsApi(api_client=self.api)
-        events = events_api.v2_list_events(cluster_id=cluster_id)
+        try:
+            events = events_api.v2_list_events(cluster_id=cluster_id)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            events = []
         return events
 
     def get_extra_keywords(self):
@@ -1527,11 +1956,15 @@ class AssistedClient(object):
                 'download_iso_path', 'ignore_validations', 'mtu', 'platform']
 
     def create_deployment(self, cluster, overrides, force=False, debug=False):
-        self.create_cluster(cluster, overrides.copy(), force=force)
+        result = self.create_cluster(cluster, overrides.copy(), force=force)
+        if result['result'] != 'success':
+            return result
         infraenv = f"{cluster}_infra-env"
         minimal = overrides.get('minimal', False)
         overrides['cluster'] = cluster
-        self.create_infra_env(infraenv, overrides)
+        result = self.create_infra_env(infraenv, overrides)
+        if result['result'] != 'success':
+            return result
         del overrides['cluster']
         if not self.saas:
             info("Waiting 60s for iso to be available")
@@ -1557,8 +1990,8 @@ class AssistedClient(object):
             boot_overrides = overrides.copy()
             boot_overrides['cluster'] = cluster
             boot_result = boot_hosts(boot_overrides, debug=debug)
-            if boot_result != 0:
-                return {'result': 'failure', 'reason': 'Hit issue when booting hosts'}
+            if boot_result['result'] != 'success':
+                return boot_result
         if 'hosts_number' in overrides:
             hosts_number = overrides.get('hosts_number')
         elif 'hosts' in overrides and isinstance(overrides['hosts'], list):
@@ -1581,21 +2014,35 @@ class AssistedClient(object):
 
     def create_fake_host(self, name, cluster, secret_key, overrides={}):
         infra_env_id = self.get_infra_env_id(cluster)
+        if infra_env_id is None:
+            msg = f"{name} Not found"
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
         agent_version = 'registry.redhat.io/rhai-tech-preview/assisted-installer-agent-rhel8:v1.0.0-248'
         host_id = str(uuid1())
         info(f"Using uuid {host_id}")
         new_host_params = {"host_id": host_id, "discovery_agent_version": agent_version}
         new_host_params = models.HostCreateParams(**new_host_params)
         self.client.api_client.default_headers['X-Secret-Key'] = secret_key
-        self.client.v2_register_host(infra_env_id=infra_env_id, new_host_params=new_host_params)
+        try:
+            self.client.v2_register_host(infra_env_id=infra_env_id, new_host_params=new_host_params)
+        except Exception as e:
+            msg = literal_eval(e.body)['reason']
+            error(msg)
+            return {'result': 'failure', 'reason': msg}
+        return {'result': 'success'}
 
     def scale_deployment(self, cluster, overrides, debug=False):
         infraenv = f"{cluster}_infra-env"
         minimal = overrides.get('minimal', False)
         if cluster.endswith('-day2'):
-            self.create_cluster(cluster, overrides.copy())
+            result = self.create_cluster(cluster, overrides.copy())
+            if result['result'] == 'success':
+                return result
             overrides['cluster'] = cluster
-            self.create_infra_env(infraenv, overrides)
+            result = self.create_infra_env(infraenv, overrides)
+            if result['result'] == 'success':
+                return result
             del overrides['cluster']
         else:
             info_cluster = self.info_cluster(cluster)
@@ -1627,8 +2074,8 @@ class AssistedClient(object):
             boot_overrides = overrides.copy()
             boot_overrides['cluster'] = cluster
             boot_result = boot_hosts(boot_overrides, debug=debug)
-            if boot_result != 0:
-                return {'result': 'failure', 'reason': 'Hit issue when booting hosts'}
+            if boot_result['result'] == 'success':
+                return boot_result
         self.wait_hosts(infraenv, hosts_number)
         installed = ['installed', 'added-to-existing-cluster']
         hosts = [h['requested_hostname'] for h in self.list_hosts() if h['status'] not in installed]

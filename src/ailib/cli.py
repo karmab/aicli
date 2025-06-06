@@ -85,12 +85,16 @@ def create_cluster(args):
     overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.create_cluster(args.cluster, overrides.copy(), force=args.force)
+    result = ai.create_cluster(args.cluster, overrides.copy(), force=args.force)
+    if result['result'] != 'success':
+        sys.exit(1)
     if overrides.get('infraenv', True):
         infraenv = f"{args.cluster}_infra-env"
         overrides['cluster'] = args.cluster
         info(f"Creating infraenv {infraenv}")
-        ai.create_infra_env(infraenv, overrides, quiet=True)
+        result = ai.create_infra_env(infraenv, overrides, quiet=True)
+        if result['result'] != 'success':
+            sys.exit(1)
 
 
 def delete_cluster(args):
@@ -104,20 +108,24 @@ def delete_cluster(args):
     clusters = [clu['name'] for clu in ai.list_clusters()] if allclusters else args.clusters
     for cluster in clusters:
         info(f"Deleting cluster {cluster}")
-        ai.delete_cluster(cluster)
+        result = ai.delete_cluster(cluster)
+        if result['result'] != 'success':
+            sys.exit(1)
         for infra_env in ai.list_infra_envs():
             infra_env_name = infra_env.get('name')
             associated_infra_envs = [f"{cluster}_infra-env", f"{cluster}-day2_infra-env"]
             if infra_env_name is not None and infra_env_name in associated_infra_envs:
                 infra_env_id = infra_env['id']
-                ai.delete_infra_env(infra_env_id)
+                result = ai.delete_infra_env(infra_env_id)
+                if result['result'] != 'success':
+                    sys.exit(1)
 
 
 def export_cluster(args):
     info(f"Exporting cluster {args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.export_cluster(args.cluster)
+    print(ai.export_cluster(args.cluster))
 
 
 def info_cluster(args):
@@ -371,14 +379,16 @@ def start_hosts(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     hostnames = args.hostnames
-    ai.start_hosts(hostnames=hostnames)
+    result = ai.start_hosts(hostnames=hostnames)
+    return 1 if result['result'] != 'success' else 0
 
 
 def stop_hosts(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     hostnames = args.hostnames
-    ai.stop_hosts(hostnames=hostnames)
+    result = ai.stop_hosts(hostnames=hostnames)
+    return 1 if result['result'] != 'success' else 0
 
 
 def create_fake_hosts(args):
@@ -409,7 +419,8 @@ def create_infra_env(args):
     overrides = handle_parameters(args.param, args.paramfile)
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.create_infra_env(args.infraenv, overrides)
+    result = ai.create_infra_env(args.infraenv, overrides)
+    return 1 if result['result'] != 'success' else 0
 
 
 def delete_infra_env(args):
@@ -563,7 +574,9 @@ def download_kubeadminpassword(args):
         info(f"Downloading KubeAdminPassword for Cluster {args.cluster} in {path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.download_kubeadminpassword(args.cluster, path, stdout=stdout)
+    result = ai.download_kubeadminpassword(args.cluster, path, stdout=stdout)
+    if stdout:
+        print(result)
 
 
 def download_kubeconfig(args):
@@ -573,15 +586,9 @@ def download_kubeconfig(args):
         info(f"Downloading Kubeconfig for Cluster {args.cluster} in {args.path}/kubeconfig.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.download_kubeconfig(args.cluster, args.path, stdout=stdout)
-
-
-def download_initrd(args):
-    args.path = container_path(args.path)
-    info(f"Downloading Initrd Config for infraenv {args.infraenv} in {args.path}/initrd.{args.infraenv}")
-    ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
-                        ca=args.ca, cert=args.cert, key=args.key)
-    ai.download_initrd(args.infraenv, args.path)
+    result = ai.download_kubeconfig(args.cluster, args.path, stdout=stdout)
+    if stdout:
+        print(result)
 
 
 def download_installconfig(args):
@@ -591,7 +598,9 @@ def download_installconfig(args):
         info(f"Downloading Install Config for Cluster {args.cluster} in {args.path}/install-config.yaml.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.download_installconfig(args.cluster, args.path, stdout=stdout)
+    result = ai.download_installconfig(args.cluster, args.path, stdout=stdout)
+    if stdout:
+        print(result)
 
 
 def download_ignition(args):
@@ -641,7 +650,8 @@ def bind_host(args):
     overrides = {'cluster': args.cluster}
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.update_host(args.hostname, overrides)
+    result = ai.update_host(args.hostname, overrides)
+    return 1 if result['result'] == 'success' else 0
 
 
 def unbind_host(args):
@@ -649,7 +659,8 @@ def unbind_host(args):
     overrides = {'cluster': None}
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.update_host(args.hostname, overrides)
+    result = ai.update_host(args.hostname, overrides)
+    return 1 if result['result'] == 'success' else 0
 
 
 def update_host(args):
@@ -657,7 +668,8 @@ def update_host(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
     hostnames = args.hostname
-    ai.update_hosts(hostnames, overrides)
+    result = ai.update_hosts(hostnames, overrides)
+    return 1 if result['result'] == 'success' else 0
 
 
 def wait_hosts(args):
@@ -707,7 +719,7 @@ def info_service(args):
     info("Retrieving information on service")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.info_service()
+    print(ai.info_service())
 
 
 def list_events(args):
@@ -1030,14 +1042,6 @@ def cli():
     download_subparsers.add_parser('ipxe-script', parents=[ipxescriptdownload_parser],
                                    description=ipxescriptdownload_desc,
                                    help=ipxescriptdownload_desc)
-
-    initrddownload_desc = 'Download Initrd'
-    initrddownload_parser = argparse.ArgumentParser(add_help=False)
-    initrddownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
-    initrddownload_parser.add_argument('infraenv', metavar='INFRAENV')
-    initrddownload_parser.set_defaults(func=download_initrd)
-    download_subparsers.add_parser('initrd', parents=[initrddownload_parser], description=initrddownload_desc,
-                                   help=initrddownload_desc)
 
     installconfigdownload_desc = 'Download Installconfig'
     installconfigdownload_parser = argparse.ArgumentParser(add_help=False)
