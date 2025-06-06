@@ -563,7 +563,9 @@ def download_kubeadminpassword(args):
         info(f"Downloading KubeAdminPassword for Cluster {args.cluster} in {path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.download_kubeadminpassword(args.cluster, path, stdout=stdout)
+    result = ai.download_kubeadminpassword(args.cluster, path, stdout=stdout)
+    if stdout:
+        print(result)
 
 
 def download_kubeconfig(args):
@@ -573,7 +575,9 @@ def download_kubeconfig(args):
         info(f"Downloading Kubeconfig for Cluster {args.cluster} in {args.path}/kubeconfig.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.download_kubeconfig(args.cluster, args.path, stdout=stdout)
+    result = ai.download_kubeconfig(args.cluster, args.path, stdout=stdout)
+    if stdout:
+        print(result)
 
 
 def download_initrd(args):
@@ -591,7 +595,9 @@ def download_installconfig(args):
         info(f"Downloading Install Config for Cluster {args.cluster} in {args.path}/install-config.yaml.{args.cluster}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    ai.download_installconfig(args.cluster, args.path, stdout=stdout)
+    result = ai.download_installconfig(args.cluster, args.path, stdout=stdout)
+    if stdout:
+        print(result)
 
 
 def download_ignition(args):

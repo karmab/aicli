@@ -43,7 +43,7 @@ def boot_hosts(hostnames: list, url: str = "https://api.openshift.com", token: s
 @mcp.tool()
 def create_cluster(cluster: str, url: str = "https://api.openshift.com", token: str = None,
                    offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                   key: str = None, force: bool = False, overrides: dict = {}) -> dict:
+                   key: str = None, force: bool = False, overrides: dict = {}):
     ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
     ai.create_cluster(cluster, overrides.copy(), force=force)
     if overrides.get('infraenv', True):
@@ -82,7 +82,7 @@ def create_manifests(cluster: str, url: str = "https://api.openshift.com", token
 @mcp.tool()
 def delete_cluster(clusters: list, allclusters: bool = False, url: str = "https://api.openshift.com", token: str = None,
                    offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                   key: str = None) -> dict:
+                   key: str = None):
     """ Delete cluster """
     ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
     clusters = [clu['name'] for clu in ai.list_clusters()] if allclusters else clusters
@@ -135,30 +135,19 @@ def download_iso(infraenv: str, url: str = "https://api.openshift.com", token: s
 @mcp.tool()
 def download_kubeadminpassword(cluster: str, url: str = "https://api.openshift.com", token: str = None,
                                offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                               key: str = None, stdout: bool = True, path: str = '.') -> str:
+                               key: str = None, path: str = '.') -> str:
     """Download kubeadminpassword of cluster"""
-    if not stdout:
-        path = f"{path}/kubeadmin-password.{cluster}"
     ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.download_kubeadminpassword(cluster, path, stdout=stdout)
+    return ai.download_kubeadminpassword(cluster, path, stdout=True)
 
 
 @mcp.tool()
 def download_kubeconfig(cluster: str, url: str = "https://api.openshift.com", token: str = None,
                         offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                        key: str = None, stdout: bool = True, path: str = '.') -> str:
+                        key: str = None, path: str = '.') -> str:
     """Download kubeconfig of cluster"""
     ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.download_kubeconfig(cluster, path, stdout=stdout)
-
-
-@mcp.tool()
-def download_manifests(cluster: str, url: str = "https://api.openshift.com", token: str = None,
-                       offlinetoken: str = None, debug: bool = False, ca: str = None, cert: str = None,
-                       key: str = None, path: str = '.'):
-    """Download manifests of cluster"""
-    ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
-    ai.download_manifests(cluster, path)
+    return ai.download_kubeconfig(cluster, path, stdout=True)
 
 
 @mcp.tool()
@@ -174,7 +163,7 @@ def info_cluster(cluster: str, full: bool = False, fields: list = [], preflight:
         skipped = []
     ai = AssistedClient(url, token=token, offlinetoken=offlinetoken, debug=debug, ca=ca, cert=cert, key=key)
     if preflight:
-        print(ai.preflight_cluster(cluster))
+        return ai.preflight_cluster(cluster)
         return
     info = ai.info_cluster(cluster).to_dict()
     if fields:

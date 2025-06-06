@@ -730,7 +730,7 @@ class AssistedClient(object):
         cluster_id = self.get_cluster_id(name)
         response = self.client.v2_get_cluster_install_config(cluster_id=cluster_id)
         if stdout:
-            print(response)
+            return response
         else:
             installconfig_path = f"{path}/install-config.yaml.{name}"
             with open(installconfig_path, "w") as f:
@@ -741,7 +741,7 @@ class AssistedClient(object):
         response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id, file_name="kubeadmin-password",
                                                                _preload_content=False)
         if stdout:
-            print(response.data.decode())
+            return response.data.decode()
         else:
             kubeadminpassword_path = f"{path}/kubeadmin-password.{name}"
             with open(kubeadminpassword_path, "wb") as f:
@@ -752,7 +752,7 @@ class AssistedClient(object):
         response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id, file_name="kubeconfig-noingress",
                                                                _preload_content=False)
         if stdout:
-            print(response.data.decode())
+            return response.data.decode()
         else:
             kubeconfig_path = f"{path}/kubeconfig.{name}"
             with open(kubeconfig_path, "wb") as f:
