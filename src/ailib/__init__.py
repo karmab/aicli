@@ -22,8 +22,8 @@ from urllib.request import urlretrieve
 import yaml
 import traceback
 
-default_cluster_params = {"openshift_version": "4.18", "vip_dhcp_allocation": False}
-default_infraenv_params = {"openshift_version": "4.18", "image_type": "full-iso"}
+default_cluster_params = {"openshift_version": "4.19", "vip_dhcp_allocation": False}
+default_infraenv_params = {"openshift_version": "4.19", "image_type": "full-iso"}
 SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub']
 
 
@@ -153,7 +153,7 @@ class AssistedClient(object):
                 error(f"Hit issue when trying to set token. Got {e}")
                 if os.path.exists(offlinetokenpath):
                     error(f"Moving wrong offlinetoken file to {offlinetokenpath}.old")
-                    move(offlinetokenpath, "{offlinetokenpath}.old")
+                    move(offlinetokenpath, f"{offlinetokenpath}.old")
                 sys.exit(1)
             self.config.api_key['Authorization'] = self.token
             self.config.api_key_prefix['Authorization'] = 'Bearer'
