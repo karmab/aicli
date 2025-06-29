@@ -559,7 +559,7 @@ def download_kubeadminpassword(args):
     stdout = args.stdout
     path = args.path
     if not stdout:
-        path = f"{container_path(path)}/kubeadmin-password.{args.cluster}"
+        path = container_path(path)
         info(f"Downloading KubeAdminPassword for Cluster {args.cluster} in {path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
@@ -569,13 +569,14 @@ def download_kubeadminpassword(args):
 
 
 def download_kubeconfig(args):
+    path = args.path
     stdout = args.stdout
     if not stdout:
-        args.path = container_path(args.path)
-        info(f"Downloading Kubeconfig for Cluster {args.cluster} in {args.path}/kubeconfig.{args.cluster}")
+        path = container_path(path)
+        info(f"Downloading Kubeconfig for Cluster {args.cluster} in {path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    result = ai.download_kubeconfig(args.cluster, args.path, stdout=stdout)
+    result = ai.download_kubeconfig(args.cluster, path, stdout=stdout)
     if stdout:
         print(result)
 
