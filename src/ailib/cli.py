@@ -670,8 +670,7 @@ def update_host(args):
 def wait_hosts(args):
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    filter_installed = args.filter
-    ai.wait_hosts(args.infraenv, args.number, filter_installed=filter_installed)
+    ai.wait_hosts(args.infraenv, args.number)
 
 
 def wait_cluster(args):
@@ -1401,7 +1400,6 @@ def cli():
 
     hostswait_desc = 'Wait for hosts'
     hostswait_parser = argparse.ArgumentParser(add_help=False)
-    hostswait_parser.add_argument('-f', '--filter', action='store_true', help='Filter installed hosts')
     hostswait_parser.add_argument('-n', '--number', help='Number of nodes to wait for. Default to 3', type=int,
                                   default=3)
     hostswait_parser.add_argument('infraenv', metavar='INFRAENV')
