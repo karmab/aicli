@@ -56,7 +56,10 @@ def boot_hosts(overrides, hostnames=[], debug=False):
         bmc_password = host.get('bmc_password') or host.get('password') or overrides.get('bmc_password')
         bmc_reset = host.get('reset') or host.get('bmc_reset') or overrides.get('bmc_reset', False)
         if bmc_url is not None and bmc_user is not None and bmc_password is not None:
-            red = Redfish(bmc_url, bmc_user, bmc_password, debug=debug)
+            try:
+                red = Redfish(bmc_url, bmc_user, bmc_password, debug=debug)
+            except:
+                sys.exit(1)
             if bmc_reset:
                 red.reset()
                 sleep(240)
@@ -68,7 +71,7 @@ def boot_hosts(overrides, hostnames=[], debug=False):
                 warning(f"Hit {e} when plugging iso to host {msg}")
                 if debug:
                     traceback.print_exception(e)
-                return 1
+                sys.exit(1)
         else:
             warning(f"Skipping entry {index} because either bmc_url, bmc_user or bmc_password is not set")
         if 'sno' in overrides and overrides['sno']:
