@@ -22,8 +22,8 @@ from urllib.request import urlretrieve
 import yaml
 import traceback
 
-default_cluster_params = {"openshift_version": "4.19", "vip_dhcp_allocation": False}
-default_infraenv_params = {"openshift_version": "4.19", "image_type": "full-iso"}
+default_cluster_params = {"openshift_version": "4.20", "vip_dhcp_allocation": False}
+default_infraenv_params = {"openshift_version": "4.20", "image_type": "full-iso"}
 SSH_PUB_LOCATIONS = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_dsa.pub', 'id_rsa.pub']
 
 
