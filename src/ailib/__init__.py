@@ -202,10 +202,22 @@ class AssistedClient(object):
 
     def set_default_values(self, overrides, existing=False, quiet=False):
         if 'openshift_version' in overrides:
+            # Handle version strings that may have been incorrectly parsed as floats
             if isinstance(overrides['openshift_version'], float):
                 overrides['openshift_version'] = str(overrides['openshift_version'])
-            if overrides['openshift_version'] == 4.1:
-                overrides['openshift_version'] = '4.10'
+            # Handle common cases where YAML parsing loses trailing zeros
+            version_fixes = {
+                '4.1': '4.10',
+                '4.2': '4.20',
+                '4.3': '4.30',
+                '4.4': '4.40',
+                4.1: '4.10',
+                4.2: '4.20',
+                4.3: '4.30',
+                4.4: '4.40',
+            }
+            if overrides['openshift_version'] in version_fixes:
+                overrides['openshift_version'] = version_fixes[overrides['openshift_version']]
         api_vips = overrides.get('api_vips', [])
         api_vip = overrides.get('api_vip') or overrides.get('api_ip')
         if api_vip is not None:
