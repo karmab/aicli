@@ -317,10 +317,33 @@ class AssistedClient(object):
             overrides['image_type'] = image_type
         static_network_config = overrides.get('static_network_config', [])
         if static_network_config:
+            # Handle file path: if string is a file path, read and parse it
+            if isinstance(static_network_config, str):
+                file_path = os.path.expanduser(static_network_config)
+                if os.path.exists(file_path) and os.path.isfile(file_path):
+                    try:
+                        with open(file_path, 'r') as f:
+                            file_content = yaml.safe_load(f)
+                            # Extract static_network_config key if file contains full parameter structure
+                            if isinstance(file_content, dict) and 'static_network_config' in file_content:
+                                static_network_config = file_content['static_network_config']
+                            else:
+                                static_network_config = file_content or []
+                    except (yaml.YAMLError, IOError) as e:
+                        error(f"Failed to read/parse YAML file {file_path}: {e}")
+                        sys.exit(1)
+            # Normalize to list
             if isinstance(static_network_config, dict):
                 static_network_config = [static_network_config]
+            if not isinstance(static_network_config, list):
+                error(f"static_network_config must be a list or dict, got {type(static_network_config).__name__}")
+                sys.exit(1)
+            # Process each entry
             final_network_config = []
             for entry in static_network_config:
+                if not isinstance(entry, dict):
+                    error(f"Each entry in static_network_config must be a dict, got {type(entry).__name__}")
+                    sys.exit(1)
                 interface_map = []
                 bonds = []
                 nics = []
@@ -328,7 +351,13 @@ class AssistedClient(object):
                 network_yaml = entry.get('network_yaml')
                 interfaces = entry.get('interfaces', [])
                 if network_yaml is not None and mac_interface_map is not None:
-                    new_entry = {'network_yaml': yaml.dump(network_yaml), 'mac_interface_map': mac_interface_map}
+                    # If network_yaml is already a string (from YAML literal block), use it directly
+                    # Otherwise, if it's a dict, dump it to YAML string
+                    if isinstance(network_yaml, str):
+                        network_yaml_str = network_yaml
+                    else:
+                        network_yaml_str = yaml.dump(network_yaml)
+                    new_entry = {'network_yaml': network_yaml_str, 'mac_interface_map': mac_interface_map}
                     final_network_config.append(models.HostStaticNetworkConfig(**new_entry))
                     continue
                 if not interfaces:
