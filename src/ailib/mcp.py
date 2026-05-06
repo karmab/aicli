@@ -487,7 +487,7 @@ def wait_hosts(infraenv: str, url: str = "https://api.openshift.com", token: str
 
 
 def main():
-    mcp.run(transport="stdio")
+    mcp.run(transport="http", host='0.0.0.0')
 
 
 if __name__ == "__main__":
