@@ -240,6 +240,65 @@ class Redfish(object):
             request = Request(eject_url, headers=headers, method='POST', data=data)
             if self.debug:
                 pprint(f"Sending POST to {eject_url} with empty data")
+        result = urlopen(request, context=self.context)
+
+        # Dell fallback: Also try ejecting from Managers endpoint if media is inserted there
+        if self.model == 'dell':
+            try:
+                inserted, _ = self._get_dell_manager_vm_status()
+                if inserted:
+                    if self.debug:
+                        pprint("Dell: Media still inserted at Managers endpoint, ejecting from there")
+                    self._eject_iso_via_dell_manager()
+            except Exception as e:
+                if self.debug:
+                    pprint(f"Dell: Fallback eject check failed: {e}")
+
+        return result
+
+    def _get_dell_manager_vm_status(self):
+        """Check VirtualMedia status at Dell Managers endpoint."""
+        try:
+            manager_url = self.get_manager_url()
+            vm_url = f"{manager_url}/VirtualMedia/CD"
+            if self.debug:
+                pprint(f"Checking VirtualMedia status at {vm_url}")
+            request = Request(vm_url, headers=self.headers)
+            response = json.loads(urlopen(request, context=self.context).read())
+            inserted = response.get("Inserted", False)
+            image = response.get("Image", "")
+            if self.debug:
+                pprint(f"Manager VirtualMedia status - Inserted: {inserted}, Image: {image}")
+            return inserted, image
+        except Exception as e:
+            if self.debug:
+                pprint(f"Failed to check Manager VirtualMedia status: {e}")
+            return False, ""
+
+    def _insert_iso_via_dell_manager(self, iso_url):
+        """Insert ISO via Dell Managers endpoint (fallback for NFS)."""
+        manager_url = self.get_manager_url()
+        insert_url = f"{manager_url}/VirtualMedia/CD/Actions/VirtualMedia.InsertMedia"
+        if iso_url.startswith('http://'):
+            data = {"Image": iso_url, "TransferProtocolType": "HTTP"}
+        elif iso_url.startswith('https://'):
+            data = {"Image": iso_url, "TransferProtocolType": "HTTPS"}
+        else:
+            data = {"Image": iso_url}
+        if self.debug:
+            pprint(f"Fallback: Sending POST to {insert_url} with data {data}")
+        data = json.dumps(data).encode('utf-8')
+        request = Request(insert_url, data=data, headers=self.headers)
+        return urlopen(request, context=self.context)
+
+    def _eject_iso_via_dell_manager(self):
+        """Eject ISO via Dell Managers endpoint."""
+        manager_url = self.get_manager_url()
+        eject_url = f"{manager_url}/VirtualMedia/CD/Actions/VirtualMedia.EjectMedia"
+        if self.debug:
+            pprint(f"Fallback: Sending POST to {eject_url}")
+        data = json.dumps({}).encode('utf-8')
+        request = Request(eject_url, headers=self.headers, method='POST', data=data)
         return urlopen(request, context=self.context)
 
     def insert_iso(self, iso_url):
@@ -279,7 +338,25 @@ class Redfish(object):
             request = Request(insert_url, data=data, headers=headers)
             if self.debug:
                 pprint(f"Sending POST to {insert_url} with data {data}")
-        return urlopen(request, context=self.context)
+        result = urlopen(request, context=self.context)
+
+        # Dell fallback: If insertion via System endpoint didn't work, try Managers endpoint
+        if self.model == 'dell':
+            try:
+                inserted, _ = self._get_dell_manager_vm_status()
+                if not inserted:
+                    if self.debug:
+                        pprint("Dell: Media not inserted via System endpoint, trying Managers endpoint")
+                    result = self._insert_iso_via_dell_manager(iso_url)
+                    # Verify the fallback worked
+                    inserted, _ = self._get_dell_manager_vm_status()
+                    if not inserted:
+                        error("Dell: Failed to insert ISO via both System and Managers endpoints")
+            except Exception as e:
+                if self.debug:
+                    pprint(f"Dell: Fallback check failed: {e}")
+
+        return result
 
     def set_iso_once(self):
         """Set one-time boot to CD/DVD (Virtual Media)."""
