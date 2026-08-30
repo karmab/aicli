@@ -200,8 +200,12 @@ def create_onprem(overrides={}, debug=False):
                 sys.exit(1)
             arch = os.uname().machine
             ocp_release_image = overrides['ocp_release_image']
-            version_long = ocp_release_image.split(':')[-1].split('-')[0]
-            openshift_version = f"4.{version_long.split('.')[1]}"
+            if 'openshift_version' in overrides:
+                openshift_version = overrides['openshift_version']
+                version_long = overrides.get('version_long', openshift_version)
+            else:
+                version_long = ocp_release_image.split(':')[-1].split('-')[0]
+                openshift_version = f"4.{version_long.split('.')[1]}"
             with open(f'{tmpdir}/configmap.yml', 'r') as f:
                 cm = safe_load(f)
             data = cm['data']
@@ -212,7 +216,7 @@ def create_onprem(overrides={}, debug=False):
             os_images = [i for i in os_images if i['openshift_version'] == openshift_version and
                          i['cpu_architecture'] == arch]
             data['OS_IMAGES'] = json.dumps(os_images, indent=None, separators=(',', ':'))
-            registry = ocp_release_image.split('/')[0]
+            registry = overrides.get('installer_registry', ocp_release_image.split('/')[0])
             data['INSTALLER_IMAGE'] = f'{registry}/edge-infrastructure/assisted-installer:latest'
             data['AGENT_DOCKER_IMAGE'] = f'{registry}/edge-infrastructure/assisted-installer-agent:latest'
             data['CONTROLLER_IMAGE'] = f'{registry}/edge-infrastructure/assisted-installer-controller:latest'
