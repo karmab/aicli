@@ -576,7 +576,8 @@ def download_kubeconfig(args):
         info(f"Downloading Kubeconfig for Cluster {args.cluster} in {path}")
     ai = AssistedClient(args.url, token=args.token, offlinetoken=args.offlinetoken, debug=args.debug,
                         ca=args.ca, cert=args.cert, key=args.key)
-    result = ai.download_kubeconfig(args.cluster, path, stdout=stdout)
+    result = ai.download_kubeconfig(args.cluster, path, stdout=stdout, noingress=not args.no_noingress,
+                                        wait=args.wait)
     if stdout:
         print(result)
 
@@ -1079,6 +1080,10 @@ def cli():
     kubeconfigdownload_parser = argparse.ArgumentParser(add_help=False)
     kubeconfigdownload_parser.add_argument('--path', metavar='PATH', default='.', help='Where to download asset')
     kubeconfigdownload_parser.add_argument('-s', '--stdout', action='store_true', help='Print to stdout')
+    kubeconfigdownload_parser.add_argument('--no-noingress', action='store_true',
+                                           help='Fail instead of falling back to kubeconfig-noingress')
+    kubeconfigdownload_parser.add_argument('-w', '--wait', action='store_true',
+                                           help='Wait for kubeconfig to become available')
     kubeconfigdownload_parser.add_argument('cluster', metavar='CLUSTER')
     kubeconfigdownload_parser.set_defaults(func=download_kubeconfig)
     download_subparsers.add_parser('kubeconfig', parents=[kubeconfigdownload_parser],

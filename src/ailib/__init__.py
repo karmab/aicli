@@ -1,4 +1,5 @@
 from assisted_service_client import ApiClient, Configuration, api, models
+from assisted_service_client.rest import ApiException
 from ailib.common import warning, error, info, get_token, match_mac
 from ailib.kfish import Redfish
 import base64
@@ -779,10 +780,32 @@ class AssistedClient(object):
             with open(kubeadminpassword_path, "wb") as f:
                 copyfileobj(response, f)
 
-    def download_kubeconfig(self, name, path, stdout=False):
+    def _download_kubeconfig_try(self, cluster_id, file_name, wait=False):
+        while True:
+            try:
+                return self.client.v2_download_cluster_credentials(cluster_id=cluster_id, file_name=file_name,
+                                                                   _preload_content=False)
+            except ApiException:
+                if not wait:
+                    raise
+                info(f"{file_name} not yet available, retrying in 5s...", quiet=self.quiet)
+                try:
+                    sleep(5)
+                    self.refresh_token(self.token, self.offlinetoken)
+                except KeyboardInterrupt:
+                    info("Leaving as per your request")
+                    sys.exit(0)
+
+    def download_kubeconfig(self, name, path, stdout=False, noingress=True, wait=False):
         cluster_id = self.get_cluster_id(name)
-        response = self.client.v2_download_cluster_credentials(cluster_id=cluster_id, file_name="kubeconfig-noingress",
-                                                               _preload_content=False)
+        try:
+            response = self._download_kubeconfig_try(cluster_id, "kubeconfig", wait=wait and not noingress)
+        except ApiException:
+            if not noingress:
+                error("Kubeconfig not yet available for this cluster and noingress fallback is disabled")
+                sys.exit(1)
+            warning("Kubeconfig not available, falling back to kubeconfig-noingress")
+            response = self._download_kubeconfig_try(cluster_id, "kubeconfig-noingress", wait=wait)
         if stdout:
             return response.data.decode()
         else:
