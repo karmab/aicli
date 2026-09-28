@@ -151,6 +151,8 @@ def create_onprem(overrides={}, debug=False):
         sys.exit(1)
     with TemporaryDirectory() as tmpdir:
         ip = overrides.get('onprem_ip') or get_ip() or '192.168.122.1'
+        port = overrides.get('onprem_port', '8090')
+        image_port = overrides.get('onprem_image_port', '8888')
         ipv6 = ':' in ip
         info(f"Using ip {ip}")
         if os.path.exists('pod.yml'):
@@ -177,12 +179,12 @@ def create_onprem(overrides={}, debug=False):
                 cm_url += f"{cm_name}.yml"
                 response = urllib.request.urlopen(cm_url).read().decode('utf-8')
                 if ipv6:
-                    response = response.replace('127.0.0.1:8090', f'"[{ip}]:8090"')
+                    response = response.replace('127.0.0.1:8090', f'"[{ip}]:{port}"')
                 c.write(response)
             if ipv6 and '[' not in ip:
                 ip = f"[{ip}]"
-            IMAGE_SERVICE_BASE_URL = f'http://{ip}:8888'
-            SERVICE_BASE_URL = f'http://{ip}:8090'
+            IMAGE_SERVICE_BASE_URL = f'http://{ip}:{image_port}'
+            SERVICE_BASE_URL = f'http://{ip}:{port}'
             with open(f"{tmpdir}/configmap.yml", 'wt') as dest:
                 for line in open(f"{tmpdir}/configmap.yml.ori", 'rt').readlines():
                     if 'IMAGE_SERVICE_BASE_URL' in line:
